@@ -1,9 +1,6 @@
 import os
 
-from fastapi import FastAPI, Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from pydantic import ValidationError
+from fastapi import FastAPI
 
 from resources import resource
 
