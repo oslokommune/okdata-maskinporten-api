@@ -1,4 +1,4 @@
-frameworkVersion: ">=2.10.0 <3.0.0"
+frameworkVersion: ">=2.55.0 <3.0.0"
 
 service: okdata-maskinporten-api
 
@@ -12,7 +12,7 @@ provider:
     name: ${self:custom.deploymentBucket.${self:provider.stage}, self:custom.deploymentBucket.dev}
     serverSideEncryption: AES256
   deploymentPrefix: deploy
-  rolePermissionsBoundary: "arn:aws:iam::#{AWS::AccountId}:policy/oslokommune/oslokommune-boundary"
+  rolePermissionsBoundary: "arn:aws:iam::${aws:accountId}:policy/oslokommune/oslokommune-boundary"
   iamManagedPolicies:
     - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
   tags:
@@ -45,7 +45,6 @@ plugins:
   - serverless-es-logs
   - serverless-plugin-git-variables
   - serverless-prune-plugin
-  - serverless-pseudo-parameters
   - serverless-python-requirements
 
 resources:
