@@ -28,7 +28,9 @@ package:
   exclude:
     - '**/*'
   include:
-    - boilerplate/*.py
+    - app.py
+    - handler.py
+    - resources/*.py
 
 
 functions:
