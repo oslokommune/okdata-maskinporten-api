@@ -7,7 +7,7 @@
 attrs==20.3.0
     # via jsonschema
 aws-xray-sdk==2.6.0
-    # via lambda-boilerplate (setup.py)
+    # via okdata-maskinporten-api (setup.py)
 botocore==1.19.60
     # via aws-xray-sdk
 certifi==2020.12.5
@@ -16,6 +16,8 @@ chardet==4.0.0
     # via requests
 ecdsa==0.14.1
     # via python-jose
+fastapi==0.68.0
+    # via okdata-maskinporten-api (setup.py)
 future==0.18.2
     # via aws-xray-sdk
 idna==2.10
@@ -26,8 +28,10 @@ jsonpickle==1.5.0
     # via aws-xray-sdk
 jsonschema==3.2.0
     # via okdata-sdk
+mangum==0.12.2
+    # via okdata-maskinporten-api (setup.py)
 okdata-aws==0.3.0
-    # via lambda-boilerplate (setup.py)
+    # via okdata-maskinporten-api (setup.py)
 okdata-sdk==0.6.0
     # via okdata-aws
 prettytable==2.0.0
@@ -37,7 +41,10 @@ pyasn1==0.4.8
     #   python-jose
     #   rsa
 pydantic==1.7.4
-    # via okdata-aws
+    # via
+    #   fastapi
+    #   okdata-aws
+    #   okdata-maskinporten-api (setup.py)
 pyjwt==2.0.1
     # via okdata-sdk
 pyrsistent==0.17.3
@@ -60,8 +67,12 @@ six==1.15.0
     #   jsonschema
     #   python-dateutil
     #   python-jose
+starlette==0.14.2
+    # via fastapi
 structlog==20.2.0
     # via okdata-aws
+typing-extensions==3.10.0.0
+    # via mangum
 urllib3==1.26.5
     # via
     #   botocore

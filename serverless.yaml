@@ -19,6 +19,7 @@ provider:
     GIT_REV: ${git:branch}:${git:sha1}
     VERSION: ${self:custom.version}
   environment:
+    ROOT_PATH: "/okdata-maskinporten-api"
     GIT_REV: ${git:branch}:${git:sha1}
     STAGE: ${self:provider.stage}
     VERSION: ${self:custom.version}
@@ -27,11 +28,18 @@ package:
   exclude:
     - '**/*'
   include:
-    - boilerplate/*.py
+    - app.py
+    - handler.py
+    - resources/*.py
 
 
 functions:
-  get_boilerplate: ${file(serverless/functions/get_boilerplate.yaml)}
+  app:
+    handler: handler.handler
+    events:
+      - http: ANY /
+      - http: "ANY {proxy+}"
+    timeout: 29
 
 plugins:
   - serverless-es-logs
