@@ -1,0 +1,32 @@
+# Distribution / packaging
+.Python
+env/
+venv/
+.*venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.tox/
+__pycache__
+
+# Serverless directories
+.serverless
+node_modules/
+
+.gradle/
+.terraform/
+*~
+
+# Jetbrains
+.idea/

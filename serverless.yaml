@@ -1,0 +1,64 @@
+frameworkVersion: ">=2.10.0 <3.0.0"
+
+service: okdata-maskinporten-api
+
+provider:
+  name: aws
+  runtime: python3.9
+  memorySize: 1024
+  region: ${opt:region, 'eu-west-1'}
+  stage: ${opt:stage, 'dev'}
+  deploymentBucket:
+    name: ${self:custom.deploymentBucket.${self:provider.stage}, self:custom.deploymentBucket.dev}
+    serverSideEncryption: AES256
+  deploymentPrefix: deploy
+  rolePermissionsBoundary: "arn:aws:iam::#{AWS::AccountId}:policy/oslokommune/oslokommune-boundary"
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
+  tags:
+    GIT_REV: ${git:branch}:${git:sha1}
+    VERSION: ${self:custom.version}
+  environment:
+    GIT_REV: ${git:branch}:${git:sha1}
+    STAGE: ${self:provider.stage}
+    VERSION: ${self:custom.version}
+    SERVICE_NAME: ${self:service}
+package:
+  exclude:
+    - '**/*'
+  include:
+    - boilerplate/*.py
+
+
+functions:
+  get_boilerplate: ${file(serverless/functions/get_boilerplate.yaml)}
+
+plugins:
+  - serverless-es-logs
+  - serverless-plugin-git-variables
+  - serverless-prune-plugin
+  - serverless-pseudo-parameters
+  - serverless-python-requirements
+
+resources:
+  Description: |
+    ${self:service} ${git:branch}:${git:sha1}
+    ${git:message}
+
+custom:
+  version: 0.1.0
+  pythonRequirements:
+    dockerizePip: non-linux
+    slim: true
+    usePoetry: false
+  esLogs:
+    endpoint: ${ssm:/dataplatform/shared/logs-elasticsearch-endpoint}
+    index: dataplatform-services
+    filterPattern: '{ $.function_name = "*" }'
+  prune:
+    automatic: true
+    number: 3
+  exportGitVariables: false
+  deploymentBucket:
+    prod: ok-origo-dataplatform-config-prod
+    dev: ok-origo-dataplatform-config-dev
