@@ -1,5 +1,5 @@
 {
-  "name": "lambda-boilerplate",
+  "name": "okdata-maskinporten-api",
   "description": "",
   "version": "0.1.0",
   "dependencies": {},
@@ -8,7 +8,6 @@
     "serverless-es-logs": "^3.4.1",
     "serverless-plugin-git-variables": "^5.0.1",
     "serverless-prune-plugin": "^1.4.4",
-    "serverless-pseudo-parameters": "^2.5.0",
     "serverless-python-requirements": "^5.1.0"
   }
 }
