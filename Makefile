@@ -36,6 +36,10 @@ deploy: login-dev init format test
 deploy-prod: login-prod init format is-git-clean test
 	sls deploy --stage prod --aws-profile $(.PROD_PROFILE)
 
+.PHONY: run
+run: $(BUILD_VENV)/bin/uvicorn
+	$(BUILD_VENV)/bin/uvicorn app:app --reload
+
 ifeq ($(MAKECMDGOALS),undeploy)
 ifndef STAGE
 $(error STAGE is not set)

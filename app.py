@@ -12,4 +12,4 @@ app = FastAPI(
     root_path=root_path,
 )
 
-app.include_router(resource.router, prefix="")
+app.include_router(resource.router, prefix="/resources")
