@@ -20,3 +20,13 @@ class TestMaskinportenClients:
             "key_id": f"{client_id}-uuid",
             "key": "some-key",
         }
+
+    def test_list_client_keys(self, mock_client):
+        client_id = "some-client-id"
+
+        assert mock_client.get(f"/clients/{client_id}/keys").json() == [
+            {
+                "key_id": f"{client_id}-uuid",
+                "client_id": client_id,
+            }
+        ]
