@@ -31,6 +31,7 @@ package:
     - app.py
     - handler.py
     - resources/*.py
+    - models/*.py
 
 
 functions:
