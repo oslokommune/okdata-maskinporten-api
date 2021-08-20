@@ -1,3 +1,13 @@
-from models.models import MaskinportenClient
+from models.models import (
+    CreateMaskinportenClientBody,
+    MaskinportenClient,
+    ClientKey,
+    ClientKeyMetadata,
+)
 
-__all__ = ["MaskinportenClient"]
+__all__ = [
+    "CreateMaskinportenClientBody",
+    "MaskinportenClient",
+    "ClientKey",
+    "ClientKeyMetadata",
+]
