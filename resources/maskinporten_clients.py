@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import List
 
 from fastapi import APIRouter, status
 
@@ -43,7 +42,7 @@ def create_client_key(client_id: str):
 @router.get(
     "/{client_id}/keys",
     status_code=status.HTTP_200_OK,
-    response_model=List[ClientKeyMetadata],
+    response_model=list[ClientKeyMetadata],
 )
 def list_client_keys(client_id: str):
     # TODO: Implement real functionality

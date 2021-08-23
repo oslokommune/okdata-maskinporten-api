@@ -1,19 +1,17 @@
-from typing import List
-
 from pydantic import BaseModel
 
 
 class MaskinportenClientIn(BaseModel):
     name: str
     description: str
-    scopes: List[str]
+    scopes: list[str]
 
 
 class MaskinportenClientOut(BaseModel):
     client_id: str
     name: str
     description: str
-    scopes: List[str]
+    scopes: list[str]
 
 
 class ClientKey(BaseModel):
