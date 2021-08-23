@@ -1,13 +1,12 @@
 import logging
 import os
-
 from typing import List
 
 from fastapi import APIRouter, status
 
 from models import (
-    CreateMaskinportenClientBody,
-    MaskinportenClient,
+    MaskinportenClientIn,
+    MaskinportenClientOut,
     ClientKey,
     ClientKeyMetadata,
 )
@@ -19,10 +18,12 @@ logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
 router = APIRouter()
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=MaskinportenClient)
-def create_client(body: CreateMaskinportenClientBody):
+@router.post(
+    "", status_code=status.HTTP_201_CREATED, response_model=MaskinportenClientOut
+)
+def create_client(body: MaskinportenClientIn):
     # TODO: Implement real functionality
-    return MaskinportenClient(
+    return MaskinportenClientOut(
         client_id="some-client-id",
         name=body.name,
         description=body.description,

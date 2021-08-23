@@ -3,13 +3,13 @@ from typing import List
 from pydantic import BaseModel
 
 
-class CreateMaskinportenClientBody(BaseModel):
+class MaskinportenClientIn(BaseModel):
     name: str
     description: str
     scopes: List[str]
 
 
-class MaskinportenClient(BaseModel):
+class MaskinportenClientOut(BaseModel):
     client_id: str
     name: str
     description: str
