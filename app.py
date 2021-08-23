@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 
-from resources import resource
+from resources import maskinporten_clients
 
 root_path = os.environ.get("ROOT_PATH", "")
 app = FastAPI(
@@ -12,4 +12,4 @@ app = FastAPI(
     root_path=root_path,
 )
 
-app.include_router(resource.router, prefix="/resources")
+app.include_router(maskinporten_clients.router, prefix="/clients")
