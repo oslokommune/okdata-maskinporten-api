@@ -19,9 +19,12 @@ setup(
     packages=find_packages(),
     install_requires=[
         "aws-xray-sdk",
-        "okdata-aws",
         "fastapi",
         "mangum",
+        "okdata-aws",
         "pydantic",
+        "pyjwt",
+        "pyopenssl",
+        "requests",
     ],
 )
