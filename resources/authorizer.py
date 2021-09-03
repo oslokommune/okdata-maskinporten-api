@@ -89,7 +89,7 @@ def has_team_role(role: str):
             if not teams.has_role(auth_info.bearer_token, body.team_id, role):
                 raise ErrorResponse(
                     status.HTTP_403_FORBIDDEN,
-                    f"Team is not assigned role {role}",
+                    f"Team is not assigned required role {role}",
                 )
         except HTTPError as e:
             if e.response.status_code == 404:
