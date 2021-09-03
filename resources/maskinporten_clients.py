@@ -11,6 +11,7 @@ from models import (
 )
 from maskinporten_api.maskinporten_client import MaskinportenClient
 from resources.authorizer import AuthInfo, authorize
+from resources.authorizer import has_team_role, is_team_member
 from resources.errors import error_message_models
 
 logger = logging.getLogger()
@@ -22,12 +23,18 @@ router = APIRouter()
 
 @router.post(
     "",
-    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    dependencies=[
+        Depends(has_team_role("origo-team")),
+        Depends(is_team_member),
+        Depends(authorize(scope="okdata:maskinporten-client:create")),
+    ],
     status_code=status.HTTP_201_CREATED,
     response_model=MaskinportenClientOut,
     responses=error_message_models(
+        status.HTTP_400_BAD_REQUEST,
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
     ),
 )
 def create_client(

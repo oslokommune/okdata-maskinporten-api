@@ -14,6 +14,7 @@ node_modules: package.json package-lock.json
 $(BUILD_VENV):
 	$(GLOBAL_PY) -m venv $(BUILD_VENV)
 	$(BUILD_PY) -m pip install -U pip
+	$(BUILD_PY) -m pip install -r requirements.txt
 
 .PHONY: format
 format: $(BUILD_VENV)/bin/black

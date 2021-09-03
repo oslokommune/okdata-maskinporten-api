@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 
 class MaskinportenClientIn(BaseModel):
+    team_id: str
     name: str
     description: str
     scopes: list[str]
