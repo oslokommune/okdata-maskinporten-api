@@ -32,9 +32,9 @@ class JWTAuthError(Exception):
 @dataclass
 class JWTConfig:
     issuer: str
-    consumer_org: str
     certificate: crypto.X509
     private_key: crypto.PKey
+    consumer_org: str = None
 
 
 class JWTGenerator:
