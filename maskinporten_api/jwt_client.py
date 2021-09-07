@@ -130,7 +130,7 @@ class JWTAuthClient:
             raise JWTAuthError(data["error_description"])
 
         logging.debug(
-            "Received Maskinporten token valid for {data['expires_in']} seconds"
+            f"Received Maskinporten token valid for {data['expires_in']} seconds"
         )
         return AccessToken(
             access_token=data["access_token"],
