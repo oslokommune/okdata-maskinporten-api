@@ -37,9 +37,11 @@ class JWTConfig:
     private_key: crypto.PKey
 
 
-@dataclass
 class JWTGenerator:
     jwt_config: JWTConfig
+
+    def __init__(self, jwt_config):
+        self.jwt_config = jwt_config
 
     def _jws_headers(self):
         """Return JWT headers for the present certificate."""
