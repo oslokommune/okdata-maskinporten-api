@@ -125,7 +125,10 @@ class JWTAuthClient:
                 "Accept": "*/*",
             },
         )
-        data = response.json()
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            data = {}
 
         try:
             response.raise_for_status()
