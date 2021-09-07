@@ -22,6 +22,7 @@ def test_jwt_generator_claims(jwt_generator):
     assert claim_1["iat"] == 0
     assert claim_1["iss"] == "foo-corp"
     assert claim_1["scope"] == "a b c"
+    assert claim_1["consumer_org"] == "123"
 
     claim_2 = jwt_generator._claims("audience", ["a", "b", "c"])
 
@@ -47,6 +48,7 @@ def test_jwt_generator_generate_jwt(jwt_generator):
     assert token["iss"] == "foo-corp"
     assert token["jti"]
     assert token["scope"] == "a b c"
+    assert token["consumer_org"] == "123"
 
 
 def test_jwt_auth_client_get_access_token(jwt_config, requests_mock):

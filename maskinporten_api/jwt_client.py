@@ -60,7 +60,7 @@ class JWTGenerator:
         now = datetime.now()
         expiration_time = now + timedelta(seconds=120)
 
-        return {
+        claims = {
             "aud": audience,
             "exp": int(expiration_time.timestamp()),
             "iat": int(now.timestamp()),
@@ -68,6 +68,11 @@ class JWTGenerator:
             "jti": str(uuid.uuid4()),  # Must be unique for each grant.
             "scope": " ".join(scopes),
         }
+
+        if self.jwt_config.consumer_org:
+            claims["consumer_org"] = self.jwt_config.consumer_org
+
+        return claims
 
     def generate_jwt(self, audience, scopes):
         """Return a freshly generated JWT for `audience` and `scopes`."""
