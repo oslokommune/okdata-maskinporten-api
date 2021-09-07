@@ -26,7 +26,10 @@ from OpenSSL import crypto
 
 
 class JWTAuthError(Exception):
-    pass
+    def __init__(self, status_code, error_description):
+        super().__init__(
+            f"Got status code {status_code} from Maskinporten: {error_description}"
+        )
 
 
 @dataclass
@@ -122,12 +125,14 @@ class JWTAuthClient:
                 "Accept": "*/*",
             },
         )
-        response.raise_for_status()
-
         data = response.json()
 
-        if "error" in data:
-            raise JWTAuthError(data["error_description"])
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            if "error" in data:
+                raise JWTAuthError(response.status_code, data["error_description"])
+            raise
 
         logging.debug(
             f"Received Maskinporten token valid for {data['expires_in']} seconds"
