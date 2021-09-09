@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 import jwt
 import requests
 from OpenSSL import crypto
+from pydantic import BaseModel
 
 
 class JWTAuthError(Exception):
@@ -88,11 +89,10 @@ class JWTGenerator:
         return jwt.encode(claims, pk, algorithm="RS256", headers=headers)
 
 
-@dataclass
-class AccessToken:
+class AccessToken(BaseModel):
     access_token: str
     token_type: str
-    expires_in: str
+    expires_in: int
     scope: str
 
     def __str__(self):
@@ -130,14 +130,9 @@ class JWTAuthClient:
         except requests.exceptions.HTTPError:
             raise JWTAuthError(response.status_code, response.text)
 
-        data = response.json()
+        token = AccessToken.parse_obj(response.json())
 
         logging.debug(
-            f"Received Maskinporten token valid for {data['expires_in']} seconds"
+            f"Received Maskinporten token valid for {token.expires_in} seconds"
         )
-        return AccessToken(
-            access_token=data["access_token"],
-            token_type=data["token_type"],
-            expires_in=data["expires_in"],
-            scope=data["scope"],
-        )
+        return token
