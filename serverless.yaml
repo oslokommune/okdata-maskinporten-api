@@ -15,6 +15,7 @@ provider:
   rolePermissionsBoundary: "arn:aws:iam::${aws:accountId}:policy/oslokommune/oslokommune-boundary"
   iamManagedPolicies:
     - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
+    - "arn:aws:iam::${aws:accountId}:policy/origo_certificate_key_usage"
   tags:
     GIT_REV: ${git:branch}:${git:sha1}
     VERSION: ${self:custom.version}

@@ -19,6 +19,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "aws-xray-sdk",
+        "boto3",
         "fastapi",
         "mangum",
         "okdata-aws",
