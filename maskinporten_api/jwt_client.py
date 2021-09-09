@@ -23,7 +23,6 @@ from datetime import datetime, timedelta
 import jwt
 import requests
 from OpenSSL import crypto
-from simplejson.errors import JSONDecodeError
 
 
 class JWTAuthError(Exception):
@@ -127,16 +126,11 @@ class JWTAuthClient:
             },
         )
         try:
-            data = response.json()
-        except JSONDecodeError:
-            data = {}
-
-        try:
             response.raise_for_status()
         except requests.exceptions.HTTPError:
-            if "error" in data:
-                raise JWTAuthError(response.status_code, data["error_description"])
-            raise
+            raise JWTAuthError(response.status_code, response.text)
+
+        data = response.json()
 
         logging.debug(
             f"Received Maskinporten token valid for {data['expires_in']} seconds"
