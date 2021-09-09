@@ -14,7 +14,7 @@ certifi==2020.12.5
     # via requests
 cffi==1.14.6
     # via cryptography
-chardet==4.0.0
+charset-normalizer==2.0.4
     # via requests
 cryptography==3.4.8
     # via pyopenssl
@@ -65,13 +65,15 @@ python-jose==3.2.0
     # via python-keycloak
 python-keycloak==0.24.0
     # via okdata-sdk
-requests==2.25.1
+requests==2.26.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
     #   python-keycloak
 rsa==4.7
     # via python-jose
+simplejson==3.17.5
+    # via okdata-maskinporten-api (setup.py)
 six==1.15.0
     # via
     #   ecdsa

@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 import jwt
 import requests
 from OpenSSL import crypto
+from simplejson.errors import JSONDecodeError
 
 
 class JWTAuthError(Exception):
@@ -127,7 +128,7 @@ class JWTAuthClient:
         )
         try:
             data = response.json()
-        except json.JSONDecodeError:
+        except JSONDecodeError:
             data = {}
 
         try:
