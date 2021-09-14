@@ -1,7 +1,7 @@
 import logging
 import os
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from models import (
     MaskinportenClientIn,
@@ -10,6 +10,8 @@ from models import (
     ClientKeyMetadata,
 )
 from maskinporten_api.maskinporten_client import MaskinportenClient
+from resources.authorizer import AuthInfo, authorize
+from resources.errors import error_message_models
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
@@ -19,9 +21,19 @@ router = APIRouter()
 
 
 @router.post(
-    "", status_code=status.HTTP_201_CREATED, response_model=MaskinportenClientOut
+    "",
+    dependencies=[authorize(scope="okdata:maskinporten-client:create")],
+    status_code=status.HTTP_201_CREATED,
+    response_model=MaskinportenClientOut,
+    responses=error_message_models(
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    ),
 )
-def create_client(body: MaskinportenClientIn):
+def create_client(
+    body: MaskinportenClientIn,
+    auth_info: AuthInfo = Depends(),
+):
     logger.debug(
         f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
     )
