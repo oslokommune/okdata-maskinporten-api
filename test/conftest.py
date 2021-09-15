@@ -27,7 +27,6 @@ def initialize_parameter_store():
 
     ssm_client.put_parameter(
         Name=f"/dataplatform/{os.environ['SERVICE_NAME']}/keycloak-client-secret",
-        Description="A test parameter",
         Value="supersecretpassword",
         Type="SecureString",
     )
