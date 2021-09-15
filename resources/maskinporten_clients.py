@@ -9,6 +9,7 @@ from models import (
     ClientKey,
     ClientKeyMetadata,
 )
+from maskinporten_api.maskinporten_client import MaskinportenClient
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
@@ -21,12 +22,28 @@ router = APIRouter()
     "", status_code=status.HTTP_201_CREATED, response_model=MaskinportenClientOut
 )
 def create_client(body: MaskinportenClientIn):
-    # TODO: Implement real functionality
+    logger.debug(
+        f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
+    )
+
+    client = MaskinportenClient(body.env)
+    data = {
+        "client_name": body.name,
+        "description": body.description,
+        "scopes": body.scopes,
+        "token_endpoint_auth_method": "private_key_jwt",
+        "grant_types": ["urn:ietf:params:oauth:grant-type:jwt-bearer"],
+        "integration_type": "maskinporten",
+        "application_type": "web",
+    }
+    response = client.request("POST", ["idporten:dcr.write"], json=data).json()
+
     return MaskinportenClientOut(
-        client_id="some-client-id",
-        name=body.name,
-        description=body.description,
-        scopes=body.scopes,
+        client_id=response["client_id"],
+        name=response["client_name"],
+        description=response["description"],
+        scopes=response["scopes"],
+        active=response["active"],
     )
 
 
