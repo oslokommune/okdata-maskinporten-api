@@ -15,7 +15,7 @@ def mock_client():
 
 
 @pytest.fixture
-def mock_aws(monkeypatch):
+def mock_aws():
     mock_ssm().start()
 
     # Add required values to parameter_store
