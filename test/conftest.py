@@ -1,7 +1,7 @@
 import os
-import pytest
 
 import boto3
+import pytest
 from fastapi.testclient import TestClient
 from moto import mock_ssm
 
