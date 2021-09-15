@@ -1,5 +1,13 @@
 import pytest
 
+from keycloak import KeycloakOpenID
+from okdata.resource_auth import ResourceAuthorizer
+
+
+valid_token = "valid-token"
+valid_token_no_access = "valid-token-no-access"
+username = "janedoe"
+
 
 @pytest.fixture
 def maskinporten_create_client_response():
@@ -22,3 +30,21 @@ def maskinporten_create_client_response():
         "client_orgno": "123456789",
         "active": True,
     }
+
+
+@pytest.fixture
+def mock_authorizer(monkeypatch):
+    def has_access(self, bearer_token, scope, resource_name=None, use_whitelist=False):
+        return bearer_token == valid_token and scope in [
+            "okdata:maskinporten-client:create"
+        ]
+
+    monkeypatch.setattr(ResourceAuthorizer, "has_access", has_access)
+
+    def introspect(self, token):
+        return {
+            "active": token in [valid_token, valid_token_no_access],
+            "username": username,
+        }
+
+    monkeypatch.setattr(KeycloakOpenID, "introspect", introspect)

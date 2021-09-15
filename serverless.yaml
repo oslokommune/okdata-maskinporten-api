@@ -25,7 +25,9 @@ provider:
     STAGE: ${self:provider.stage}
     VERSION: ${self:custom.version}
     SERVICE_NAME: ${self:service}
-    KEYCLOAK_SERVER_URL: ${ssm:/dataplatform/shared/keycloak-server-url}
+    KEYCLOAK_SERVER: ${ssm:/dataplatform/shared/keycloak-server-url}
+    KEYCLOAK_REALM: api-catalog
+    RESOURCE_SERVER_CLIENT_ID: okdata-resource-server
 package:
   exclude:
     - '**/*'

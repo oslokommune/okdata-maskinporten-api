@@ -22,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "",
-    dependencies=[authorize(scope="okdata:maskinporten-client:create")],
+    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
     status_code=status.HTTP_201_CREATED,
     response_model=MaskinportenClientOut,
     responses=error_message_models(

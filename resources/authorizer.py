@@ -12,10 +12,12 @@ from resources.errors import ErrorResponse
 def keycloak_client():
     keycloak_client_id = os.environ["SERVICE_NAME"]
     return KeycloakOpenID(
-        server_url=f"{os.environ['KEYCLOAK_SERVER_URL']}/auth/",
+        server_url=f"{os.environ['KEYCLOAK_SERVER']}/auth/",
         realm_name=os.environ.get("KEYCLOAK_REALM", "api-catalog"),
         client_id=keycloak_client_id,
-        client_secret_key=get_secret(f"/dataplatform/{keycloak_client_id}/keycloak-client-secret"),
+        client_secret_key=get_secret(
+            f"/dataplatform/{keycloak_client_id}/keycloak-client-secret"
+        ),
     )
 
 
