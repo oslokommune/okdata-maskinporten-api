@@ -12,10 +12,5 @@ class Message(BaseModel):
     message: Optional[str]
 
 
-# TODO Needs Python 3.8
-# class MessageDict(TypedDict):
-#     model: ErrorResponse
-
-
 def error_message_models(*status_codes) -> Dict:
     return {code: {"model": Message} for code in status_codes}
