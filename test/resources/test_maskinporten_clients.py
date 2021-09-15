@@ -26,7 +26,7 @@ def test_create_client(mock_client, maskinporten_create_client_response):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.post(
-            "https://example.org/clients/",
+            os.getenv("MASKINPORTEN_CLIENTS_ENDPOINT"),
             json=maskinporten_create_client_response,
         )
         response = mock_client.post("/clients", json=body)
