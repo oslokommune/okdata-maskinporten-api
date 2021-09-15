@@ -1,22 +1,14 @@
 import os
 
-import boto3
-import moto
 import requests_mock
 
 from test.mock_utils import mock_access_token_generation_requests
+from test.resources.conftest import valid_token
 
 
-@moto.mock_ssm
-def test_create_client(mock_client, maskinporten_create_client_response):
-    ssm = boto3.client("ssm", region_name=os.environ["AWS_REGION"])
-    with open("test/data/test.p12.txt") as f:
-        ssm.put_parameter(
-            Name="/dataplatform/maskinporten/origo-certificate-test",
-            Value=f.read(),
-            Type="SecureString",
-        )
-
+def test_create_client(
+    mock_client, mock_aws, mock_authorizer, maskinporten_create_client_response
+):
     body = {
         "name": "some-client",
         "description": "Very cool client",
@@ -29,7 +21,9 @@ def test_create_client(mock_client, maskinporten_create_client_response):
             os.getenv("MASKINPORTEN_CLIENTS_ENDPOINT"),
             json=maskinporten_create_client_response,
         )
-        response = mock_client.post("/clients", json=body)
+        response = mock_client.post(
+            "/clients", json=body, headers={"Authorization": f"Bearer {valid_token}"}
+        )
 
     assert response.json() == {
         "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",

@@ -15,7 +15,7 @@ def mock_client():
 
 
 @pytest.fixture
-def mock_boto(monkeypatch):
+def mock_aws(monkeypatch):
     mock_ssm().start()
 
     # Add required values to parameter_store
@@ -30,3 +30,10 @@ def initialize_parameter_store():
         Value="supersecretpassword",
         Type="SecureString",
     )
+
+    with open("test/data/test.p12.txt") as f:
+        ssm_client.put_parameter(
+            Name="/dataplatform/maskinporten/origo-certificate-test",
+            Value=f.read(),
+            Type="SecureString",
+        )
