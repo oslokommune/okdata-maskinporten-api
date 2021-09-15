@@ -2,6 +2,7 @@ import jwt
 from freezegun import freeze_time
 
 from maskinporten_api.jwt_client import JWTAuthClient
+from test.mock_utils import mock_access_token_generation_requests
 
 
 def test_jwt_generator_jws_headers(jwt_generator):
@@ -35,7 +36,7 @@ def test_jwt_generator_claims(jwt_generator):
 def test_jwt_generator_generate_jwt(jwt_generator):
     encoded_token = jwt_generator.generate_jwt("audience", ["a", "b", "c"])
 
-    with open("test/maskinporten_api/data/pubkey.pem", "rb") as f:
+    with open("test/data/pubkey.pem", "rb") as f:
         public_key = f.read()
 
     token = jwt.decode(
@@ -52,26 +53,7 @@ def test_jwt_generator_generate_jwt(jwt_generator):
 
 
 def test_jwt_auth_client_get_access_token(jwt_config, requests_mock):
-    requests_mock.register_uri(
-        "GET",
-        "https://example.org/.well-known/conf",
-        json={
-            "issuer": "foo-corp",
-            "token_endpoint": "https://example.org/token-endpoint",
-        },
-        status_code=200,
-    )
-    requests_mock.register_uri(
-        "POST",
-        "https://example.org/token-endpoint",
-        json={
-            "access_token": "access_token",
-            "token_type": "Bearer",
-            "expires_in": 119,
-            "scope": "foo:bar.read",
-        },
-        status_code=200,
-    )
+    mock_access_token_generation_requests(requests_mock)
 
     client = JWTAuthClient(jwt_config, "https://example.org/.well-known/conf")
     token = client.get_access_token(["foo:bar.read"])

@@ -5,6 +5,7 @@ class MaskinportenClientIn(BaseModel):
     name: str
     description: str
     scopes: list[str]
+    env: str
 
 
 class MaskinportenClientOut(BaseModel):
@@ -12,6 +13,7 @@ class MaskinportenClientOut(BaseModel):
     name: str
     description: str
     scopes: list[str]
+    active: bool
 
 
 class ClientKey(BaseModel):

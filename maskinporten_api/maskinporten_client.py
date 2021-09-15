@@ -1,3 +1,4 @@
+import base64
 import os
 
 import requests
@@ -9,9 +10,9 @@ from maskinporten_api.ssm import get_secret
 
 class MaskinportenClient:
     def __init__(self, env="test"):
+        p12_encoded = get_secret(f"/dataplatform/maskinporten/origo-certificate-{env}")
         p12 = crypto.load_pkcs12(
-            get_secret(f"/dataplatform/maskinporten/origo-certificate-{env}"),
-            os.getenv("MASKINPORTEN_KEY_PASSWORD"),
+            base64.b64decode(p12_encoded), os.getenv("MASKINPORTEN_KEY_PASSWORD")
         )
         conf = JWTConfig(
             issuer=os.getenv("MASKINPORTEN_ADMIN_CLIENT_ID"),
@@ -20,7 +21,7 @@ class MaskinportenClient:
         )
         self.client = JWTAuthClient(conf, os.getenv("IDPORTEN_OIDC_WELLKNOWN"))
 
-    def request(self, method, path, scopes):
+    def request(self, method, scopes, path="", json=None):
         base_url = os.getenv("MASKINPORTEN_CLIENTS_ENDPOINT")
         access_token = self.client.get_access_token(scopes)
 
@@ -32,6 +33,7 @@ class MaskinportenClient:
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {access_token}",
             },
+            json=json,
         )
         response.raise_for_status()
 
