@@ -1,14 +1,22 @@
+import os
+
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from keycloak import KeycloakOpenID
 from okdata.resource_auth import ResourceAuthorizer
 
-from clients.keycloak import setup_keycloak_client
+from maskinporten_api.ssm import get_secret
 from resources.errors import ErrorResponse
 
 
 def keycloak_client():
-    return setup_keycloak_client()
+    keycloak_client_id = os.environ["SERVICE_NAME"]
+    return KeycloakOpenID(
+        server_url=f"{os.environ['KEYCLOAK_SERVER_URL']}/auth/",
+        realm_name=os.environ.get("KEYCLOAK_REALM", "api-catalog"),
+        client_id=keycloak_client_id,
+        client_secret_key=get_secret(f"/dataplatform/{keycloak_client_id}/keycloak-client-secret"),
+    )
 
 
 def resource_authorizer() -> ResourceAuthorizer:
