@@ -13,7 +13,7 @@ def get_secret(key):
 
 def send_key(value, name, destination_aws_account_id):
     sts_client = boto3.client("sts")
-    role_arn = f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-prod-test"
+    role_arn = f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-maskinporten"
 
     assume_role_response = sts_client.assume_role(
         RoleArn=role_arn, RoleSessionName="dataplatform-prod"
