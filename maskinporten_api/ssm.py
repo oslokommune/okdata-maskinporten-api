@@ -16,7 +16,7 @@ def send_key(value, name, destination_aws_account_id):
     role_arn = f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-maskinporten"
 
     assume_role_response = sts_client.assume_role(
-        RoleArn=role_arn, RoleSessionName="dataplatform-prod"
+        RoleArn=role_arn, RoleSessionName="dataplatform-maskinporten"
     )
 
     credentials = assume_role_response["Credentials"]
