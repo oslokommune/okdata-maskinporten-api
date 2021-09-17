@@ -22,16 +22,13 @@ def send_secret(secret_value, ssm_parameter_name, destination_aws_account_id):
     )
 
     credentials = assume_role_response["Credentials"]
-    access_key_id = credentials["AccessKeyId"]
-    secret_access_key = credentials["SecretAccessKey"]
-    session_token = credentials["SessionToken"]
 
     ssm_client = boto3.client(
         "ssm",
         region_name=os.environ["AWS_REGION"],
-        aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key,
-        aws_session_token=session_token,
+        aws_access_key_id=credentials["AccessKeyId"],
+        aws_secret_access_key=credentials["SecretAccessKey"],
+        aws_session_token=credentials["SessionToken"],
     )
 
     ssm_client.put_parameter(
