@@ -18,8 +18,10 @@ class MaskinportenSecrets:
     key_password: str
 
 
-def send_secrets(secrets: MaskinportenSecrets, destination_aws_account_id):
-    """Store secret values as a SecureStrings SSM parameter with prefix '/okdata/maskinporten/' in AWS account with ID `destination_aws_account_id`"""
+def send_secrets(
+    secrets: MaskinportenSecrets, maskinporten_client_id, destination_aws_account_id
+):
+    """Store secret values as a SecureStrings SSM parameter with prefix '/okdata/maskinporten/``maskinporten_client_id'/ in AWS account with ID `destination_aws_account_id`"""
     sts_client = boto3.client("sts")
     role_arn = (
         f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-maskinporten"
@@ -41,7 +43,7 @@ def send_secrets(secrets: MaskinportenSecrets, destination_aws_account_id):
 
     for key, value in secrets.__dict__.items():
         response = ssm_client.put_parameter(
-            Name=f"/okdata/maskinporten/{key}",
+            Name=f"/okdata/maskinporten/{maskinporten_client_id}/{key}",
             Value=value,
             Type="SecureString",
         )
