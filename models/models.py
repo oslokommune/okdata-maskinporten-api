@@ -22,5 +22,5 @@ class ClientKey(BaseModel):
 
 
 class ClientKeyMetadata(BaseModel):
-    key_id: str
+    kid: str
     client_id: str
