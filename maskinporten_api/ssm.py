@@ -11,7 +11,7 @@ def get_secret(key):
 
 
 def send_secret(secret_value, ssm_parameter_name, destination_aws_account_id):
-    """Store a secret value `secret_value` as a SecureString SSM parameter with name `ssm_parameter_name` in AWS account with ID `destination_aws_account_id`"""
+    """Store a secret value `secret_value` as a SecureString SSM parameter with name '/okdata/maskinporten/`ssm_parameter_name`' in AWS account with ID `destination_aws_account_id`"""
     sts_client = boto3.client("sts")
     role_arn = (
         f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-maskinporten"
@@ -35,7 +35,7 @@ def send_secret(secret_value, ssm_parameter_name, destination_aws_account_id):
     )
 
     ssm_client.put_parameter(
-        Name=ssm_parameter_name,
+        Name=f"/okdata/maskinporten/{ssm_parameter_name}",
         Value=secret_value,
         Type="SecureString",
     )
