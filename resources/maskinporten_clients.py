@@ -70,7 +70,7 @@ def create_client_key(client_id: str):
 
 
 @router.get(
-    "/{client_id}/keys",
+    "/{env}/{client_id}/keys",
     status_code=status.HTTP_200_OK,
     response_model=list[ClientKeyMetadata],
     responses=error_message_models(
@@ -79,8 +79,8 @@ def create_client_key(client_id: str):
         status.HTTP_404_NOT_FOUND,
     ),
 )
-def list_client_keys(client_id: str):
-    maskinporten_client = MaskinportenClient()  # TODO: Supply environment
+def list_client_keys(env: str, client_id: str):
+    maskinporten_client = MaskinportenClient(env)
     try:
         jwks = maskinporten_client.request(
             "GET", ["idporten:dcr.read"], f"{client_id}/jwks"

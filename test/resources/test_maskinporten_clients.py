@@ -55,7 +55,7 @@ def test_list_client_keys(
             json=maskinporten_list_client_keys_response,
         )
         response = mock_client.get(
-            f"/clients/{client_id}/keys",
+            f"/clients/test/{client_id}/keys",
             headers={"Authorization": f"Bearer {valid_token}"},
         )
 

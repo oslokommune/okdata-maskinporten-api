@@ -9,7 +9,7 @@ from maskinporten_api.ssm import get_secret
 
 
 class MaskinportenClient:
-    def __init__(self, env="test"):
+    def __init__(self, env):
         p12_encoded = get_secret(f"/dataplatform/maskinporten/origo-certificate-{env}")
         p12 = crypto.load_pkcs12(
             base64.b64decode(p12_encoded), os.getenv("MASKINPORTEN_KEY_PASSWORD")
