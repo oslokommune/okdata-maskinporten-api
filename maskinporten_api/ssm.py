@@ -40,8 +40,9 @@ def send_secrets(secrets: MaskinportenSecrets, destination_aws_account_id):
     )
 
     for key, value in secrets.__dict__.items():
-        ssm_client.put_parameter(
+        response = ssm_client.put_parameter(
             Name=f"/okdata/maskinporten/{key}",
             Value=value,
             Type="SecureString",
         )
+        yield response
