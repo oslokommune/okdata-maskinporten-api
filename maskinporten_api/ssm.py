@@ -1,5 +1,4 @@
 import os
-import json
 
 import boto3
 
@@ -26,7 +25,7 @@ def send_key(value, name, destination_aws_account_id):
 
     ssm_client = boto3.client(
         "ssm",
-        region_name="eu-west-1",
+        region_name=os.environ["AWS_REGION"],
         aws_access_key_id=access_key_id,
         aws_secret_access_key=secret_access_key,
         aws_session_token=session_token,
