@@ -11,7 +11,6 @@ class MaskinportenClientIn(BaseModel):
 
 class MaskinportenClientOut(BaseModel):
     client_id: str
-    team_id: str
     name: str
     description: str
     scopes: list[str]

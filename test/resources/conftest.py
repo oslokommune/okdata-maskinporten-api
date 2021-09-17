@@ -7,6 +7,8 @@ from okdata.resource_auth import ResourceAuthorizer
 valid_token = "valid-token"
 valid_token_no_access = "valid-token-no-access"
 username = "janedoe"
+team_id = "abc-123-def-456"
+origo_team_role = "origo-team"
 
 
 @pytest.fixture

@@ -8,6 +8,7 @@ def has_member(access_token: str, team_id: str, user_id: str):
         url=f"{os.environ['TEAMS_API_URL']}/teams/{team_id}/members/{user_id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
+    r.raise_for_status()
     return r.status_code == 200
 
 
