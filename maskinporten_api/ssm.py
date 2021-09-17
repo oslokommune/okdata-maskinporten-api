@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 
 import boto3
 
@@ -10,8 +11,15 @@ def get_secret(key):
     return response["Parameter"]["Value"]
 
 
-def send_secret(secret_value, ssm_parameter_name, destination_aws_account_id):
-    """Store a secret value `secret_value` as a SecureString SSM parameter with name '/okdata/maskinporten/`ssm_parameter_name`' in AWS account with ID `destination_aws_account_id`"""
+@dataclass
+class MaskinportenSecrets:
+    keystore: str
+    key_id: str
+    key_password: str
+
+
+def send_secrets(secrets: MaskinportenSecrets, destination_aws_account_id):
+    """Store secret values as a SecureStrings SSM parameter with prefix '/okdata/maskinporten/' in AWS account with ID `destination_aws_account_id`"""
     sts_client = boto3.client("sts")
     role_arn = (
         f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-maskinporten"
@@ -31,8 +39,9 @@ def send_secret(secret_value, ssm_parameter_name, destination_aws_account_id):
         aws_session_token=credentials["SessionToken"],
     )
 
-    ssm_client.put_parameter(
-        Name=f"/okdata/maskinporten/{ssm_parameter_name}",
-        Value=secret_value,
-        Type="SecureString",
-    )
+    for key, value in secrets.__dict__.items():
+        ssm_client.put_parameter(
+            Name=f"/okdata/maskinporten/{key}",
+            Value=value,
+            Type="SecureString",
+        )
