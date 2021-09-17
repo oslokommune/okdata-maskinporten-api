@@ -1,7 +1,8 @@
 import logging
 import os
 
-from fastapi import APIRouter, Depends, status
+import requests
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from models import (
     MaskinportenClientIn,
@@ -69,10 +70,28 @@ def create_client_key(client_id: str):
 
 
 @router.get(
-    "/{client_id}/keys",
+    "/{env}/{client_id}/keys",
+    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=list[ClientKeyMetadata],
+    responses=error_message_models(
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+    ),
 )
-def list_client_keys(client_id: str):
-    # TODO: Implement real functionality
-    return [ClientKeyMetadata(key_id=f"{client_id}-uuid", client_id=client_id)]
+def list_client_keys(env: str, client_id: str):
+    maskinporten_client = MaskinportenClient(env)
+    try:
+        jwks = maskinporten_client.request(
+            "GET", ["idporten:dcr.read"], f"{client_id}/jwks"
+        ).json()
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(404, f"No client with ID {client_id}")
+        raise
+
+    return [
+        ClientKeyMetadata(kid=key["kid"], client_id=client_id)
+        for key in jwks.get("keys", [])
+    ]

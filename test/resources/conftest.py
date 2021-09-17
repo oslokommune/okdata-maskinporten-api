@@ -33,6 +33,24 @@ def maskinporten_create_client_response():
 
 
 @pytest.fixture
+def maskinporten_list_client_keys_response():
+    return {
+        "keys": [
+            {
+                "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
+                "alg": "RS256",
+                "n": "nYFc81LY5FoxWcKh",
+                "e": "AQAB",
+                "kty": "RSA",
+                "exp": 1663324457,
+            }
+        ],
+        "last_updated": "2021-09-16T12:34:17.099+02:00",
+        "created": "2021-09-16T12:34:17.099+02:00",
+    }
+
+
+@pytest.fixture
 def mock_authorizer(monkeypatch):
     def has_access(self, bearer_token, scope, resource_name=None, use_whitelist=False):
         return bearer_token == valid_token and scope in [
