@@ -71,6 +71,7 @@ def create_client_key(client_id: str):
 
 @router.get(
     "/{env}/{client_id}/keys",
+    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=list[ClientKeyMetadata],
     responses=error_message_models(
