@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 import boto3
 
@@ -41,7 +41,7 @@ def send_secrets(
         aws_session_token=credentials["SessionToken"],
     )
 
-    for key, value in secrets.__dict__.items():
+    for key, value in asdict(secrets):
         response = ssm_client.put_parameter(
             Name=f"/okdata/maskinporten/{maskinporten_client_id}/{key}",
             Value=value,
