@@ -18,6 +18,7 @@ setup(
     url="https://github.oslo.kommune.no/origo-dataplatform/lambda-boilerplate",
     packages=find_packages(),
     install_requires=[
+        "authlib",
         "aws-xray-sdk",
         "boto3",
         "fastapi",
