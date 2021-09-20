@@ -42,9 +42,8 @@ def send_secrets(
     )
 
     for key, value in asdict(secrets):
-        response = ssm_client.put_parameter(
+        ssm_client.put_parameter(
             Name=f"/okdata/maskinporten/{maskinporten_client_id}/{key}",
             Value=value,
             Type="SecureString",
         )
-        yield response
