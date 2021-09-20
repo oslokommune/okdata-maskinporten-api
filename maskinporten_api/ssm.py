@@ -24,7 +24,7 @@ def send_secrets(
     """Send secret values to another AWS Account.
 
     Secret values are stored as SecureString SSM parameters with prefix
-    '/okdata/maskinporten/``maskinporten_client_id'/ in AWS account with ID
+    '/okdata/maskinporten/`maskinporten_client_id`/' in AWS account with ID
     `destination_aws_account_id`.
     """
 
