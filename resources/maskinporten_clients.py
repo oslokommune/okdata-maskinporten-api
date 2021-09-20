@@ -10,6 +10,7 @@ from models import (
     ClientKey,
     ClientKeyMetadata,
 )
+from maskinporten_api.keys import generate_key, jwk_from_key
 from maskinporten_api.maskinporten_client import MaskinportenClient
 from resources.authorizer import AuthInfo, authorize
 from resources.errors import error_message_models
@@ -39,7 +40,7 @@ def create_client(
         f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
     )
 
-    client = MaskinportenClient(body.env)
+    maskinporten_client = MaskinportenClient(body.env)
     data = {
         "client_name": body.name,
         "description": body.description,
@@ -49,24 +50,51 @@ def create_client(
         "integration_type": "maskinporten",
         "application_type": "web",
     }
-    response = client.request("POST", ["idporten:dcr.write"], json=data).json()
+    new_client = maskinporten_client.request("POST", ["idporten:dcr.write"], json=data)
 
     return MaskinportenClientOut(
-        client_id=response["client_id"],
-        name=response["client_name"],
-        description=response["description"],
-        scopes=response["scopes"],
-        active=response["active"],
+        client_id=new_client["client_id"],
+        name=new_client["client_name"],
+        description=new_client["description"],
+        scopes=new_client["scopes"],
+        active=new_client["active"],
     )
 
 
 @router.post(
-    "/{client_id}/keys", status_code=status.HTTP_201_CREATED, response_model=ClientKey
+    "/{env}/{client_id}/keys",
+    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    status_code=status.HTTP_201_CREATED,
+    response_model=ClientKey,
+    responses=error_message_models(
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+    ),
 )
-def create_client_key(client_id: str):
-    # TODO: Implement real functionality
-    client_key = ClientKey(key_id=f"{client_id}-uuid", key="some-key")
-    return client_key
+def create_client_key(
+    env: str,
+    client_id: str,
+    auth_info: AuthInfo = Depends(),
+):
+    maskinporten_client = MaskinportenClient(env)
+
+    try:
+        client = maskinporten_client.request("GET", ["idporten:dcr.read"], client_id)
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(404, f"No client with ID {client_id}")
+        raise
+
+    jwk = jwk_from_key(generate_key(), client["client_name"])
+
+    logger.debug(f"Registering new key with id {jwk['kid']} for client {client_id}")
+
+    jwks = maskinporten_client.request(
+        "POST", ["idporten:dcr.write"], f"{client_id}/jwks", json={"keys": [jwk]}
+    )
+
+    return ClientKey(kid=jwks["keys"][0]["kid"])
 
 
 @router.get(
@@ -85,7 +113,7 @@ def list_client_keys(env: str, client_id: str):
     try:
         jwks = maskinporten_client.request(
             "GET", ["idporten:dcr.read"], f"{client_id}/jwks"
-        ).json()
+        )
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise HTTPException(404, f"No client with ID {client_id}")
