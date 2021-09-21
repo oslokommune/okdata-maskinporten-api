@@ -48,7 +48,7 @@ class SSMService:
             aws_session_token=credentials["SessionToken"],
         )
 
-        for key, value in asdict(secrets):
+        for key, value in asdict(secrets).items():
             ssm_client.put_parameter(
                 Name=f"/okdata/maskinporten/{maskinporten_client_id}/{key}",
                 Value=value,
