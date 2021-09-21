@@ -20,7 +20,11 @@ class Secrets:
 
 class SSMService:
     def send_secrets(
-        self, secrets: Secrets, maskinporten_client_id, destination_aws_account_id
+        self,
+        secrets: Secrets,
+        maskinporten_client_id,
+        destination_aws_account_id,
+        destination_aws_region,
     ):
         """Send secret values to another AWS Account.
 
@@ -42,7 +46,7 @@ class SSMService:
 
         ssm_client = boto3.client(
             "ssm",
-            region_name=os.environ["AWS_REGION"],
+            region_name=destination_aws_region,
             aws_access_key_id=credentials["AccessKeyId"],
             aws_secret_access_key=credentials["SecretAccessKey"],
             aws_session_token=credentials["SessionToken"],

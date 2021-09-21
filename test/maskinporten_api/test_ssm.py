@@ -11,13 +11,15 @@ def test_send_secrets():
     ssm_service = SSMService()
 
     maskinporten_client_id = "some-client"
+    destination_aws_region = "eu-west-1"
     ssm_service.send_secrets(
         Secrets("some-value", "some-value", "some-value"),
         maskinporten_client_id,
         "123456789876",
+        destination_aws_region,
     )
 
-    ssm_client = boto3.client("ssm", region_name="eu-west-1")
+    ssm_client = boto3.client("ssm", region_name=destination_aws_region)
 
     parameter_metadata = ssm_client.describe_parameters()
 

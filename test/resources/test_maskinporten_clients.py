@@ -57,9 +57,13 @@ def test_create_client_key(
         )
 
         destination_aws_account = "123456789876"
+        destination_aws_region = "eu-west-1"
         response = mock_client.post(
             f"/clients/test/{client_id}/keys",
-            data={"destination_aws_account": destination_aws_account},
+            data={
+                "destination_aws_account": destination_aws_account,
+                "destination_aws_region": destination_aws_region,
+            },
             headers={
                 "Authorization": f"Bearer {valid_token}",
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -71,6 +75,7 @@ def test_create_client_key(
         secrets=Secrets(ANY, ANY, ANY),
         maskinporten_client_id=client_id,
         destination_aws_account_id=destination_aws_account,
+        destination_aws_region=destination_aws_region,
     )
     assert response.json() == {
         "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",

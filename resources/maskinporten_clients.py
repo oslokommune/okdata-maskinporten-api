@@ -69,6 +69,7 @@ def create_client_key(
     env: str,
     client_id: str,
     destination_aws_account: str = Form(...),
+    destination_aws_region: str = Form(...),
     auth_info: AuthInfo = Depends(),
 ):
     maskinporten_client = MaskinportenClient(env)
@@ -91,6 +92,7 @@ def create_client_key(
         secrets=Secrets(keystore="TODO", key_id="TODO", key_password="TODO"),
         maskinporten_client_id=client_id,
         destination_aws_account_id=destination_aws_account,
+        destination_aws_region=destination_aws_region,
     )
 
     return ClientKey(kid=jwks["keys"][0]["kid"])

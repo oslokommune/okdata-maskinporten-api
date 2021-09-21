@@ -84,7 +84,13 @@ def mock_authorizer(monkeypatch):
 
 @pytest.fixture
 def mock_send_secrets(monkeypatch, mocker):
-    def send_secrets(self, secrets, maskinporten_client_id, destination_aws_account_id):
+    def send_secrets(
+        self,
+        secrets,
+        maskinporten_client_id,
+        destination_aws_account_id,
+        destination_aws_region,
+    ):
         return
 
     monkeypatch.setattr(SSMService, "send_secrets", send_secrets)
