@@ -41,16 +41,8 @@ def create_client(
     )
 
     maskinporten_client = MaskinportenClient(body.env)
-    data = {
-        "client_name": body.name,
-        "description": body.description,
-        "scopes": body.scopes,
-        "token_endpoint_auth_method": "private_key_jwt",
-        "grant_types": ["urn:ietf:params:oauth:grant-type:jwt-bearer"],
-        "integration_type": "maskinporten",
-        "application_type": "web",
-    }
-    new_client = maskinporten_client.request("POST", ["idporten:dcr.write"], json=data)
+
+    new_client = maskinporten_client.create_client(body)
 
     return MaskinportenClientOut(
         client_id=new_client["client_id"],
@@ -80,7 +72,7 @@ def create_client_key(
     maskinporten_client = MaskinportenClient(env)
 
     try:
-        client = maskinporten_client.request("GET", ["idporten:dcr.read"], client_id)
+        client = maskinporten_client.get_client(client_id)
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise HTTPException(404, f"No client with ID {client_id}")
@@ -90,9 +82,7 @@ def create_client_key(
 
     logger.debug(f"Registering new key with id {jwk['kid']} for client {client_id}")
 
-    jwks = maskinporten_client.request(
-        "POST", ["idporten:dcr.write"], f"{client_id}/jwks", json={"keys": [jwk]}
-    )
+    jwks = maskinporten_client.create_client_key(client_id, jwk)
 
     return ClientKey(kid=jwks["keys"][0]["kid"])
 
@@ -111,9 +101,7 @@ def create_client_key(
 def list_client_keys(env: str, client_id: str):
     maskinporten_client = MaskinportenClient(env)
     try:
-        jwks = maskinporten_client.request(
-            "GET", ["idporten:dcr.read"], f"{client_id}/jwks"
-        )
+        jwks = maskinporten_client.get_client_keys(client_id)
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise HTTPException(404, f"No client with ID {client_id}")
