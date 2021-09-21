@@ -4,9 +4,9 @@ import os
 import requests
 from OpenSSL import crypto
 
-from models import MaskinportenClientIn
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.ssm import get_secret
+from models import MaskinportenClientIn
 
 
 class MaskinportenClient:
