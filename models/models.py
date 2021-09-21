@@ -17,8 +17,7 @@ class MaskinportenClientOut(BaseModel):
 
 
 class ClientKey(BaseModel):
-    key_id: str
-    key: str
+    kid: str
 
 
 class ClientKeyMetadata(BaseModel):

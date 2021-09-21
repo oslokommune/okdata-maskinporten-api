@@ -33,7 +33,13 @@ def maskinporten_create_client_response():
 
 
 @pytest.fixture
-def maskinporten_list_client_keys_response():
+def maskinporten_get_client_response(maskinporten_create_client_response):
+    """Currently the same response as when creating a new client."""
+    return maskinporten_create_client_response
+
+
+@pytest.fixture
+def maskinporten_create_client_key_response():
     return {
         "keys": [
             {
@@ -48,6 +54,12 @@ def maskinporten_list_client_keys_response():
         "last_updated": "2021-09-16T12:34:17.099+02:00",
         "created": "2021-09-16T12:34:17.099+02:00",
     }
+
+
+@pytest.fixture
+def maskinporten_list_client_keys_response(maskinporten_create_client_key_response):
+    """Currently the same response as when creating a new key."""
+    return maskinporten_create_client_key_response
 
 
 @pytest.fixture

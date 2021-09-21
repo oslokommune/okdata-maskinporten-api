@@ -34,12 +34,31 @@ def test_create_client(
     }
 
 
-def test_create_client_key(mock_client):
-    client_id = "some-client-id"
+def test_create_client_key(
+    mock_client,
+    mock_authorizer,
+    maskinporten_get_client_response,
+    maskinporten_create_client_key_response,
+):
+    client_id = "some-client"
 
-    assert mock_client.post(f"/clients/{client_id}/keys").json() == {
-        "key_id": f"{client_id}-uuid",
-        "key": "some-key",
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{os.getenv('MASKINPORTEN_CLIENTS_ENDPOINT')}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.post(
+            f"{os.getenv('MASKINPORTEN_CLIENTS_ENDPOINT')}{client_id}/jwks",
+            json=maskinporten_create_client_key_response,
+        )
+        response = mock_client.post(
+            f"/clients/test/{client_id}/keys",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert response.json() == {
+        "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
     }
 
 

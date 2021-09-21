@@ -37,4 +37,4 @@ class MaskinportenClient:
         )
         response.raise_for_status()
 
-        return response
+        return response.json()
