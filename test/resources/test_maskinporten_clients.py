@@ -38,11 +38,14 @@ def test_create_client(
 
 def test_create_client_key(
     mock_client,
+    mock_aws,
     mock_authorizer,
-    mock_send_secrets,
     maskinporten_get_client_response,
     maskinporten_create_client_key_response,
+    mocker,
 ):
+    mocker.spy(SSMService, "send_secrets")
+
     client_id = "some-client"
 
     with requests_mock.Mocker(real_http=True) as rm:

@@ -3,8 +3,6 @@ import pytest
 from keycloak import KeycloakOpenID
 from okdata.resource_auth import ResourceAuthorizer
 
-from maskinporten_api.ssm import SSMService
-
 
 valid_token = "valid-token"
 valid_token_no_access = "valid-token-no-access"
@@ -80,19 +78,3 @@ def mock_authorizer(monkeypatch):
         }
 
     monkeypatch.setattr(KeycloakOpenID, "introspect", introspect)
-
-
-@pytest.fixture
-def mock_send_secrets(monkeypatch, mocker):
-    def send_secrets(
-        self,
-        secrets,
-        maskinporten_client_id,
-        destination_aws_account_id,
-        destination_aws_region,
-    ):
-        return
-
-    monkeypatch.setattr(SSMService, "send_secrets", send_secrets)
-
-    mocker.spy(SSMService, "send_secrets")

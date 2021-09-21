@@ -1,13 +1,10 @@
 import boto3
 
-from moto import mock_sts, mock_ssm
 
 from maskinporten_api.ssm import SSMService, Secrets
 
 
-@mock_sts
-@mock_ssm
-def test_send_secrets():
+def test_send_secrets(mock_aws):
     ssm_service = SSMService()
 
     maskinporten_client_id = "some-client"
