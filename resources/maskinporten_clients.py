@@ -101,7 +101,7 @@ def create_client_key(
 def list_client_keys(env: str, client_id: str):
     maskinporten_client = MaskinportenClient(env)
     try:
-        jwks = maskinporten_client.get_client(client_id)
+        jwks = maskinporten_client.get_client_keys(client_id)
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise HTTPException(404, f"No client with ID {client_id}")

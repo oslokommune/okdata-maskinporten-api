@@ -46,6 +46,9 @@ class MaskinportenClient:
             "POST", ["idporten:dcr.write"], f"{client_id}/jwks", json={"keys": [jwk]}
         )
 
+    def get_client_keys(self, client_id: str):
+        return self._request("GET", ["idporten:dcr.read"], f"{client_id}/jwks")
+
     def _request(self, method, scopes, path="", json=None):
         base_url = os.getenv("MASKINPORTEN_CLIENTS_ENDPOINT")
         access_token = self.client.get_access_token(scopes)
