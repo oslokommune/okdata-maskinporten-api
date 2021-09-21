@@ -1,3 +1,4 @@
+import base64
 import uuid
 
 from OpenSSL import crypto
@@ -21,3 +22,13 @@ def jwk_from_key(key, client_name):
         "alg": "RS256",
         **jwk.dumps(crypto.dump_publickey(crypto.FILETYPE_PEM, key)),
     }
+
+
+def pkcs12_from_key(key, passphrase):
+    """Return a Base64-encoded PKCS #12 archive containing `key`.
+
+    `passphrase` is used to encrypt the structure.
+    """
+    pkcs12 = crypto.PKCS12()
+    pkcs12.set_privatekey(key)
+    return base64.b64encode(pkcs12.export(passphrase)).decode("utf-8")
