@@ -23,3 +23,7 @@ class ClientKey(BaseModel):
 class ClientKeyMetadata(BaseModel):
     kid: str
     client_id: str
+
+
+class CreateKeyParameters(BaseModel):
+    cake: str

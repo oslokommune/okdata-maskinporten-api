@@ -29,6 +29,7 @@ setup(
         "pyjwt",
         "pyopenssl",
         "python-keycloak",
+        "python-multipart",
         "requests>=2.26.0,<3.0.0",
         # We don't really need this, but AWS Lambda started including this
         # library in the Python 3.9 runtime, and `requests` will swap the

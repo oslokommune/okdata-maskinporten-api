@@ -1,7 +1,9 @@
 import os
 
 import requests_mock
+from unittest.mock import ANY
 
+from maskinporten_api.ssm import SSMService, Secrets
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import valid_token
 
@@ -37,6 +39,7 @@ def test_create_client(
 def test_create_client_key(
     mock_client,
     mock_authorizer,
+    mock_send_secrets,
     maskinporten_get_client_response,
     maskinporten_create_client_key_response,
 ):
@@ -52,11 +55,23 @@ def test_create_client_key(
             f"{os.getenv('MASKINPORTEN_CLIENTS_ENDPOINT')}{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
+
+        destination_aws_account = "123456789876"
         response = mock_client.post(
             f"/clients/test/{client_id}/keys",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            data={"destination_aws_account": destination_aws_account},
+            headers={
+                "Authorization": f"Bearer {valid_token}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
         )
 
+    SSMService.send_secrets.assert_called_once_with(
+        ANY,
+        secrets=Secrets(ANY, ANY, ANY),
+        maskinporten_client_id=client_id,
+        destination_aws_account_id=destination_aws_account,
+    )
     assert response.json() == {
         "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
     }
