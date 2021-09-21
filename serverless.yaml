@@ -34,9 +34,9 @@ package:
   include:
     - app.py
     - handler.py
-    - resources/*.py
+    - maskinporten_api/*.py
     - models/*.py
-
+    - resources/*.py
 
 functions:
   app:
