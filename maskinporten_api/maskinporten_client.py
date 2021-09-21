@@ -50,12 +50,11 @@ class MaskinportenClient:
         return self._request("GET", ["idporten:dcr.read"], f"{client_id}/jwks")
 
     def _request(self, method, scopes, path="", json=None):
-        base_url = os.getenv("MASKINPORTEN_CLIENTS_ENDPOINT")
         access_token = self.client.get_access_token(scopes)
 
         response = requests.request(
             method,
-            f"{base_url}{path}",
+            f"{self.base_url}{path}",
             headers={
                 "Accept": "*/*",
                 "Content-Type": "application/json",
