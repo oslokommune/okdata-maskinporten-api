@@ -63,13 +63,12 @@ def test_create_client_key(
         destination_aws_region = "eu-west-1"
         response = mock_client.post(
             f"/clients/test/{client_id}/keys",
-            data={
+            json={
                 "destination_aws_account": destination_aws_account,
                 "destination_aws_region": destination_aws_region,
             },
             headers={
                 "Authorization": f"Bearer {valid_token}",
-                "Content-Type": "application/x-www-form-urlencoded",
             },
         )
 

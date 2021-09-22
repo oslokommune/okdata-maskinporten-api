@@ -3,6 +3,7 @@ from models.models import (
     MaskinportenClientOut,
     ClientKey,
     ClientKeyMetadata,
+    SomeFittingName,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "MaskinportenClientOut",
     "ClientKey",
     "ClientKeyMetadata",
+    "SomeFittingName",
 ]

@@ -2,13 +2,14 @@ import logging
 import os
 
 import requests
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from models import (
     MaskinportenClientIn,
     MaskinportenClientOut,
     ClientKey,
     ClientKeyMetadata,
+    SomeFittingName,
 )
 from maskinporten_api.keys import generate_key, jwk_from_key
 from maskinporten_api.maskinporten_client import MaskinportenClient
@@ -68,8 +69,7 @@ def create_client(
 def create_client_key(
     env: str,
     client_id: str,
-    destination_aws_account: str = Form(...),
-    destination_aws_region: str = Form(...),
+    body: SomeFittingName,
     auth_info: AuthInfo = Depends(),
 ):
     maskinporten_client = MaskinportenClient(env)
@@ -88,11 +88,12 @@ def create_client_key(
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
 
+    print("YOYOYOYOYOYOOO")
     ssm_service.send_secrets(
         secrets=Secrets(keystore="TODO", key_id="TODO", key_password="TODO"),
         maskinporten_client_id=client_id,
-        destination_aws_account_id=destination_aws_account,
-        destination_aws_region=destination_aws_region,
+        destination_aws_account_id=body.destination_aws_account,
+        destination_aws_region=body.destination_aws_region,
     )
 
     return ClientKey(kid=jwks["keys"][0]["kid"])
