@@ -1,15 +1,15 @@
 from models.models import (
     MaskinportenClientIn,
     MaskinportenClientOut,
-    ClientKey,
+    ClientKeyOut,
     ClientKeyMetadata,
-    SomeFittingName,
+    ClientKeyIn,
 )
 
 __all__ = [
     "MaskinportenClientIn",
     "MaskinportenClientOut",
-    "ClientKey",
+    "ClientKeyOut",
     "ClientKeyMetadata",
-    "SomeFittingName",
+    "ClientKeyIn",
 ]

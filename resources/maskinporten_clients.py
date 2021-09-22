@@ -9,9 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from models import (
     MaskinportenClientIn,
     MaskinportenClientOut,
-    ClientKey,
+    ClientKeyOut,
     ClientKeyMetadata,
-    SomeFittingName,
+    ClientKeyIn,
 )
 from maskinporten_api.keys import generate_key, jwk_from_key, pkcs12_from_key
 from maskinporten_api.maskinporten_client import MaskinportenClient
@@ -61,7 +61,7 @@ def create_client(
     "/{env}/{client_id}/keys",
     dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
     status_code=status.HTTP_201_CREATED,
-    response_model=ClientKey,
+    response_model=ClientKeyOut,
     responses=error_message_models(
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
@@ -71,7 +71,7 @@ def create_client(
 def create_client_key(
     env: str,
     client_id: str,
-    body: SomeFittingName,
+    body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
 ):
     maskinporten_client = MaskinportenClient(env)
@@ -105,7 +105,7 @@ def create_client_key(
         destination_aws_region=body.destination_aws_region,
     )
 
-    return ClientKey(kid=jwks["keys"][0]["kid"])
+    return ClientKeyOut(kid=jwks["keys"][0]["kid"])
 
 
 @router.get(
