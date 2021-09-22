@@ -3,7 +3,7 @@ import os
 import requests_mock
 from unittest.mock import ANY
 
-from maskinporten_api.ssm import SSMService, Secrets
+from resources import maskinporten_clients
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import valid_token
 
@@ -44,7 +44,7 @@ def test_create_client_key(
     maskinporten_create_client_key_response,
     mocker,
 ):
-    mocker.spy(SSMService, "send_secrets")
+    mocker.spy(maskinporten_clients, "send_secrets")
 
     client_id = "some-client"
 
@@ -72,9 +72,8 @@ def test_create_client_key(
             },
         )
 
-    SSMService.send_secrets.assert_called_once_with(
-        ANY,
-        secrets=Secrets(ANY, ANY, ANY),
+    maskinporten_clients.send_secrets.assert_called_once_with(
+        secrets=maskinporten_clients.Secrets(ANY, ANY, ANY),
         maskinporten_client_id=client_id,
         destination_aws_account_id=destination_aws_account,
         destination_aws_region=destination_aws_region,

@@ -13,7 +13,7 @@ from models import (
 )
 from maskinporten_api.keys import generate_key, jwk_from_key
 from maskinporten_api.maskinporten_client import MaskinportenClient
-from maskinporten_api.ssm import SSMService, Secrets
+from maskinporten_api.ssm import send_secrets, Secrets
 from resources.authorizer import AuthInfo, authorize
 from resources.errors import error_message_models
 
@@ -73,7 +73,6 @@ def create_client_key(
     auth_info: AuthInfo = Depends(),
 ):
     maskinporten_client = MaskinportenClient(env)
-    ssm_service = SSMService()
 
     try:
         client = maskinporten_client.get_client(client_id)
@@ -88,8 +87,7 @@ def create_client_key(
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
 
-    print("YOYOYOYOYOYOOO")
-    ssm_service.send_secrets(
+    send_secrets(
         secrets=Secrets(keystore="TODO", key_id="TODO", key_password="TODO"),
         maskinporten_client_id=client_id,
         destination_aws_account_id=body.destination_aws_account,

@@ -1,15 +1,15 @@
 import boto3
 
 
-from maskinporten_api.ssm import SSMService, Secrets
+from maskinporten_api.ssm import send_secrets, Secrets
 
 
 def test_send_secrets(mock_aws):
-    ssm_service = SSMService()
 
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
-    ssm_service.send_secrets(
+
+    send_secrets(
         Secrets("some-value", "some-value", "some-value"),
         maskinporten_client_id,
         "123456789876",
