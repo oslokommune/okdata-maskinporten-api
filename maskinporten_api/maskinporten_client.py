@@ -12,7 +12,9 @@ from models import MaskinportenClientIn
 class MaskinportenClient:
     def __init__(self, env):
         p12_encoded = get_secret(f"/dataplatform/maskinporten/origo-certificate-{env}")
-        password = get_secret("/dataplatform/maskinporten/origo-certificate-password")
+        password = get_secret(
+            f"/dataplatform/maskinporten/origo-certificate-password-{env}"
+        )
         p12 = crypto.load_pkcs12(
             base64.b64decode(p12_encoded), password.encode("utf-8")
         )

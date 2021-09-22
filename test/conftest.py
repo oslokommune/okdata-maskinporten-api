@@ -32,7 +32,7 @@ def initialize_parameter_store():
         Type="SecureString",
     )
     ssm_client.put_parameter(
-        Name="/dataplatform/maskinporten/origo-certificate-password",
+        Name="/dataplatform/maskinporten/origo-certificate-password-test",
         Value="test",
         Type="SecureString",
     )
