@@ -1,5 +1,7 @@
 import logging
 import os
+import string
+import secrets
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,7 +13,7 @@ from models import (
     ClientKeyMetadata,
     SomeFittingName,
 )
-from maskinporten_api.keys import generate_key, jwk_from_key
+from maskinporten_api.keys import generate_key, jwk_from_key, pkcs12_from_key
 from maskinporten_api.maskinporten_client import MaskinportenClient
 from maskinporten_api.ssm import send_secrets, Secrets
 from resources.authorizer import AuthInfo, authorize
@@ -81,14 +83,23 @@ def create_client_key(
             raise HTTPException(404, f"No client with ID {client_id}")
         raise
 
-    jwk = jwk_from_key(generate_key(), client["client_name"])
+    key = generate_key()
+    jwk = jwk_from_key(key, client["client_name"])
+    key_id = jwk["kid"]
 
-    logger.debug(f"Registering new key with id {jwk['kid']} for client {client_id}")
+    logger.debug(f"Registering new key with id {key_id} for client {client_id}")
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
 
+    alphabet = string.ascii_letters + string.digits
+    key_password = "".join(secrets.choice(alphabet) for i in range(32))
+
     send_secrets(
-        secrets=Secrets(keystore="TODO", key_id="TODO", key_password="TODO"),
+        secrets=Secrets(
+            keystore=pkcs12_from_key(key, key_password),
+            key_id=key_id,
+            key_password=key_password,
+        ),
         maskinporten_client_id=client_id,
         destination_aws_account_id=body.destination_aws_account,
         destination_aws_region=body.destination_aws_region,
