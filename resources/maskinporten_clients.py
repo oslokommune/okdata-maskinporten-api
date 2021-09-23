@@ -1,7 +1,5 @@
 import logging
 import os
-import string
-import secrets
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,7 +11,12 @@ from models import (
     ClientKeyMetadata,
     ClientKeyIn,
 )
-from maskinporten_api.keys import generate_key, jwk_from_key, pkcs12_from_key
+from maskinporten_api.keys import (
+    generate_key,
+    jwk_from_key,
+    pkcs12_from_key,
+    generate_random_password,
+)
 from maskinporten_api.maskinporten_client import MaskinportenClient
 from maskinporten_api.ssm import send_secrets, Secrets
 from resources.authorizer import AuthInfo, authorize
@@ -91,8 +94,7 @@ def create_client_key(
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
 
-    alphabet = string.ascii_letters + string.digits
-    key_password = "".join(secrets.choice(alphabet) for i in range(32))
+    key_password = generate_random_password(pw_length=32)
 
     send_secrets(
         secrets=Secrets(
