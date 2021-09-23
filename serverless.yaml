@@ -20,7 +20,7 @@ provider:
     GIT_REV: ${git:branch}:${git:sha1}
     VERSION: ${self:custom.version}
   environment:
-    ROOT_PATH: "/okdata-maskinporten-api"
+    ROOT_PATH: "/maskinporten"
     GIT_REV: ${git:branch}:${git:sha1}
     STAGE: ${self:provider.stage}
     VERSION: ${self:custom.version}
