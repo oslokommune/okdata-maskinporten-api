@@ -80,8 +80,6 @@ python-keycloak==0.24.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
-python-multipart==0.0.5
-    # via okdata-maskinporten-api (setup.py)
 requests==2.26.0
     # via
     #   okdata-maskinporten-api (setup.py)
@@ -101,7 +99,6 @@ six==1.15.0
     #   pyopenssl
     #   python-dateutil
     #   python-jose
-    #   python-multipart
 starlette==0.14.2
     # via fastapi
 structlog==20.2.0
