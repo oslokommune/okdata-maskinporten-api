@@ -18,9 +18,9 @@ from maskinporten_api.keys import (
     generate_password,
 )
 from maskinporten_api.maskinporten_client import MaskinportenClient
-from maskinporten_api.ssm import send_secrets, Secrets
+from maskinporten_api.ssm import send_secrets, Secrets, AssumeRoleAccessDeniedException
 from resources.authorizer import AuthInfo, authorize
-from resources.errors import error_message_models
+from resources.errors import error_message_models, ErrorResponse
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
@@ -92,21 +92,23 @@ def create_client_key(
 
     logger.debug(f"Registering new key with id {key_id} for client {client_id}")
 
-    jwks = maskinporten_client.create_client_key(client_id, jwk)
-
     key_password = generate_password(pw_length=32)
 
-    # TODO: Find a good procedure for handling the case where `send_secrets` fails
-    send_secrets(
-        secrets=Secrets(
-            keystore=pkcs12_from_key(key, key_password),
-            key_id=key_id,
-            key_password=key_password,
-        ),
-        maskinporten_client_id=client_id,
-        destination_aws_account_id=body.destination_aws_account,
-        destination_aws_region=body.destination_aws_region,
-    )
+    try:
+        send_secrets(
+            secrets=Secrets(
+                keystore=pkcs12_from_key(key, key_password),
+                key_id=key_id,
+                key_password=key_password,
+            ),
+            maskinporten_client_id=client_id,
+            destination_aws_account_id=body.destination_aws_account,
+            destination_aws_region=body.destination_aws_region,
+        )
+    except AssumeRoleAccessDeniedException as e:
+        raise ErrorResponse(400, str(e))
+
+    jwks = maskinporten_client.create_client_key(client_id, jwk)
 
     return ClientKeyOut(kid=jwks["keys"][0]["kid"])
 

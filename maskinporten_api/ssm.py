@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass, asdict
 
 import boto3
+from botocore.exceptions import ClientError
 
 
 def get_secret(key):
@@ -36,9 +37,14 @@ def send_secrets(
         f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-maskinporten"
     )
 
-    assume_role_response = sts_client.assume_role(
-        RoleArn=role_arn, RoleSessionName="dataplatform-maskinporten"
-    )
+    try:
+        assume_role_response = sts_client.assume_role(
+            RoleArn=role_arn, RoleSessionName="dataplatform-maskinporten"
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "AccessDenied":
+            raise AssumeRoleAccessDeniedException(e.response["Error"]["Message"])
+        raise e
 
     credentials = assume_role_response["Credentials"]
 
@@ -57,3 +63,7 @@ def send_secrets(
             Type="SecureString",
             Overwrite=True,
         )
+
+
+class AssumeRoleAccessDeniedException(Exception):
+    pass
