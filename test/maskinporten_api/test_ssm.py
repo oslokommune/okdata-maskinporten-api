@@ -1,7 +1,7 @@
 import boto3
 
 
-from maskinporten_api.ssm import send_secrets, Secrets
+from maskinporten_api.ssm import SendSecretsService, Secrets
 
 
 def test_send_secrets(mock_aws):
@@ -9,7 +9,7 @@ def test_send_secrets(mock_aws):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
 
-    send_secrets(
+    SendSecretsService().send_secrets(
         Secrets("some-value", "some-value", "some-value"),
         maskinporten_client_id,
         "123456789876",

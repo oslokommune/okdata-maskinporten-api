@@ -18,7 +18,11 @@ from maskinporten_api.keys import (
     generate_password,
 )
 from maskinporten_api.maskinporten_client import MaskinportenClient
-from maskinporten_api.ssm import send_secrets, Secrets, AssumeRoleAccessDeniedException
+from maskinporten_api.ssm import (
+    SendSecretsService,
+    Secrets,
+    AssumeRoleAccessDeniedException,
+)
 from resources.authorizer import AuthInfo, authorize
 from resources.errors import error_message_models, ErrorResponse
 
@@ -79,6 +83,7 @@ def create_client_key(
     auth_info: AuthInfo = Depends(),
 ):
     maskinporten_client = MaskinportenClient(env)
+    send_secrets_service = SendSecretsService()
 
     try:
         client = maskinporten_client.get_client(client_id)
@@ -96,7 +101,7 @@ def create_client_key(
     key_password = generate_password(pw_length=32)
 
     try:
-        send_secrets(
+        send_secrets_service.send_secrets(
             secrets=Secrets(
                 keystore=pkcs12_from_key(key, key_password),
                 key_id=key_id,
