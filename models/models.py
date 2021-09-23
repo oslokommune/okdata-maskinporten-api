@@ -16,7 +16,12 @@ class MaskinportenClientOut(BaseModel):
     active: bool
 
 
-class ClientKey(BaseModel):
+class ClientKeyIn(BaseModel):
+    destination_aws_account: str
+    destination_aws_region: str
+
+
+class ClientKeyOut(BaseModel):
     kid: str
 
 

@@ -7,11 +7,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from models import (
     MaskinportenClientIn,
     MaskinportenClientOut,
-    ClientKey,
+    ClientKeyOut,
     ClientKeyMetadata,
+    ClientKeyIn,
 )
-from maskinporten_api.keys import generate_key, jwk_from_key
+from maskinporten_api.keys import (
+    generate_key,
+    jwk_from_key,
+    pkcs12_from_key,
+    generate_password,
+)
 from maskinporten_api.maskinporten_client import MaskinportenClient
+from maskinporten_api.ssm import send_secrets, Secrets
 from resources.authorizer import AuthInfo, authorize
 from resources.errors import error_message_models
 
@@ -57,7 +64,7 @@ def create_client(
     "/{env}/{client_id}/keys",
     dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
     status_code=status.HTTP_201_CREATED,
-    response_model=ClientKey,
+    response_model=ClientKeyOut,
     responses=error_message_models(
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
@@ -67,6 +74,7 @@ def create_client(
 def create_client_key(
     env: str,
     client_id: str,
+    body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
 ):
     maskinporten_client = MaskinportenClient(env)
@@ -78,13 +86,29 @@ def create_client_key(
             raise HTTPException(404, f"No client with ID {client_id}")
         raise
 
-    jwk = jwk_from_key(generate_key(), client["client_name"])
+    key = generate_key()
+    jwk = jwk_from_key(key, client["client_name"])
+    key_id = jwk["kid"]
 
-    logger.debug(f"Registering new key with id {jwk['kid']} for client {client_id}")
+    logger.debug(f"Registering new key with id {key_id} for client {client_id}")
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
 
-    return ClientKey(kid=jwks["keys"][0]["kid"])
+    key_password = generate_password(pw_length=32)
+
+    # TODO: Find a good procedure for handling the case where `send_secrets` fails
+    send_secrets(
+        secrets=Secrets(
+            keystore=pkcs12_from_key(key, key_password),
+            key_id=key_id,
+            key_password=key_password,
+        ),
+        maskinporten_client_id=client_id,
+        destination_aws_account_id=body.destination_aws_account,
+        destination_aws_region=body.destination_aws_region,
+    )
+
+    return ClientKeyOut(kid=jwks["keys"][0]["kid"])
 
 
 @router.get(

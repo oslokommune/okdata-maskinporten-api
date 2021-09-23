@@ -12,14 +12,17 @@ def get_secret(key):
 
 
 @dataclass
-class MaskinportenSecrets:
+class Secrets:
     keystore: str
     key_id: str
     key_password: str
 
 
 def send_secrets(
-    secrets: MaskinportenSecrets, maskinporten_client_id, destination_aws_account_id
+    secrets: Secrets,
+    maskinporten_client_id,
+    destination_aws_account_id,
+    destination_aws_region,
 ):
     """Send secret values to another AWS Account.
 
@@ -41,15 +44,16 @@ def send_secrets(
 
     ssm_client = boto3.client(
         "ssm",
-        region_name=os.environ["AWS_REGION"],
+        region_name=destination_aws_region,
         aws_access_key_id=credentials["AccessKeyId"],
         aws_secret_access_key=credentials["SecretAccessKey"],
         aws_session_token=credentials["SessionToken"],
     )
 
-    for key, value in asdict(secrets):
+    for key, value in asdict(secrets).items():
         ssm_client.put_parameter(
             Name=f"/okdata/maskinporten/{maskinporten_client_id}/{key}",
             Value=value,
             Type="SecureString",
+            Overwrite=True,
         )

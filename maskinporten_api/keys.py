@@ -1,5 +1,7 @@
 import base64
 import uuid
+import secrets
+import string
 
 from OpenSSL import crypto
 from authlib.jose import jwk
@@ -32,3 +34,8 @@ def pkcs12_from_key(key, passphrase):
     pkcs12 = crypto.PKCS12()
     pkcs12.set_privatekey(key)
     return base64.b64encode(pkcs12.export(passphrase)).decode("utf-8")
+
+
+def generate_password(pw_length: int) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for i in range(pw_length))

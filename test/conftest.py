@@ -3,7 +3,7 @@ import os
 import boto3
 import pytest
 from fastapi.testclient import TestClient
-from moto import mock_ssm
+from moto import mock_ssm, mock_sts
 
 from app import app
 
@@ -17,6 +17,7 @@ def mock_client():
 @pytest.fixture
 def mock_aws():
     mock_ssm().start()
+    mock_sts().start()
 
     # Add required values to parameter_store
     initialize_parameter_store()

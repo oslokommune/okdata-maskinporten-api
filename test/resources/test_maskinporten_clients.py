@@ -1,7 +1,9 @@
 import os
 
 import requests_mock
+from unittest.mock import ANY
 
+from resources import maskinporten_clients
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import valid_token
 
@@ -36,10 +38,14 @@ def test_create_client(
 
 def test_create_client_key(
     mock_client,
+    mock_aws,
     mock_authorizer,
     maskinporten_get_client_response,
     maskinporten_create_client_key_response,
+    mocker,
 ):
+    mocker.spy(maskinporten_clients, "send_secrets")
+
     client_id = "some-client"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -52,11 +58,26 @@ def test_create_client_key(
             f"{os.getenv('MASKINPORTEN_CLIENTS_ENDPOINT')}{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
+
+        destination_aws_account = "123456789876"
+        destination_aws_region = "eu-west-1"
         response = mock_client.post(
             f"/clients/test/{client_id}/keys",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            json={
+                "destination_aws_account": destination_aws_account,
+                "destination_aws_region": destination_aws_region,
+            },
+            headers={
+                "Authorization": f"Bearer {valid_token}",
+            },
         )
 
+    maskinporten_clients.send_secrets.assert_called_once_with(
+        secrets=maskinporten_clients.Secrets(ANY, ANY, ANY),
+        maskinporten_client_id=client_id,
+        destination_aws_account_id=destination_aws_account,
+        destination_aws_region=destination_aws_region,
+    )
     assert response.json() == {
         "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
     }
