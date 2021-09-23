@@ -36,6 +36,6 @@ def pkcs12_from_key(key, passphrase):
     return base64.b64encode(pkcs12.export(passphrase)).decode("utf-8")
 
 
-def generate_random_password(pw_length: int) -> str:
+def generate_password(pw_length: int) -> str:
     alphabet = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabet) for i in range(pw_length))

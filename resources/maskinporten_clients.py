@@ -15,7 +15,7 @@ from maskinporten_api.keys import (
     generate_key,
     jwk_from_key,
     pkcs12_from_key,
-    generate_random_password,
+    generate_password,
 )
 from maskinporten_api.maskinporten_client import MaskinportenClient
 from maskinporten_api.ssm import send_secrets, Secrets
@@ -94,7 +94,7 @@ def create_client_key(
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
 
-    key_password = generate_random_password(pw_length=32)
+    key_password = generate_password(pw_length=32)
 
     # TODO: Find a good procedure for handling the case where `send_secrets` fails
     send_secrets(
