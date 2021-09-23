@@ -1,11 +1,11 @@
 import base64
-import os
 
 import requests
 from OpenSSL import crypto
 
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.ssm import get_secret
+from maskinporten_api.util import getenv
 from models import MaskinportenClientIn
 
 
@@ -19,12 +19,12 @@ class MaskinportenClient:
             base64.b64decode(p12_encoded), password.encode("utf-8")
         )
         conf = JWTConfig(
-            issuer=os.getenv("MASKINPORTEN_ADMIN_CLIENT_ID"),
+            issuer=getenv("MASKINPORTEN_ADMIN_CLIENT_ID"),
             certificate=p12.get_certificate(),
             private_key=p12.get_privatekey(),
         )
-        self.client = JWTAuthClient(conf, os.getenv("IDPORTEN_OIDC_WELLKNOWN"))
-        self.base_url = os.getenv("MASKINPORTEN_CLIENTS_ENDPOINT")
+        self.client = JWTAuthClient(conf, getenv("IDPORTEN_OIDC_WELLKNOWN"))
+        self.base_url = getenv("MASKINPORTEN_CLIENTS_ENDPOINT")
 
     def create_client(self, client: MaskinportenClientIn):
         return self._request(
