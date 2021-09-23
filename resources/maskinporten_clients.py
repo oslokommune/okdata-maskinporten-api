@@ -96,6 +96,7 @@ def create_client_key(
 
     key_password = generate_random_password(pw_length=32)
 
+    # TODO: Find a good procedure for handling the case where `send_secrets` fails
     send_secrets(
         secrets=Secrets(
             keystore=pkcs12_from_key(key, key_password),
