@@ -69,6 +69,7 @@ def create_client(
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
         status.HTTP_404_NOT_FOUND,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
     ),
 )
 def create_client_key(
@@ -106,7 +107,7 @@ def create_client_key(
             destination_aws_region=body.destination_aws_region,
         )
     except AssumeRoleAccessDeniedException as e:
-        raise ErrorResponse(400, str(e))
+        raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
 

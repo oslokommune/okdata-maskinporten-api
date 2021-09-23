@@ -83,6 +83,56 @@ def test_create_client_key(
     }
 
 
+def test_create_client_key_assume_role_access_denied(
+    mock_client,
+    mock_aws,
+    mock_authorizer,
+    maskinporten_get_client_response,
+    maskinporten_create_client_key_response,
+    mocker,
+):
+    mocker.spy(maskinporten_clients, "send_secrets")
+
+    client_id = "some-client"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{os.getenv('MASKINPORTEN_CLIENTS_ENDPOINT')}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.post(
+            f"{os.getenv('MASKINPORTEN_CLIENTS_ENDPOINT')}{client_id}/jwks",
+            json=maskinporten_create_client_key_response,
+        )
+
+        destination_aws_account = "123456789876"
+        destination_aws_region = "eu-west-1"
+
+        with mocker.patch.object(
+            maskinporten_clients,
+            "send_secrets",
+            side_effect=maskinporten_clients.AssumeRoleAccessDeniedException(
+                "Error message from aws"
+            ),
+        ):
+            response = mock_client.post(
+                f"/clients/test/{client_id}/keys",
+                json={
+                    "destination_aws_account": destination_aws_account,
+                    "destination_aws_region": destination_aws_region,
+                },
+                headers={
+                    "Authorization": f"Bearer {valid_token}",
+                },
+            )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "message": "Error message from aws",
+    }
+
+
 def test_list_client_keys(
     mock_client, mock_authorizer, maskinporten_list_client_keys_response
 ):
