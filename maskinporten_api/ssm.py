@@ -55,4 +55,5 @@ def send_secrets(
             Name=f"/okdata/maskinporten/{maskinporten_client_id}/{key}",
             Value=value,
             Type="SecureString",
+            Overwrite=True,
         )
