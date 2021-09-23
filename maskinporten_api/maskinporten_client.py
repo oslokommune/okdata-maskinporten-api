@@ -12,8 +12,11 @@ from models import MaskinportenClientIn
 class MaskinportenClient:
     def __init__(self, env):
         p12_encoded = get_secret(f"/dataplatform/maskinporten/origo-certificate-{env}")
+        password = get_secret(
+            f"/dataplatform/maskinporten/origo-certificate-password-{env}"
+        )
         p12 = crypto.load_pkcs12(
-            base64.b64decode(p12_encoded), os.getenv("MASKINPORTEN_KEY_PASSWORD")
+            base64.b64decode(p12_encoded), password.encode("utf-8")
         )
         conf = JWTConfig(
             issuer=os.getenv("MASKINPORTEN_ADMIN_CLIENT_ID"),

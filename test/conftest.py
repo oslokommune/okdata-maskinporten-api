@@ -31,6 +31,11 @@ def initialize_parameter_store():
         Value="supersecretpassword",
         Type="SecureString",
     )
+    ssm_client.put_parameter(
+        Name="/dataplatform/maskinporten/origo-certificate-password-test",
+        Value="test",
+        Type="SecureString",
+    )
 
     with open("test/data/test.p12.txt") as f:
         ssm_client.put_parameter(

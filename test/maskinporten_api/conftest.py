@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from OpenSSL import crypto
 
@@ -9,10 +7,7 @@ from maskinporten_api.jwt_client import JWTConfig, JWTGenerator
 @pytest.fixture
 def jwt_config():
     with open("test/data/test.p12", "rb") as f:
-        p12 = crypto.load_pkcs12(
-            f.read(),
-            os.getenv("MASKINPORTEN_KEY_PASSWORD").encode("utf-8"),
-        )
+        p12 = crypto.load_pkcs12(f.read(), b"test")
     return JWTConfig(
         issuer="foo-corp",
         consumer_org="123",
