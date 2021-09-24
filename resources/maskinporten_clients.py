@@ -2,7 +2,7 @@ import logging
 import os
 
 import requests
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from models import (
     MaskinportenClientIn,
@@ -88,8 +88,10 @@ def create_client_key(
     try:
         client = maskinporten_client.get_client(client_id)
     except requests.HTTPError as e:
-        if e.response.status_code == 404:
-            raise HTTPException(404, f"No client with ID {client_id}")
+        if e.response.status_code == status.HTTP_404_NOT_FOUND:
+            raise ErrorResponse(
+                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
+            )
         raise
 
     key = generate_key()
@@ -135,8 +137,10 @@ def list_client_keys(env: str, client_id: str):
     try:
         jwks = maskinporten_client.get_client_keys(client_id)
     except requests.HTTPError as e:
-        if e.response.status_code == 404:
-            raise HTTPException(404, f"No client with ID {client_id}")
+        if e.response.status_code == status.HTTP_404_NOT_FOUND:
+            raise ErrorResponse(
+                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
+            )
         raise
 
     return [
