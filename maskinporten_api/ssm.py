@@ -20,7 +20,6 @@ class Secrets:
 
 
 class SendSecretsService:
-
     def __init__(self):
         self.sts_client = boto3.client("sts")
 
