@@ -19,6 +19,11 @@ class Secrets:
     key_password: str
 
 
+class AssumeRoleAccessDeniedException(Exception):
+    """Raised when assume role request to aws fails with an access denied error"""
+    pass
+
+
 class SendSecretsService:
     def __init__(self):
         self.sts_client = boto3.client("sts")
@@ -67,7 +72,3 @@ class SendSecretsService:
                 Type="SecureString",
                 Overwrite=True,
             )
-
-
-class AssumeRoleAccessDeniedException(Exception):
-    pass
