@@ -21,6 +21,7 @@ class Secrets:
 
 class AssumeRoleAccessDeniedException(Exception):
     """Raised when assume role request to aws fails with an access denied error"""
+
     pass
 
 
