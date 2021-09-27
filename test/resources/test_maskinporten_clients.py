@@ -1,7 +1,7 @@
 import os
 
-import requests_mock
 import pytest
+import requests_mock
 from unittest.mock import ANY
 
 from resources import maskinporten_clients
