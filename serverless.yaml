@@ -13,7 +13,7 @@ provider:
     serverSideEncryption: AES256
   deploymentPrefix: deploy
   iam:
-    role: "role: arn:aws:iam::${aws:accountId}:role/okdata-maskinporten-api"
+    role: "arn:aws:iam::${aws::AccountId}:role/okdata-maskinporten-api"
   tags:
     GIT_REV: ${git:branch}:${git:sha1}
     VERSION: ${self:custom.version}
