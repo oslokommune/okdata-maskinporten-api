@@ -12,6 +12,10 @@ provider:
     name: ${self:custom.deploymentBucket.${self:provider.stage}, self:custom.deploymentBucket.dev}
     serverSideEncryption: AES256
   deploymentPrefix: deploy
+  rolePermissionsBoundary: "arn:aws:iam::${aws:accountId}:policy/oslokommune/oslokommune-boundary"
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
+    - "arn:aws:iam::${aws:accountId}:policy/okdata-maskinporten-api"
   tags:
     GIT_REV: ${git:branch}:${git:sha1}
     VERSION: ${self:custom.version}
@@ -45,7 +49,6 @@ functions:
       - http: ANY /
       - http: "ANY {proxy+}"
     timeout: 29
-    role: "arn:aws:iam::${aws:accountId}:role/okdata-maskinporten-api"
 
 plugins:
   - serverless-es-logs
