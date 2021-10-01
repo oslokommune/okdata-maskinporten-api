@@ -10,7 +10,11 @@ from test.resources.conftest import valid_token
 
 
 def test_create_client(
-    mock_client, mock_aws, mock_authorizer, maskinporten_create_client_response
+    maskinporten_create_client_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
 ):
     body = {
         "name": "some-client",
@@ -24,11 +28,11 @@ def test_create_client(
             os.getenv("MASKINPORTEN_CLIENTS_ENDPOINT"),
             json=maskinporten_create_client_response,
         )
-        response = mock_client.post(
+        client = mock_client.post(
             "/clients", json=body, headers={"Authorization": f"Bearer {valid_token}"}
-        )
+        ).json()
 
-    assert response.json() == {
+    assert client == {
         "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
         "client_name": "some-client",
         "description": "Very cool client",
@@ -37,6 +41,10 @@ def test_create_client(
         "last_updated": "2021-09-15T10:20:43.354+02:00",
         "active": True,
     }
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.get_item(Key={"Id": client["client_id"], "Type": "client"})
+    assert audit_log_entry["Item"]["Id"] == client["client_id"]
 
 
 def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
@@ -65,11 +73,12 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
 
 
 def test_create_client_key(
-    mock_client,
-    mock_aws,
-    mock_authorizer,
-    maskinporten_get_client_response,
     maskinporten_create_client_key_response,
+    maskinporten_get_client_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
     mocker,
 ):
     mocker.spy(maskinporten_clients.SendSecretsService, "send_secrets")
@@ -89,7 +98,7 @@ def test_create_client_key(
 
         destination_aws_account = "123456789876"
         destination_aws_region = "eu-west-1"
-        response = mock_client.post(
+        key = mock_client.post(
             f"/clients/test/{client_id}/keys",
             json={
                 "destination_aws_account": destination_aws_account,
@@ -98,7 +107,11 @@ def test_create_client_key(
             headers={
                 "Authorization": f"Bearer {valid_token}",
             },
-        )
+        ).json()
+
+    assert key == {
+        "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
+    }
 
     maskinporten_clients.SendSecretsService.send_secrets.assert_called_once_with(
         ANY,
@@ -107,9 +120,10 @@ def test_create_client_key(
         destination_aws_account_id=destination_aws_account,
         destination_aws_region=destination_aws_region,
     )
-    assert response.json() == {
-        "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
-    }
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
+    assert audit_log_entry["Item"]["Id"] == key["kid"]
 
 
 def test_create_client_key_assume_role_access_denied(

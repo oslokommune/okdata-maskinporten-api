@@ -11,6 +11,7 @@ from models import (
     ClientKeyMetadata,
     ClientKeyIn,
 )
+from maskinporten_api.audit import audit_log
 from maskinporten_api.keys import (
     generate_key,
     jwk_from_key,
@@ -50,9 +51,16 @@ def create_client(
     logger.debug(
         f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
     )
-    return MaskinportenClientOut.parse_obj(
-        MaskinportenClient(body.env).create_client(body)
+    new_client = MaskinportenClient(body.env).create_client(body)
+    audit_log(
+        item_id=new_client["client_id"],
+        item_type="client",
+        env=body.env,
+        action="create",
+        user=auth_info.principal_id,
+        scopes=new_client["scopes"],
     )
+    return MaskinportenClientOut.parse_obj(new_client)
 
 
 @router.get(
@@ -125,8 +133,18 @@ def create_client_key(
         raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
+    kid = jwks["keys"][0]["kid"]
 
-    return ClientKeyOut(kid=jwks["keys"][0]["kid"])
+    audit_log(
+        item_id=kid,
+        item_type="key",
+        env=env,
+        action="create",
+        user=auth_info.principal_id,
+        client_id=client_id,
+    )
+
+    return ClientKeyOut(kid=kid)
 
 
 @router.get(

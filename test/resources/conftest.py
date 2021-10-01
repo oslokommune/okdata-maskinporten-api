@@ -1,6 +1,7 @@
+import boto3
 import pytest
-
 from keycloak import KeycloakOpenID
+from moto import mock_dynamodb2
 from okdata.resource_auth import ResourceAuthorizer
 
 
@@ -83,3 +84,21 @@ def mock_authorizer(monkeypatch):
         }
 
     monkeypatch.setattr(KeycloakOpenID, "introspect", introspect)
+
+
+@pytest.fixture
+@mock_dynamodb2
+def mock_dynamodb():
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+    dynamodb.create_table(
+        TableName="maskinporten-audit-trail",
+        KeySchema=[
+            {"AttributeName": "Id", "KeyType": "HASH"},
+            {"AttributeName": "Type", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "Id", "AttributeType": "S"},
+            {"AttributeName": "Type", "AttributeType": "S"},
+        ],
+    )
+    return dynamodb
