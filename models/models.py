@@ -10,9 +10,11 @@ class MaskinportenClientIn(BaseModel):
 
 class MaskinportenClientOut(BaseModel):
     client_id: str
-    name: str
+    client_name: str
     description: str
     scopes: list[str]
+    created: str
+    last_updated: str
     active: bool
 
 

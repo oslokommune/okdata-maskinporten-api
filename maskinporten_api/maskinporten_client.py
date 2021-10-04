@@ -44,6 +44,9 @@ class MaskinportenClient:
     def get_client(self, client_id: str):
         return self._request("GET", ["idporten:dcr.read"], client_id)
 
+    def get_clients(self):
+        return self._request("GET", ["idporten:dcr.read"])
+
     def create_client_key(self, client_id: str, jwk: dict):
         return self._request(
             "POST", ["idporten:dcr.write"], f"{client_id}/jwks", json={"keys": [jwk]}
