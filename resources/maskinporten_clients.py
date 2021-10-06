@@ -50,18 +50,26 @@ def create_client(
     logger.debug(
         f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
     )
-
-    maskinporten_client = MaskinportenClient(body.env)
-
-    new_client = maskinporten_client.create_client(body)
-
-    return MaskinportenClientOut(
-        client_id=new_client["client_id"],
-        name=new_client["client_name"],
-        description=new_client["description"],
-        scopes=new_client["scopes"],
-        active=new_client["active"],
+    return MaskinportenClientOut.parse_obj(
+        MaskinportenClient(body.env).create_client(body)
     )
+
+
+@router.get(
+    "/{env}",
+    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    status_code=status.HTTP_200_OK,
+    response_model=list[MaskinportenClientOut],
+    responses=error_message_models(
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    ),
+)
+def list_clients(env: str, auth_info: AuthInfo = Depends()):
+    return [
+        MaskinportenClientOut.parse_obj(c)
+        for c in MaskinportenClient(env).get_clients()
+    ]
 
 
 @router.post(

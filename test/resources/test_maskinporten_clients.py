@@ -30,11 +30,38 @@ def test_create_client(
 
     assert response.json() == {
         "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
-        "name": "some-client",
+        "client_name": "some-client",
         "description": "Very cool client",
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
+        "created": "2021-09-15T10:20:43.354+02:00",
+        "last_updated": "2021-09-15T10:20:43.354+02:00",
         "active": True,
     }
+
+
+def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{os.getenv('MASKINPORTEN_CLIENTS_ENDPOINT')}",
+            json=maskinporten_get_clients_response,
+        )
+        response = mock_client.get(
+            "/clients/test",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert response.json() == [
+        {
+            "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
+            "client_name": "some-client",
+            "description": "Very cool client",
+            "scopes": ["folkeregister:deling/offentligmedhjemmel"],
+            "created": "2021-09-15T10:20:43.354+02:00",
+            "last_updated": "2021-09-15T10:20:43.354+02:00",
+            "active": True,
+        }
+    ]
 
 
 def test_create_client_key(

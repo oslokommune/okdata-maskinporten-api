@@ -39,6 +39,11 @@ def maskinporten_get_client_response(maskinporten_create_client_response):
 
 
 @pytest.fixture
+def maskinporten_get_clients_response(maskinporten_get_client_response):
+    return [maskinporten_get_client_response]
+
+
+@pytest.fixture
 def maskinporten_create_client_key_response():
     return {
         "keys": [
