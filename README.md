@@ -1,6 +1,8 @@
 Okdata Maskinporten API
 ==================
 
+REST API for managing clients and keys in [Maskinporten](https://samarbeid.digdir.no/maskinporten/maskinporten/25) and synchronization with AWS SSM.
+
 ## Setup
 
 In these examples, we use the default `python3` distribution on your platform.
