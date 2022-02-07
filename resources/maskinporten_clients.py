@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 import requests
 from fastapi import APIRouter, Depends, status
@@ -98,6 +99,12 @@ def create_client_key(
     body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
 ):
+    if not re.fullmatch("[0-9a-f-]+", client_id):
+        raise ErrorResponse(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"Invalid client ID: {client_id}",
+        )
+
     maskinporten_client = MaskinportenClient(env)
     send_secrets_service = SendSecretsService()
 
