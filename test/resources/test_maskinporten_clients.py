@@ -83,7 +83,7 @@ def test_create_client_key(
 ):
     mocker.spy(maskinporten_clients.SendSecretsService, "send_secrets")
 
-    client_id = "some-client"
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -126,6 +126,20 @@ def test_create_client_key(
     assert audit_log_entry["Item"]["Id"] == key["kid"]
 
 
+def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):
+    res = mock_client.post(
+        "/clients/test/invalid_client_id/keys",
+        json={
+            "destination_aws_account": "123456789876",
+            "destination_aws_region": "eu-west-1",
+        },
+        headers={
+            "Authorization": f"Bearer {valid_token}",
+        },
+    )
+    assert res.status_code == 422
+
+
 def test_create_client_key_assume_role_access_denied(
     mock_client,
     mock_aws,
@@ -137,7 +151,7 @@ def test_create_client_key_assume_role_access_denied(
 ):
     mocker.spy(maskinporten_clients.SendSecretsService, "send_secrets")
 
-    client_id = "some-client"
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -173,7 +187,7 @@ def test_create_client_key_assume_role_access_denied(
 def test_list_client_keys(
     mock_client, mock_authorizer, maskinporten_list_client_keys_response
 ):
-    client_id = "some-client"
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
