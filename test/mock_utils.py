@@ -1,6 +1,9 @@
+from maskinporten_api.maskinporten_client import IDPORTEN_OIDC_WELLKNOWN
+
+
 def mock_access_token_generation_requests(mocker):
     mocker.get(
-        "https://example.org/.well-known/conf",
+        IDPORTEN_OIDC_WELLKNOWN["test"],
         json={
             "issuer": "foo-corp",
             "token_endpoint": "https://example.org/token-endpoint",
