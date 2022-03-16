@@ -100,5 +100,9 @@ def mock_dynamodb():
             {"AttributeName": "Id", "AttributeType": "S"},
             {"AttributeName": "Type", "AttributeType": "S"},
         ],
+        ProvisionedThroughput={
+            "ReadCapacityUnits": 5,
+            "WriteCapacityUnits": 5,
+        },
     )
     return dynamodb
