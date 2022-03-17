@@ -29,8 +29,8 @@ upgrade-deps: $(BUILD_VENV)/bin/pip-compile
 
 .PHONY: deploy
 deploy: login-dev init format test
-	@echo "\nDeploying to stage: $${STAGE:-dev}\n"
-	sls deploy --stage $${STAGE:-dev} --aws-profile $(.DEV_PROFILE)
+	@echo "\nDeploying to stage: dev\n"
+	sls deploy --stage dev --aws-profile $(.DEV_PROFILE)
 
 .PHONY: deploy-prod
 deploy-prod: login-prod init format is-git-clean test
@@ -40,18 +40,15 @@ deploy-prod: login-prod init format is-git-clean test
 run: $(BUILD_VENV)/bin/uvicorn
 	$(BUILD_VENV)/bin/uvicorn app:app --reload
 
-ifeq ($(MAKECMDGOALS),undeploy)
-ifndef STAGE
-$(error STAGE is not set)
-endif
-ifeq ($(STAGE),dev)
-$(error Please do not undeploy dev)
-endif
-endif
 .PHONY: undeploy
 undeploy: login-dev
-	@echo "\nUndeploying stage: $(STAGE)\n"
-	sls remove --stage $(STAGE) --aws-profile $(.DEV_PROFILE)
+	@echo "\nUndeploying stage: dev\n"
+	sls remove --stage dev --aws-profile $(.DEV_PROFILE)
+
+.PHONY: undeploy-prod
+undeploy-prod: login-prod
+	@echo "\nUndeploying stage: prod\n"
+	sls remove --stage prod --aws-profile $(.PROD_PROFILE)
 
 .PHONY: login-dev
 login-dev:
