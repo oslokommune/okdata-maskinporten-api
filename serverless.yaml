@@ -1,4 +1,4 @@
-frameworkVersion: ">=2.55.0 <3.0.0"
+frameworkVersion: ">=2.72.3 <3.0.0"
 
 service: okdata-maskinporten-api
 
