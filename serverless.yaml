@@ -25,9 +25,7 @@ provider:
     STAGE: ${self:provider.stage}
     VERSION: ${self:custom.version}
     SERVICE_NAME: ${self:service}
-    IDPORTEN_OIDC_WELLKNOWN: https://oidc-ver2.difi.no/idporten-oidc-provider/.well-known/openid-configuration
     MASKINPORTEN_ADMIN_CLIENT_ID: ${ssm:/dataplatform/maskinporten/admin-client-id}
-    MASKINPORTEN_CLIENTS_ENDPOINT: https://integrasjon-ver2.difi.no/clients/
     MASKINPORTEN_CONSUMER_ORG: ${ssm:/dataplatform/maskinporten/consumer-org}
     KEYCLOAK_SERVER: ${ssm:/dataplatform/shared/keycloak-server-url}
     KEYCLOAK_REALM: api-catalog

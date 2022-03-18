@@ -8,6 +8,16 @@ from maskinporten_api.ssm import get_secret
 from maskinporten_api.util import getenv
 from models import MaskinportenClientIn
 
+IDPORTEN_OIDC_WELLKNOWN = {
+    "test": "https://oidc-ver2.difi.no/idporten-oidc-provider/.well-known/openid-configuration",
+    "prod": "https://oidc.difi.no/idporten-oidc-provider/.well-known/openid-configuration",
+}
+
+MASKINPORTEN_CLIENTS_ENDPOINTS = {
+    "test": "https://integrasjon-ver2.difi.no/clients/",
+    "prod": "https://integrasjon.difi.no/clients/",
+}
+
 
 class MaskinportenClient:
     def __init__(self, env):
@@ -23,8 +33,8 @@ class MaskinportenClient:
             certificate=p12.get_certificate(),
             private_key=p12.get_privatekey(),
         )
-        self.client = JWTAuthClient(conf, getenv("IDPORTEN_OIDC_WELLKNOWN"))
-        self.base_url = getenv("MASKINPORTEN_CLIENTS_ENDPOINT")
+        self.client = JWTAuthClient(conf, IDPORTEN_OIDC_WELLKNOWN[env])
+        self.base_url = MASKINPORTEN_CLIENTS_ENDPOINTS[env]
 
     def create_client(self, client: MaskinportenClientIn):
         return self._request(
