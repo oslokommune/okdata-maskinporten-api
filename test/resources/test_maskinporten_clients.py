@@ -2,10 +2,12 @@ import pytest
 import requests_mock
 from unittest.mock import ANY
 
-from maskinporten_api.maskinporten_client import MASKINPORTEN_CLIENTS_ENDPOINTS
+from maskinporten_api.maskinporten_client import env_config
 from resources import maskinporten_clients
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import valid_token
+
+CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
 
 
 def test_create_client(
@@ -24,7 +26,7 @@ def test_create_client(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.post(
-            MASKINPORTEN_CLIENTS_ENDPOINTS["test"],
+            CLIENTS_ENDPOINT,
             json=maskinporten_create_client_response,
         )
         client = mock_client.post(
@@ -49,10 +51,7 @@ def test_create_client(
 def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
-        rm.get(
-            MASKINPORTEN_CLIENTS_ENDPOINTS["test"],
-            json=maskinporten_get_clients_response,
-        )
+        rm.get(CLIENTS_ENDPOINT, json=maskinporten_get_clients_response)
         response = mock_client.get(
             "/clients/test",
             headers={"Authorization": f"Bearer {valid_token}"},
@@ -87,11 +86,11 @@ def test_create_client_key(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.get(
-            f"{MASKINPORTEN_CLIENTS_ENDPOINTS['test']}{client_id}",
+            f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.post(
-            f"{MASKINPORTEN_CLIENTS_ENDPOINTS['test']}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
 
@@ -155,11 +154,11 @@ def test_create_client_key_assume_role_access_denied(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.get(
-            f"{MASKINPORTEN_CLIENTS_ENDPOINTS['test']}{client_id}",
+            f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.post(
-            f"{MASKINPORTEN_CLIENTS_ENDPOINTS['test']}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
 
@@ -191,7 +190,7 @@ def test_list_client_keys(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.get(
-            f"{MASKINPORTEN_CLIENTS_ENDPOINTS['test']}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         response = mock_client.get(
