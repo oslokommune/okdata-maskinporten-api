@@ -3,11 +3,17 @@ import dataclasses
 
 import requests
 from OpenSSL import crypto
+from botocore.exceptions import ClientError
 
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.ssm import get_secret
 from maskinporten_api.util import getenv
 from models import MaskinportenClientIn
+
+
+class UnsupportedEnvironmentError(Exception):
+    def __init__(self, env):
+        super().__init__(f"Maskinporten environment '{env}' is not supported")
 
 
 @dataclasses.dataclass
@@ -16,19 +22,27 @@ class EnvConfig:
     idporten_oidc_wellknown: str
     maskinporten_clients_endpoint: str
 
-    @property
     def maskinporten_admin_client_id(self):
-        return getenv(f"MASKINPORTEN_ADMIN_CLIENT_ID_{self.name.upper()}")
+        try:
+            return getenv(f"MASKINPORTEN_ADMIN_CLIENT_ID_{self.name.upper()}")
+        except ClientError:
+            raise UnsupportedEnvironmentError(self.name)
 
-    @property
     def certificate(self):
-        return get_secret(f"/dataplatform/maskinporten/origo-certificate-{self.name}")
+        try:
+            return get_secret(
+                f"/dataplatform/maskinporten/origo-certificate-{self.name}"
+            )
+        except ClientError:
+            raise UnsupportedEnvironmentError(self.name)
 
-    @property
     def certificate_password(self):
-        return get_secret(
-            f"/dataplatform/maskinporten/origo-certificate-password-{self.name}"
-        )
+        try:
+            return get_secret(
+                f"/dataplatform/maskinporten/origo-certificate-password-{self.name}"
+            )
+        except ClientError:
+            raise UnsupportedEnvironmentError(self.name)
 
 
 _ENV_CONFIGS = [
@@ -50,23 +64,18 @@ def env_config(env):
     try:
         return next(e for e in _ENV_CONFIGS if e.name == env)
     except StopIteration:
-        raise ValueError(
-            "Unknown env '{}', must be one of: {}".format(
-                env,
-                [e.name for e in _ENV_CONFIGS],
-            )
-        )
+        raise UnsupportedEnvironmentError(env)
 
 
 class MaskinportenClient:
     def __init__(self, env):
         config = env_config(env)
         p12 = crypto.load_pkcs12(
-            base64.b64decode(config.certificate),
-            config.certificate_password.encode("utf-8"),
+            base64.b64decode(config.certificate()),
+            config.certificate_password().encode("utf-8"),
         )
         conf = JWTConfig(
-            issuer=config.maskinporten_admin_client_id,
+            issuer=config.maskinporten_admin_client_id(),
             certificate=p12.get_certificate(),
             private_key=p12.get_privatekey(),
         )
