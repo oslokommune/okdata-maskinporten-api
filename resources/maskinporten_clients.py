@@ -6,6 +6,7 @@ import requests
 from fastapi import APIRouter, Depends, status
 
 from models import (
+    MaskinportenEnvironment,
     MaskinportenClientIn,
     MaskinportenClientOut,
     ClientKeyOut,
@@ -81,7 +82,7 @@ def create_client(
         status.HTTP_403_FORBIDDEN,
     ),
 )
-def list_clients(env: str, auth_info: AuthInfo = Depends()):
+def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
     try:
         maskinporten_client = MaskinportenClient(env)
     except UnsupportedEnvironmentError as e:
@@ -105,7 +106,7 @@ def list_clients(env: str, auth_info: AuthInfo = Depends()):
     ),
 )
 def create_client_key(
-    env: str,
+    env: MaskinportenEnvironment,
     client_id: str,
     body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
@@ -180,7 +181,7 @@ def create_client_key(
         status.HTTP_404_NOT_FOUND,
     ),
 )
-def list_client_keys(env: str, client_id: str):
+def list_client_keys(env: MaskinportenEnvironment, client_id: str):
     try:
         maskinporten_client = MaskinportenClient(env)
     except UnsupportedEnvironmentError as e:

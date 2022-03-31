@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.ssm import get_secret
 from maskinporten_api.util import getenv
-from models import MaskinportenClientIn
+from models import MaskinportenClientIn, MaskinportenEnvironment
 
 
 class UnsupportedEnvironmentError(Exception):
@@ -18,7 +18,7 @@ class UnsupportedEnvironmentError(Exception):
 
 @dataclasses.dataclass
 class EnvConfig:
-    name: str
+    name: MaskinportenEnvironment
     idporten_oidc_wellknown: str
     maskinporten_clients_endpoint: str
 
@@ -47,12 +47,12 @@ class EnvConfig:
 
 _ENV_CONFIGS = [
     EnvConfig(
-        "test",
+        MaskinportenEnvironment.test.value,
         "https://oidc-ver2.difi.no/idporten-oidc-provider/.well-known/openid-configuration",
         "https://integrasjon-ver2.difi.no/clients/",
     ),
     EnvConfig(
-        "prod",
+        MaskinportenEnvironment.prod.value,
         "https://oidc.difi.no/idporten-oidc-provider/.well-known/openid-configuration",
         "https://integrasjon.difi.no/clients/",
     ),

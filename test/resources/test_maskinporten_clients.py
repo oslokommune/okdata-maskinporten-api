@@ -70,6 +70,24 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
     ]
 
 
+def test_list_clients_validation_error(
+    mock_client, mock_authorizer, maskinporten_get_clients_response
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(CLIENTS_ENDPOINT, json=maskinporten_get_clients_response)
+        response = mock_client.get(
+            "/clients/hest",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert response.status_code == 400
+    assert (
+        response.json()["message"]
+        == "Unsupported Maskinporten environment. Must be one of: test, prod"
+    )
+
+
 def test_create_client_key(
     maskinporten_create_client_key_response,
     maskinporten_get_client_response,
