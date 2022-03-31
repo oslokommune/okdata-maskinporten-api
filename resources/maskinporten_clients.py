@@ -6,6 +6,7 @@ import requests
 from fastapi import APIRouter, Depends, status
 
 from models import (
+    MaskinportenEnvironment,
     MaskinportenClientIn,
     MaskinportenClientOut,
     ClientKeyOut,
@@ -19,7 +20,10 @@ from maskinporten_api.keys import (
     pkcs12_from_key,
     generate_password,
 )
-from maskinporten_api.maskinporten_client import MaskinportenClient
+from maskinporten_api.maskinporten_client import (
+    MaskinportenClient,
+    UnsupportedEnvironmentError,
+)
 from maskinporten_api.ssm import (
     SendSecretsService,
     Secrets,
@@ -52,7 +56,11 @@ def create_client(
     logger.debug(
         f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
     )
-    new_client = MaskinportenClient(body.env).create_client(body)
+    try:
+        new_client = MaskinportenClient(body.env).create_client(body)
+    except UnsupportedEnvironmentError as e:
+        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+
     audit_log(
         item_id=new_client["client_id"],
         item_type="client",
@@ -74,10 +82,14 @@ def create_client(
         status.HTTP_403_FORBIDDEN,
     ),
 )
-def list_clients(env: str, auth_info: AuthInfo = Depends()):
+def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
+    try:
+        maskinporten_client = MaskinportenClient(env)
+    except UnsupportedEnvironmentError as e:
+        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+
     return [
-        MaskinportenClientOut.parse_obj(c)
-        for c in MaskinportenClient(env).get_clients()
+        MaskinportenClientOut.parse_obj(c) for c in maskinporten_client.get_clients()
     ]
 
 
@@ -94,7 +106,7 @@ def list_clients(env: str, auth_info: AuthInfo = Depends()):
     ),
 )
 def create_client_key(
-    env: str,
+    env: MaskinportenEnvironment,
     client_id: str,
     body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
@@ -105,7 +117,11 @@ def create_client_key(
             f"Invalid client ID: {client_id}",
         )
 
-    maskinporten_client = MaskinportenClient(env)
+    try:
+        maskinporten_client = MaskinportenClient(env)
+    except UnsupportedEnvironmentError as e:
+        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+
     send_secrets_service = SendSecretsService()
 
     try:
@@ -165,8 +181,12 @@ def create_client_key(
         status.HTTP_404_NOT_FOUND,
     ),
 )
-def list_client_keys(env: str, client_id: str):
-    maskinporten_client = MaskinportenClient(env)
+def list_client_keys(env: MaskinportenEnvironment, client_id: str):
+    try:
+        maskinporten_client = MaskinportenClient(env)
+    except UnsupportedEnvironmentError as e:
+        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+
     try:
         jwks = maskinporten_client.get_client_keys(client_id)
     except requests.HTTPError as e:

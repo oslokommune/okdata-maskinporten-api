@@ -1,4 +1,5 @@
 from models.models import (
+    MaskinportenEnvironment,
     MaskinportenClientIn,
     MaskinportenClientOut,
     ClientKeyOut,
@@ -7,6 +8,7 @@ from models.models import (
 )
 
 __all__ = [
+    "MaskinportenEnvironment",
     "MaskinportenClientIn",
     "MaskinportenClientOut",
     "ClientKeyOut",

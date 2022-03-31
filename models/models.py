@@ -1,11 +1,18 @@
+from enum import Enum
+
 from pydantic import BaseModel
+
+
+class MaskinportenEnvironment(str, Enum):
+    test = "test"
+    prod = "prod"
 
 
 class MaskinportenClientIn(BaseModel):
     name: str
     description: str
     scopes: list[str]
-    env: str
+    env: MaskinportenEnvironment
 
 
 class MaskinportenClientOut(BaseModel):
