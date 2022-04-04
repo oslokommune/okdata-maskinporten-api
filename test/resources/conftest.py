@@ -85,6 +85,14 @@ def mock_authorizer(monkeypatch):
 
     monkeypatch.setattr(KeycloakOpenID, "introspect", introspect)
 
+    def token(self, grant_type):
+        return {
+            "token_type": "Bearer",
+            "access_token": valid_token,
+        }
+
+    monkeypatch.setattr(KeycloakOpenID, "token", token)
+
 
 @pytest.fixture
 @mock_dynamodb2

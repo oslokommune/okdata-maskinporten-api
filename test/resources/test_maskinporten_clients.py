@@ -1,13 +1,16 @@
+import os
 import pytest
 import requests_mock
 from unittest.mock import ANY
 
 from maskinporten_api.maskinporten_client import env_config
+
 from resources import maskinporten_clients
 from test.mock_utils import mock_access_token_generation_requests
-from test.resources.conftest import valid_token
+from test.resources.conftest import username, valid_token
 
 CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
+OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 
 
 def test_create_client(
@@ -16,6 +19,7 @@ def test_create_client(
     mock_aws,
     mock_client,
     mock_dynamodb,
+    mocker,
 ):
     body = {
         "name": "some-client",
@@ -23,17 +27,24 @@ def test_create_client(
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
         "env": "test",
     }
+
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
+
         rm.post(
             CLIENTS_ENDPOINT,
             json=maskinporten_create_client_response,
         )
-        client = mock_client.post(
+
+        permissions_adapter = rm.post(
+            f"{OKDATA_PERMISSION_API_URL}/permissions",
+        )
+
+        created_client = mock_client.post(
             "/clients", json=body, headers={"Authorization": f"Bearer {valid_token}"}
         ).json()
 
-    assert client == {
+    client = {
         "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
         "client_name": "some-client",
         "description": "Very cool client",
@@ -42,10 +53,18 @@ def test_create_client(
         "last_updated": "2021-09-15T10:20:43.354+02:00",
         "active": True,
     }
+    assert created_client == client
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": client["client_id"], "Type": "client"})
     assert audit_log_entry["Item"]["Id"] == client["client_id"]
+
+    permissions_request = permissions_adapter.last_request
+    assert permissions_request.headers["Authorization"] == f"Bearer {valid_token}"
+    assert permissions_request.json() == {
+        "owner": {"user_id": username, "user_type": "user"},
+        "resource_name": f"okdata:maskinporten-client:{body['env']}-{client['client_id']}",
+    }
 
 
 def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):

@@ -24,12 +24,14 @@ from maskinporten_api.maskinporten_client import (
     MaskinportenClient,
     UnsupportedEnvironmentError,
 )
+
+from maskinporten_api.permissions import create_client_permissions
 from maskinporten_api.ssm import (
     SendSecretsService,
     Secrets,
     AssumeRoleAccessDeniedException,
 )
-from resources.authorizer import AuthInfo, authorize
+from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
 
 logger = logging.getLogger()
@@ -52,6 +54,7 @@ router = APIRouter()
 def create_client(
     body: MaskinportenClientIn,
     auth_info: AuthInfo = Depends(),
+    service_client: ServiceClient = Depends(),
 ):
     logger.debug(
         f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
@@ -69,6 +72,14 @@ def create_client(
         user=auth_info.principal_id,
         scopes=new_client["scopes"],
     )
+
+    create_client_permissions(
+        env=body.env,
+        client_id=new_client["client_id"],
+        owner_principal_id=auth_info.principal_id,
+        auth_header=service_client.authorization_header,
+    )
+
     return MaskinportenClientOut.parse_obj(new_client)
 
 
