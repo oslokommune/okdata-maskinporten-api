@@ -49,7 +49,7 @@ def maskinporten_create_client_key_response():
     return {
         "keys": [
             {
-                "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
+                "kid": "test-ab0f2066-feb8-8bdc-7bbc-24994da79391-key-cd88232f",
                 "alg": "RS256",
                 "n": "nYFc81LY5FoxWcKh",
                 "e": "AQAB",

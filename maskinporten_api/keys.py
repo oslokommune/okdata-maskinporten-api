@@ -6,6 +6,8 @@ import string
 from OpenSSL import crypto
 from authlib.jose import jwk
 
+from models import MaskinportenEnvironment
+
 
 def generate_key():
     """Return a freshly made 4096 bit RSA key pair."""
@@ -14,13 +16,17 @@ def generate_key():
     return key
 
 
-def jwk_from_key(key, client_name):
+def jwk_from_key(
+    key: crypto.PKey,
+    env: MaskinportenEnvironment,
+    client_id: str,
+):
     """Return a JSON Web Key (JWK) payload representing `key`.
 
-    `client_name` is baked into the key ID together with a UUID.
+    `env` and `client_id` is baked into the key ID together with a shortened UUID.
     """
     return {
-        "kid": f"{client_name}-{uuid.uuid4()}",
+        "kid": f"{env}-{client_id}-key-{str(uuid.uuid4())[:8]}",
         "alg": "RS256",
         **jwk.dumps(crypto.dump_publickey(crypto.FILETYPE_PEM, key)),
     }

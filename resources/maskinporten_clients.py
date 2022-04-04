@@ -145,7 +145,7 @@ def create_client_key(
         raise
 
     key = generate_key()
-    jwk = jwk_from_key(key, client["client_name"])
+    jwk = jwk_from_key(key, env, client["client_id"])
     key_id = jwk["kid"]
 
     logger.debug(f"Registering new key with id {key_id} for client {client_id}")

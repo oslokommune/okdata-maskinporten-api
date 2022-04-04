@@ -145,7 +145,7 @@ def test_create_client_key(
         ).json()
 
     assert key == {
-        "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
+        "kid": "test-ab0f2066-feb8-8bdc-7bbc-24994da79391-key-cd88232f",
     }
 
     maskinporten_clients.SendSecretsService.send_secrets.assert_called_once_with(
@@ -237,7 +237,7 @@ def test_list_client_keys(
 
     assert response.json() == [
         {
-            "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
+            "kid": "test-ab0f2066-feb8-8bdc-7bbc-24994da79391-key-cd88232f",
             "client_id": client_id,
         }
     ]
