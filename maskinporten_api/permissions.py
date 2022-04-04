@@ -2,32 +2,10 @@ import os
 
 import requests
 
-from models import MaskinportenEnvironment
-
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 
 
-def create_client_permissions(
-    env: MaskinportenEnvironment,
-    client_id: str,
-    owner_principal_id: str,
-    auth_header: dict,
-):
-    resource_name = f"okdata:maskinporten-client:{env}-{client_id}"
-    _create_okdata_permissions(
-        resource_name,
-        owner_principal_id,
-        auth_header,
-    )
-
-
-# TODO
-def create_client_key_permissions():
-    # resource_name = f"okdata:maskinporten-key:{env}-{...}"
-    pass
-
-
-def _create_okdata_permissions(
+def create_okdata_permissions(
     resource_name: str,
     owner_principal_id: str,
     auth_header: dict,

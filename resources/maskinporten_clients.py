@@ -25,7 +25,7 @@ from maskinporten_api.maskinporten_client import (
     UnsupportedEnvironmentError,
 )
 
-from maskinporten_api.permissions import create_client_permissions
+from maskinporten_api.permissions import create_okdata_permissions
 from maskinporten_api.ssm import (
     SendSecretsService,
     Secrets,
@@ -73,9 +73,8 @@ def create_client(
         scopes=new_client["scopes"],
     )
 
-    create_client_permissions(
-        env=body.env,
-        client_id=new_client["client_id"],
+    create_okdata_permissions(
+        resource_name=f"okdata:maskinporten-client:{body.env}-{new_client['client_id']}",
         owner_principal_id=auth_info.principal_id,
         auth_header=service_client.authorization_header,
     )
@@ -121,6 +120,7 @@ def create_client_key(
     client_id: str,
     body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
+    service_client: ServiceClient = Depends(),
 ):
     if not re.fullmatch("[0-9a-f-]+", client_id):
         raise ErrorResponse(
@@ -176,6 +176,12 @@ def create_client_key(
         action="create",
         user=auth_info.principal_id,
         client_id=client_id,
+    )
+
+    create_okdata_permissions(
+        resource_name=f"okdata:maskinporten-key:{kid}",
+        owner_principal_id=auth_info.principal_id,
+        auth_header=service_client.authorization_header,
     )
 
     return ClientKeyOut(kid=kid)
