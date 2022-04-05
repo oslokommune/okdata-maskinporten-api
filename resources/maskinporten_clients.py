@@ -173,7 +173,7 @@ def create_client_key(
     except TooManyKeysError as e:
         # TODO: We should revert the secrets injected to AWS here. Actually we
         #       should do that if any exception is raised.
-        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+        raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
 
     kid = jwks["keys"][0]["kid"]
 

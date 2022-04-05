@@ -215,7 +215,7 @@ def test_create_client_key_too_many_keys(
             },
         )
 
-    assert res.status_code == 400
+    assert res.status_code == 409
     assert (
         res.json()["message"]
         == f"Client '{client_id}' already has the maximum number of registered keys: 5"
