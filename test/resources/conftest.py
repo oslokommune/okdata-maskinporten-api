@@ -49,7 +49,7 @@ def maskinporten_create_client_key_response():
     return {
         "keys": [
             {
-                "kid": "some-client-ab0f2066-feb8-8bdc-7bbc-24994da79391",
+                "kid": "1970-01-01-12-00-00",
                 "alg": "RS256",
                 "n": "nYFc81LY5FoxWcKh",
                 "e": "AQAB",
@@ -84,6 +84,14 @@ def mock_authorizer(monkeypatch):
         }
 
     monkeypatch.setattr(KeycloakOpenID, "introspect", introspect)
+
+    def token(self, grant_type):
+        return {
+            "token_type": "Bearer",
+            "access_token": valid_token,
+        }
+
+    monkeypatch.setattr(KeycloakOpenID, "token", token)
 
 
 @pytest.fixture

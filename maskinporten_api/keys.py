@@ -1,7 +1,9 @@
+import os
 import base64
-import uuid
 import secrets
 import string
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from OpenSSL import crypto
 from authlib.jose import jwk
@@ -14,13 +16,12 @@ def generate_key():
     return key
 
 
-def jwk_from_key(key, client_name):
-    """Return a JSON Web Key (JWK) payload representing `key`.
-
-    `client_name` is baked into the key ID together with a UUID.
-    """
+def jwk_from_key(key: crypto.PKey):
+    """Return a JSON Web Key (JWK) payload representing `key`."""
     return {
-        "kid": f"{client_name}-{uuid.uuid4()}",
+        "kid": datetime.now(tz=ZoneInfo(key=os.environ["TIMEZONE"])).strftime(
+            "%Y-%m-%d-%H-%M-%S"
+        ),
         "alg": "RS256",
         **jwk.dumps(crypto.dump_publickey(crypto.FILETYPE_PEM, key)),
     }

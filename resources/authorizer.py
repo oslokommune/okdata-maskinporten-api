@@ -28,6 +28,18 @@ def resource_authorizer() -> ResourceAuthorizer:
 http_bearer = HTTPBearer(scheme_name="Keycloak token")
 
 
+class ServiceClient:
+    authorization_header: str
+
+    def __init__(
+        self,
+        keycloak_client: KeycloakOpenID = Depends(keycloak_client),
+    ):
+        response = keycloak_client.token(grant_type=["client_credentials"])
+        access_token = f"{response['token_type']} {response['access_token']}"
+        self.authorization_header = {"Authorization": access_token}
+
+
 class AuthInfo:
     principal_id: str
     bearer_token: str

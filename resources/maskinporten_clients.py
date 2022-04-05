@@ -24,12 +24,14 @@ from maskinporten_api.maskinporten_client import (
     MaskinportenClient,
     UnsupportedEnvironmentError,
 )
+
+from maskinporten_api.permissions import create_okdata_permissions
 from maskinporten_api.ssm import (
     SendSecretsService,
     Secrets,
     AssumeRoleAccessDeniedException,
 )
-from resources.authorizer import AuthInfo, authorize
+from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
 
 logger = logging.getLogger()
@@ -52,6 +54,7 @@ router = APIRouter()
 def create_client(
     body: MaskinportenClientIn,
     auth_info: AuthInfo = Depends(),
+    service_client: ServiceClient = Depends(),
 ):
     logger.debug(
         f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
@@ -61,6 +64,13 @@ def create_client(
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
+    # TODO: Roll back created client if permission creation fails.
+    create_okdata_permissions(
+        resource_name=f"okdata:maskinporten-client:{body.env}-{new_client['client_id']}",
+        owner_principal_id=auth_info.principal_id,
+        auth_header=service_client.authorization_header,
+    )
+
     audit_log(
         item_id=new_client["client_id"],
         item_type="client",
@@ -69,6 +79,7 @@ def create_client(
         user=auth_info.principal_id,
         scopes=new_client["scopes"],
     )
+
     return MaskinportenClientOut.parse_obj(new_client)
 
 
@@ -110,6 +121,7 @@ def create_client_key(
     client_id: str,
     body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
+    service_client: ServiceClient = Depends(),
 ):
     if not re.fullmatch("[0-9a-f-]+", client_id):
         raise ErrorResponse(
@@ -125,7 +137,7 @@ def create_client_key(
     send_secrets_service = SendSecretsService()
 
     try:
-        client = maskinporten_client.get_client(client_id)
+        maskinporten_client.get_client(client_id)
     except requests.HTTPError as e:
         if e.response.status_code == status.HTTP_404_NOT_FOUND:
             raise ErrorResponse(
@@ -134,7 +146,7 @@ def create_client_key(
         raise
 
     key = generate_key()
-    jwk = jwk_from_key(key, client["client_name"])
+    jwk = jwk_from_key(key)
     key_id = jwk["kid"]
 
     logger.debug(f"Registering new key with id {key_id} for client {client_id}")
@@ -157,6 +169,13 @@ def create_client_key(
 
     jwks = maskinporten_client.create_client_key(client_id, jwk)
     kid = jwks["keys"][0]["kid"]
+
+    # TODO: Roll back created client if permission creation fails.
+    create_okdata_permissions(
+        resource_name=f"okdata:maskinporten-key:{env}-{client_id}-key-{kid}",
+        owner_principal_id=auth_info.principal_id,
+        auth_header=service_client.authorization_header,
+    )
 
     audit_log(
         item_id=kid,
