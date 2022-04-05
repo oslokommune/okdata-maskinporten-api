@@ -10,13 +10,17 @@ def create_okdata_permissions(
     owner_principal_id: str,
     auth_header: dict,
 ):
+    # Determine caller user type. Allows Keycloak service accounts
+    # to create permissions for Maskinporten resources.
     service_account_prefix = "service-account-"
+
     if owner_principal_id.startswith(service_account_prefix):
         user_id = owner_principal_id[len(service_account_prefix) :]
         user_type = "client"
     else:
         user_type = "user"
         user_id = owner_principal_id
+
     create_permissions_body = {
         "owner": {"user_id": user_id, "user_type": user_type},
         "resource_name": resource_name,
@@ -28,3 +32,5 @@ def create_okdata_permissions(
         headers=auth_header,
     )
     create_permissions_response.raise_for_status()
+
+    return create_permissions_response

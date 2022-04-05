@@ -32,6 +32,7 @@ provider:
     KEYCLOAK_REALM: api-catalog
     RESOURCE_SERVER_CLIENT_ID: okdata-resource-server
     OKDATA_PERMISSION_API_URL: ${ssm:/dataplatform/shared/api-gateway-url}/okdata-permission-api
+    TIMEZONE: "Europe/Oslo"
 package:
   exclude:
     - '**/*'

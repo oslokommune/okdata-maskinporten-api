@@ -147,9 +147,7 @@ def test_create_client_key(
             },
         ).json()
 
-    assert key == {
-        "kid": "test-ab0f2066-feb8-8bdc-7bbc-24994da79391-key-cd88232f",
-    }
+    assert key == {"kid": "1970-01-01-12-00-00"}
 
     maskinporten_clients.SendSecretsService.send_secrets.assert_called_once_with(
         ANY,
@@ -167,7 +165,7 @@ def test_create_client_key(
     assert permissions_request.headers["Authorization"] == f"Bearer {valid_token}"
     assert permissions_request.json() == {
         "owner": {"user_id": username, "user_type": "user"},
-        "resource_name": f"okdata:maskinporten-key:{key['kid']}",
+        "resource_name": f"okdata:maskinporten-key:test-{client_id}-key-{key['kid']}",
     }
 
 
@@ -247,7 +245,7 @@ def test_list_client_keys(
 
     assert response.json() == [
         {
-            "kid": "test-ab0f2066-feb8-8bdc-7bbc-24994da79391-key-cd88232f",
+            "kid": "1970-01-01-12-00-00",
             "client_id": client_id,
         }
     ]
