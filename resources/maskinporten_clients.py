@@ -7,12 +7,13 @@ import requests
 from fastapi import APIRouter, Depends, status
 
 from models import (
-    MaskinportenEnvironment,
+    ClientKeyMetadata,
+    CreateClientKeyIn,
+    CreateClientKeyOut,
+    DeleteClientKeyOut,
     MaskinportenClientIn,
     MaskinportenClientOut,
-    ClientKeyOut,
-    ClientKeyMetadata,
-    ClientKeyIn,
+    MaskinportenEnvironment,
 )
 from maskinporten_api.audit import audit_log
 from maskinporten_api.keys import (
@@ -22,6 +23,7 @@ from maskinporten_api.keys import (
     generate_password,
 )
 from maskinporten_api.maskinporten_client import (
+    KeyNotFoundError,
     MaskinportenClient,
     TooManyKeysError,
     UnsupportedEnvironmentError,
@@ -112,7 +114,7 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
     "/{env}/{client_id}/keys",
     dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
     status_code=status.HTTP_201_CREATED,
-    response_model=ClientKeyOut,
+    response_model=CreateClientKeyOut,
     responses=error_message_models(
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
@@ -123,7 +125,7 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
 def create_client_key(
     env: MaskinportenEnvironment,
     client_id: str,
-    body: ClientKeyIn,
+    body: CreateClientKeyIn,
     auth_info: AuthInfo = Depends(),
 ):
     if not re.fullmatch("[0-9a-f-]+", client_id):
@@ -190,7 +192,66 @@ def create_client_key(
         client_id=client_id,
     )
 
-    return ClientKeyOut(kid=kid)
+    return CreateClientKeyOut(kid=kid)
+
+
+@router.delete(
+    "/{env}/{client_id}/keys/{key_id}",
+    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    status_code=status.HTTP_200_OK,
+    response_model=DeleteClientKeyOut,
+    responses=error_message_models(
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+    ),
+)
+def delete_client_key(
+    env: MaskinportenEnvironment,
+    client_id: str,
+    key_id: str,
+    auth_info: AuthInfo = Depends(),
+):
+    if not re.fullmatch("[0-9a-f-]+", client_id):
+        raise ErrorResponse(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"Invalid client ID: {client_id}",
+        )
+
+    try:
+        maskinporten_client = MaskinportenClient(env)
+    except UnsupportedEnvironmentError as e:
+        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+
+    try:
+        maskinporten_client.get_client(client_id)
+    except requests.HTTPError as e:
+        if e.response.status_code == status.HTTP_404_NOT_FOUND:
+            raise ErrorResponse(
+                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
+            )
+        raise
+
+    logger.debug(f"Deleting key {key_id} from client {client_id}")
+
+    try:
+        maskinporten_client.delete_client_key(client_id, key_id)
+    except KeyNotFoundError as e:
+        raise ErrorResponse(status.HTTP_404_NOT_FOUND, str(e))
+
+    audit_log(
+        item_id=key_id,
+        item_type="key",
+        env=env,
+        action="delete",
+        user=auth_info.principal_id,
+        client_id=client_id,
+    )
+
+    # TODO: We should also delete the key from SSM. Inform the client with the
+    #       `deleted_from_ssm` field whether this was done or not.
+    return DeleteClientKeyOut(deleted_from_ssm=False)
 
 
 @router.get(

@@ -58,6 +58,7 @@ def test_create_client(
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": client["client_id"], "Type": "client"})
     assert audit_log_entry["Item"]["Id"] == client["client_id"]
+    assert audit_log_entry["Item"]["Action"] == "create"
 
     permissions_request = permissions_adapter.last_request
     assert permissions_request.headers["Authorization"] == f"Bearer {valid_token}"
@@ -138,7 +139,7 @@ def test_create_client_key(
 
         destination_aws_account = "123456789876"
         destination_aws_region = "eu-west-1"
-        key = mock_client.post(
+        res = mock_client.post(
             f"/clients/test/{client_id}/keys",
             json={
                 "destination_aws_account": destination_aws_account,
@@ -147,8 +148,10 @@ def test_create_client_key(
             headers={
                 "Authorization": f"Bearer {valid_token}",
             },
-        ).json()
+        )
 
+    assert res.status_code == 201
+    key = res.json()
     assert key == {"kid": "1970-01-01-12-00-00"}
 
     maskinporten_clients.SendSecretsService.send_secrets.assert_called_once_with(
@@ -162,10 +165,10 @@ def test_create_client_key(
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
     assert audit_log_entry["Item"]["Id"] == key["kid"]
+    assert audit_log_entry["Item"]["Action"] == "create"
 
 
 def test_create_client_key_too_many_keys(
-    maskinporten_create_client_key_response,
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
@@ -270,6 +273,118 @@ def test_create_client_key_assume_role_access_denied(
     }
 
 
+def test_delete_client_key_last_remaining(
+    maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+    key_id = "1970-01-01-12-00-00"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
+        )
+        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}/jwks")
+
+        res = mock_client.delete(
+            f"/clients/test/{client_id}/keys/{key_id}",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert res.status_code == 200
+    assert res.json() == {"deleted_from_ssm": False}
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.get_item(Key={"Id": key_id, "Type": "key"})
+    assert audit_log_entry["Item"]["Id"] == key_id
+    assert audit_log_entry["Item"]["Action"] == "delete"
+
+
+def test_delete_client_key_more_than_one_left(
+    maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
+    maskinporten_delete_client_key_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+    key_id = "1970-01-01-12-00-00"
+
+    # Add a second key.
+    maskinporten_list_client_keys_response["keys"].append(
+        {"kid": "1980-01-01-12-00-00"}
+    )
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
+        )
+        rm.post(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_delete_client_key_response,
+        )
+        res = mock_client.delete(
+            f"/clients/test/{client_id}/keys/{key_id}",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert res.status_code == 200
+    assert res.json() == {"deleted_from_ssm": False}
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.get_item(Key={"Id": key_id, "Type": "key"})
+    assert audit_log_entry["Item"]["Id"] == key_id
+    assert audit_log_entry["Item"]["Action"] == "delete"
+
+
+def test_delete_client_key_no_keys(
+    maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
+    maskinporten_delete_client_key_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+    key_id = "1970-01-01-12-00-00"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
+        res = mock_client.delete(
+            f"/clients/test/{client_id}/keys/{key_id}",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert res.status_code == 404
+
+
 def test_list_client_keys(
     mock_client, mock_authorizer, maskinporten_list_client_keys_response
 ):
@@ -286,6 +401,7 @@ def test_list_client_keys(
             headers={"Authorization": f"Bearer {valid_token}"},
         )
 
+    assert response.status_code == 200
     assert response.json() == [
         {
             "kid": "1970-01-01-12-00-00",

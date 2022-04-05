@@ -26,13 +26,17 @@ class MaskinportenClientOut(BaseModel):
     active: bool
 
 
-class ClientKeyIn(BaseModel):
+class CreateClientKeyIn(BaseModel):
     destination_aws_account: str
     destination_aws_region: str
 
 
-class ClientKeyOut(BaseModel):
+class CreateClientKeyOut(BaseModel):
     kid: str
+
+
+class DeleteClientKeyOut(BaseModel):
+    deleted_from_ssm: bool
 
 
 class ClientKeyMetadata(BaseModel):

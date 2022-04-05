@@ -63,6 +63,12 @@ def maskinporten_create_client_key_response():
 
 
 @pytest.fixture
+def maskinporten_delete_client_key_response(maskinporten_create_client_key_response):
+    """Currently the same response as when creating a new key."""
+    return maskinporten_create_client_key_response
+
+
+@pytest.fixture
 def maskinporten_list_client_keys_response(maskinporten_create_client_key_response):
     """Currently the same response as when creating a new key."""
     return maskinporten_create_client_key_response
