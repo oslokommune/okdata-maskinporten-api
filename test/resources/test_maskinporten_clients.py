@@ -110,6 +110,7 @@ def test_list_clients_validation_error(
 def test_create_client_key(
     maskinporten_create_client_key_response,
     maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
     mock_authorizer,
     mock_aws,
     mock_client,
@@ -125,6 +126,10 @@ def test_create_client_key(
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
+        )
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
         )
         rm.post(
             f"{CLIENTS_ENDPOINT}{client_id}/jwks",
@@ -167,6 +172,54 @@ def test_create_client_key(
         "owner": {"user_id": username, "user_type": "user"},
         "resource_name": f"okdata:maskinporten-key:test-{client_id}-key-{key['kid']}",
     }
+
+
+def test_create_client_key_too_many_keys(
+    maskinporten_create_client_key_response,
+    maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    mocker.spy(maskinporten_clients.SendSecretsService, "send_secrets")
+
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+
+    # Fill up the key chain.
+    maskinporten_list_client_keys_response["keys"] = (
+        maskinporten_list_client_keys_response["keys"] * 5
+    )
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
+        )
+
+        res = mock_client.post(
+            f"/clients/test/{client_id}/keys",
+            json={
+                "destination_aws_account": "123456789876",
+                "destination_aws_region": "eu-west-1",
+            },
+            headers={
+                "Authorization": f"Bearer {valid_token}",
+            },
+        )
+
+    assert res.status_code == 409
+    assert (
+        res.json()["message"]
+        == f"Client '{client_id}' already has the maximum number of registered keys: 5"
+    )
 
 
 def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):

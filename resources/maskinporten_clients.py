@@ -22,6 +22,7 @@ from maskinporten_api.keys import (
 )
 from maskinporten_api.maskinporten_client import (
     MaskinportenClient,
+    TooManyKeysError,
     UnsupportedEnvironmentError,
 )
 
@@ -167,7 +168,13 @@ def create_client_key(
     except AssumeRoleAccessDeniedException as e:
         raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
-    jwks = maskinporten_client.create_client_key(client_id, jwk)
+    try:
+        jwks = maskinporten_client.create_client_key(client_id, jwk)
+    except TooManyKeysError as e:
+        # TODO: We should revert the secrets injected to AWS here. Actually we
+        #       should do that if any exception is raised.
+        raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
+
     kid = jwks["keys"][0]["kid"]
 
     # TODO: Roll back created client if permission creation fails.

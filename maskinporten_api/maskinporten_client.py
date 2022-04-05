@@ -67,7 +67,18 @@ def env_config(env):
         raise UnsupportedEnvironmentError(env)
 
 
+class TooManyKeysError(Exception):
+    def __init__(self, client_id, max_keys):
+        super().__init__(
+            f"Client '{client_id}' already has the maximum number of registered keys: {max_keys}"
+        )
+
+
 class MaskinportenClient:
+    # The maximum number of keys that a Maskinporten client will hold. This is
+    # a restriction in Maskinporten itself.
+    MAX_KEYS = 5
+
     def __init__(self, env):
         config = env_config(env)
         p12 = crypto.load_pkcs12(
@@ -104,8 +115,20 @@ class MaskinportenClient:
         return self._request("GET", ["idporten:dcr.read"])
 
     def create_client_key(self, client_id: str, jwk: dict):
+        existing_jwks = self.get_client_keys(client_id).get("keys", [])
+
+        if len(existing_jwks) >= self.MAX_KEYS:
+            raise TooManyKeysError(client_id, self.MAX_KEYS)
+
         return self._request(
-            "POST", ["idporten:dcr.write"], f"{client_id}/jwks", json={"keys": [jwk]}
+            "POST",
+            ["idporten:dcr.write"],
+            f"{client_id}/jwks",
+            # XXX: We need to send every existing key together with the new
+            # one, otherwise all the existing keys are deleted. This comes with
+            # an additional quirk: The expiration date of the existing keys are
+            # renewed as well... Digdir is looking into a fix for this.
+            json={"keys": [jwk, *existing_jwks]},
         )
 
     def get_client_keys(self, client_id: str):
