@@ -233,7 +233,7 @@ def delete_client_key(
             )
         raise
 
-    logger.debug(f"Deleting key {key_id} from client {client_id}")
+    logger.debug(sanitize(f"Deleting key {key_id} from client {client_id}"))
 
     try:
         maskinporten_client.delete_client_key(client_id, key_id)
