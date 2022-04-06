@@ -177,13 +177,6 @@ def create_client_key(
 
     kid = jwks["keys"][0]["kid"]
 
-    # TODO: Roll back created client if permission creation fails.
-    create_okdata_permissions(
-        resource_name=f"okdata:maskinporten-key:{env}-{client_id}-key-{kid}",
-        owner_principal_id=auth_info.principal_id,
-        auth_header=service_client.authorization_header,
-    )
-
     audit_log(
         item_id=kid,
         item_type="key",
