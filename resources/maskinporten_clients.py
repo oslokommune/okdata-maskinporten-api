@@ -124,7 +124,6 @@ def create_client_key(
     client_id: str,
     body: ClientKeyIn,
     auth_info: AuthInfo = Depends(),
-    service_client: ServiceClient = Depends(),
 ):
     if not re.fullmatch("[0-9a-f-]+", client_id):
         raise ErrorResponse(
