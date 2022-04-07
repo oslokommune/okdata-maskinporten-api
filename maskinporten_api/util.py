@@ -12,3 +12,7 @@ def getenv(name):
         raise OSError(f"Environment variable {name} is not set")
 
     return env
+
+
+def sanitize(log_entry):
+    return log_entry.replace("\n", "")

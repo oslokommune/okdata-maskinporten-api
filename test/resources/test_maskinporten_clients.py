@@ -135,9 +135,6 @@ def test_create_client_key(
             f"{CLIENTS_ENDPOINT}{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
-        permissions_adapter = rm.post(
-            f"{OKDATA_PERMISSION_API_URL}/permissions",
-        )
 
         destination_aws_account = "123456789876"
         destination_aws_region = "eu-west-1"
@@ -165,13 +162,6 @@ def test_create_client_key(
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
     assert audit_log_entry["Item"]["Id"] == key["kid"]
-
-    permissions_request = permissions_adapter.last_request
-    assert permissions_request.headers["Authorization"] == f"Bearer {valid_token}"
-    assert permissions_request.json() == {
-        "owner": {"user_id": username, "user_type": "user"},
-        "resource_name": f"okdata:maskinporten-key:test-{client_id}-key-{key['kid']}",
-    }
 
 
 def test_create_client_key_too_many_keys(

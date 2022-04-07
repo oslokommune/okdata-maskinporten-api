@@ -25,13 +25,13 @@ from maskinporten_api.maskinporten_client import (
     TooManyKeysError,
     UnsupportedEnvironmentError,
 )
-
 from maskinporten_api.permissions import create_okdata_permissions
 from maskinporten_api.ssm import (
     SendSecretsService,
     Secrets,
     AssumeRoleAccessDeniedException,
 )
+from maskinporten_api.util import sanitize
 from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
 
@@ -58,7 +58,9 @@ def create_client(
     service_client: ServiceClient = Depends(),
 ):
     logger.debug(
-        f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
+        sanitize(
+            f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
+        )
     )
     try:
         new_client = MaskinportenClient(body.env).create_client(body)
@@ -150,7 +152,9 @@ def create_client_key(
     jwk = jwk_from_key(key)
     key_id = jwk["kid"]
 
-    logger.debug(f"Registering new key with id {key_id} for client {client_id}")
+    logger.debug(
+        sanitize(f"Registering new key with id {key_id} for client {client_id}")
+    )
 
     key_password = generate_password(pw_length=32)
 
@@ -176,13 +180,6 @@ def create_client_key(
         raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
 
     kid = jwks["keys"][0]["kid"]
-
-    # TODO: Roll back created client if permission creation fails.
-    create_okdata_permissions(
-        resource_name=f"okdata:maskinporten-key:{env}-{client_id}-key-{kid}",
-        owner_principal_id=auth_info.principal_id,
-        auth_header=service_client.authorization_header,
-    )
 
     audit_log(
         item_id=kid,
