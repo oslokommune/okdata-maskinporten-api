@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+from datetime import datetime, timedelta
 
 import requests
 from fastapi import APIRouter, Depends, status
@@ -219,7 +220,22 @@ def list_client_keys(env: MaskinportenEnvironment, client_id: str):
             )
         raise
 
+    if "keys" not in jwks:
+        return []
+
+    created = jwks["created"]
+    last_updated = jwks["last_updated"]
+    expires = (datetime.fromisoformat(created) + timedelta(days=365)).isoformat(
+        timespec="milliseconds"
+    )
+
     return [
-        ClientKeyMetadata(kid=key["kid"], client_id=client_id)
-        for key in jwks.get("keys", [])
+        ClientKeyMetadata(
+            kid=key["kid"],
+            client_id=client_id,
+            created=created,
+            expires=expires,
+            last_updated=last_updated,
+        )
+        for key in jwks["keys"]
     ]

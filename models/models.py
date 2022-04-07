@@ -37,3 +37,6 @@ class ClientKeyOut(BaseModel):
 class ClientKeyMetadata(BaseModel):
     kid: str
     client_id: str
+    created: str
+    expires: str
+    last_updated: str
