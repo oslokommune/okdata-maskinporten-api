@@ -14,6 +14,7 @@ OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 
 
 def test_create_client(
+    maskinporten_create_client_body,
     maskinporten_create_client_response,
     mock_authorizer,
     mock_aws,
@@ -21,13 +22,6 @@ def test_create_client(
     mock_dynamodb,
     mocker,
 ):
-    body = {
-        "name": "some-client",
-        "description": "Very cool client",
-        "scopes": ["folkeregister:deling/offentligmedhjemmel"],
-        "env": "test",
-    }
-
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
 
@@ -41,7 +35,9 @@ def test_create_client(
         )
 
         created_client = mock_client.post(
-            "/clients", json=body, headers={"Authorization": f"Bearer {valid_token}"}
+            "/clients",
+            json=maskinporten_create_client_body,
+            headers={"Authorization": f"Bearer {valid_token}"},
         ).json()
 
     client = {
@@ -64,8 +60,36 @@ def test_create_client(
     assert permissions_request.headers["Authorization"] == f"Bearer {valid_token}"
     assert permissions_request.json() == {
         "owner": {"user_id": username, "user_type": "user"},
-        "resource_name": f"okdata:maskinporten-client:{body['env']}-{client['client_id']}",
+        "resource_name": f"okdata:maskinporten-client:{maskinporten_create_client_body['env']}-{client['client_id']}",
     }
+
+
+def test_create_client_rollback(
+    maskinporten_create_client_body,
+    maskinporten_create_client_response,
+    mock_authorizer,
+    mock_client,
+    mocker,
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        create_client_matcher = rm.post(
+            CLIENTS_ENDPOINT,
+            json=maskinporten_create_client_response,
+        )
+        rm.post(f"{OKDATA_PERMISSION_API_URL}/permissions", status_code=403)
+        delete_client_matcher = rm.delete(
+            f"{CLIENTS_ENDPOINT}{maskinporten_create_client_response['client_id']}"
+        )
+        res = mock_client.post(
+            "/clients",
+            json=maskinporten_create_client_body,
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert res.status_code == 500
+    assert create_client_matcher.called_once
+    assert delete_client_matcher.called_once
 
 
 def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):

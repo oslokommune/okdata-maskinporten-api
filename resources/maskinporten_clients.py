@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import requests
 from fastapi import APIRouter, Depends, status
+from okdata.aws.logging import log_exception
 
 from models import (
     ClientKeyMetadata,
@@ -66,19 +67,29 @@ def create_client(
         )
     )
     try:
-        new_client = MaskinportenClient(body.env).create_client(body).json()
+        maskinporten_client = MaskinportenClient(body.env)
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
-    # TODO: Roll back created client if permission creation fails.
-    create_okdata_permissions(
-        resource_name=f"okdata:maskinporten-client:{body.env}-{new_client['client_id']}",
-        owner_principal_id=auth_info.principal_id,
-        auth_header=service_client.authorization_header,
-    )
+    new_client = maskinporten_client.create_client(body).json()
+    new_client_id = new_client["client_id"]
+
+    try:
+        create_okdata_permissions(
+            resource_name=f"okdata:maskinporten-client:{body.env}-{new_client_id}",
+            owner_principal_id=auth_info.principal_id,
+            auth_header=service_client.authorization_header,
+        )
+    except requests.RequestException as e:
+        # Permission creation failed. Retract the created Maskinporten client.
+        log_exception(e)
+        maskinporten_client.delete_client(new_client_id)
+        raise ErrorResponse(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
+        )
 
     audit_log(
-        item_id=new_client["client_id"],
+        item_id=new_client_id,
         item_type="client",
         env=body.env,
         action="create",

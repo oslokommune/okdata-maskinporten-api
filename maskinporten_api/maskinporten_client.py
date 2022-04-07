@@ -119,6 +119,9 @@ class MaskinportenClient:
     def get_clients(self):
         return self._request("GET", ["idporten:dcr.read"])
 
+    def delete_client(self, client_id: str):
+        return self._request("DELETE", ["idporten:dcr.write"], client_id)
+
     def create_client_key(self, client_id: str, jwk: dict):
         existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
 

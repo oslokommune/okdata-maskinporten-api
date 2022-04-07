@@ -11,6 +11,16 @@ username = "janedoe"
 
 
 @pytest.fixture
+def maskinporten_create_client_body():
+    return {
+        "name": "some-client",
+        "description": "Very cool client",
+        "scopes": ["folkeregister:deling/offentligmedhjemmel"],
+        "env": "test",
+    }
+
+
+@pytest.fixture
 def maskinporten_create_client_response():
     return {
         "client_name": "some-client",
