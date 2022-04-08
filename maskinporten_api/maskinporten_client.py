@@ -111,16 +111,16 @@ class MaskinportenClient:
                 "integration_type": "maskinporten",
                 "application_type": "web",
             },
-        ).json()
+        )
 
     def get_client(self, client_id: str):
-        return self._request("GET", ["idporten:dcr.read"], client_id).json()
+        return self._request("GET", ["idporten:dcr.read"], client_id)
 
     def get_clients(self):
-        return self._request("GET", ["idporten:dcr.read"]).json()
+        return self._request("GET", ["idporten:dcr.read"])
 
     def create_client_key(self, client_id: str, jwk: dict):
-        existing_jwks = self.get_client_keys(client_id).get("keys", [])
+        existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
 
         if len(existing_jwks) >= self.MAX_KEYS:
             raise TooManyKeysError(client_id, self.MAX_KEYS)
@@ -134,10 +134,10 @@ class MaskinportenClient:
             # an additional quirk: The expiration date of the existing keys are
             # renewed as well... Digdir is looking into a fix for this.
             json={"keys": [jwk, *existing_jwks]},
-        ).json()
+        )
 
     def delete_client_key(self, client_id, key_id):
-        existing_jwks = self.get_client_keys(client_id).get("keys", [])
+        existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
         updated_jwks = [jwk for jwk in existing_jwks if jwk["kid"] != key_id]
 
         if len(existing_jwks) == len(updated_jwks):
@@ -146,26 +146,25 @@ class MaskinportenClient:
         if len(updated_jwks) == 0:
             # When deleting the last key, we need to DELETE instead of POST-ing
             # an empty `keys` object.
-            self._request(
+            return self._request(
                 "DELETE",
                 ["idporten:dcr.write"],
                 f"{client_id}/jwks",
             )
-            return {}
 
         return self._request(
             "POST",
             ["idporten:dcr.write"],
             f"{client_id}/jwks",
             json={"keys": updated_jwks},
-        ).json()
+        )
 
     def get_client_keys(self, client_id: str):
         return self._request(
             "GET",
             ["idporten:dcr.read"],
             f"{client_id}/jwks",
-        ).json()
+        )
 
     def _request(self, method, scopes, path="", json=None):
         access_token = self.client.get_access_token(scopes)

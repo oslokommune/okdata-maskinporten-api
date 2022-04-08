@@ -66,7 +66,7 @@ def create_client(
         )
     )
     try:
-        new_client = MaskinportenClient(body.env).create_client(body)
+        new_client = MaskinportenClient(body.env).create_client(body).json()
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -106,7 +106,8 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
     return [
-        MaskinportenClientOut.parse_obj(c) for c in maskinporten_client.get_clients()
+        MaskinportenClientOut.parse_obj(c)
+        for c in maskinporten_client.get_clients().json()
     ]
 
 
@@ -175,7 +176,7 @@ def create_client_key(
         raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
     try:
-        jwks = maskinporten_client.create_client_key(client_id, jwk)
+        jwks = maskinporten_client.create_client_key(client_id, jwk).json()
     except TooManyKeysError as e:
         # TODO: We should revert the secrets injected to AWS here. Actually we
         #       should do that if any exception is raised.
@@ -272,7 +273,7 @@ def list_client_keys(env: MaskinportenEnvironment, client_id: str):
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
     try:
-        jwks = maskinporten_client.get_client_keys(client_id)
+        jwks = maskinporten_client.get_client_keys(client_id).json()
     except requests.HTTPError as e:
         if e.response.status_code == status.HTTP_404_NOT_FOUND:
             raise ErrorResponse(
