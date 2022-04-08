@@ -87,9 +87,7 @@ def maskinporten_list_client_keys_response(maskinporten_create_client_key_respon
 @pytest.fixture
 def mock_authorizer(monkeypatch):
     def has_access(self, bearer_token, scope, resource_name=None, use_whitelist=False):
-        return bearer_token == valid_token and scope in [
-            "okdata:maskinporten-client:create"
-        ]
+        return bearer_token == valid_token and scope in ["maskinporten:client:create"]
 
     monkeypatch.setattr(ResourceAuthorizer, "has_access", has_access)
 

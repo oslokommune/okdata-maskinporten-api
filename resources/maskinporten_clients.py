@@ -48,7 +48,7 @@ router = APIRouter()
 
 @router.post(
     "",
-    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_201_CREATED,
     response_model=MaskinportenClientOut,
     responses=error_message_models(
@@ -76,7 +76,7 @@ def create_client(
 
     try:
         create_okdata_permissions(
-            resource_name=f"okdata:maskinporten-client:{body.env}-{new_client_id}",
+            resource_name=f"maskinporten:client:{body.env}-{new_client_id}",
             owner_principal_id=auth_info.principal_id,
             auth_header=service_client.authorization_header,
         )
@@ -102,7 +102,7 @@ def create_client(
 
 @router.get(
     "/{env}",
-    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=list[MaskinportenClientOut],
     responses=error_message_models(
@@ -124,7 +124,7 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
 
 @router.post(
     "/{env}/{client_id}/keys",
-    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_201_CREATED,
     response_model=CreateClientKeyOut,
     responses=error_message_models(
@@ -209,7 +209,7 @@ def create_client_key(
 
 @router.delete(
     "/{env}/{client_id}/keys/{key_id}",
-    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=DeleteClientKeyOut,
     responses=error_message_models(
@@ -268,7 +268,7 @@ def delete_client_key(
 
 @router.get(
     "/{env}/{client_id}/keys",
-    dependencies=[Depends(authorize(scope="okdata:maskinporten-client:create"))],
+    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=list[ClientKeyMetadata],
     responses=error_message_models(
