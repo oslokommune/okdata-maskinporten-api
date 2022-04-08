@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel
@@ -20,8 +21,8 @@ class MaskinportenClientOut(BaseModel):
     client_name: str
     description: str
     scopes: list[str]
-    created: str
-    last_updated: str
+    created: datetime
+    last_updated: datetime
     active: bool
 
 
@@ -37,6 +38,6 @@ class ClientKeyOut(BaseModel):
 class ClientKeyMetadata(BaseModel):
     kid: str
     client_id: str
-    created: str
-    expires: str
-    last_updated: str
+    created: datetime
+    expires: datetime
+    last_updated: datetime

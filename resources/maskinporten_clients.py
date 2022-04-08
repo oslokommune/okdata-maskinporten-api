@@ -225,9 +225,7 @@ def list_client_keys(env: MaskinportenEnvironment, client_id: str):
 
     created = jwks["created"]
     last_updated = jwks["last_updated"]
-    expires = (datetime.fromisoformat(created) + timedelta(days=365)).isoformat(
-        timespec="milliseconds"
-    )
+    expires = datetime.fromisoformat(created) + timedelta(days=365)
 
     return [
         ClientKeyMetadata(

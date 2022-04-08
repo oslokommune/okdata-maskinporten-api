@@ -49,8 +49,8 @@ def test_create_client(
         "client_name": "some-client",
         "description": "Very cool client",
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
-        "created": "2021-09-15T10:20:43.354+02:00",
-        "last_updated": "2021-09-15T10:20:43.354+02:00",
+        "created": "2021-09-15T10:20:43.354000+02:00",
+        "last_updated": "2021-09-15T10:20:43.354000+02:00",
         "active": True,
     }
     assert created_client == client
@@ -82,8 +82,8 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
             "client_name": "some-client",
             "description": "Very cool client",
             "scopes": ["folkeregister:deling/offentligmedhjemmel"],
-            "created": "2021-09-15T10:20:43.354+02:00",
-            "last_updated": "2021-09-15T10:20:43.354+02:00",
+            "created": "2021-09-15T10:20:43.354000+02:00",
+            "last_updated": "2021-09-15T10:20:43.354000+02:00",
             "active": True,
         }
     ]
@@ -290,9 +290,9 @@ def test_list_client_keys(
         {
             "kid": "1970-01-01-12-00-00",
             "client_id": client_id,
-            "created": "2021-09-16T12:34:17.099+02:00",
-            "expires": "2022-09-16T12:34:17.099+02:00",
-            "last_updated": "2021-09-16T12:34:17.099+02:00",
+            "created": "2021-09-16T12:34:17.099000+02:00",
+            "expires": "2022-09-16T12:34:17.099000+02:00",
+            "last_updated": "2021-09-16T12:34:17.099000+02:00",
         }
     ]
 
