@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -27,12 +28,15 @@ class MaskinportenClientOut(BaseModel):
 
 
 class CreateClientKeyIn(BaseModel):
-    destination_aws_account: str
-    destination_aws_region: str
+    destination_aws_account: Optional[str]
+    destination_aws_region: Optional[str]
 
 
 class CreateClientKeyOut(BaseModel):
     kid: str
+    ssm_params: Optional[list[str]]
+    keystore: Optional[str]
+    key_password: Optional[str]
 
 
 class DeleteClientKeyOut(BaseModel):

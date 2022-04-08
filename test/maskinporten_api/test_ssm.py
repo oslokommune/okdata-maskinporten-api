@@ -3,11 +3,7 @@ import pytest
 from botocore.exceptions import ClientError
 from moto.sts.models import STSBackend
 
-from maskinporten_api.ssm import (
-    SendSecretsService,
-    Secrets,
-    AssumeRoleAccessDeniedException,
-)
+from maskinporten_api.ssm import AssumeRoleAccessDeniedException, send_secrets
 
 
 def test_send_secrets(mock_aws):
@@ -15,8 +11,8 @@ def test_send_secrets(mock_aws):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
 
-    SendSecretsService().send_secrets(
-        Secrets("some-value", "some-value", "some-value"),
+    send_secrets(
+        {"some-secret-1": "value", "some-secret-2": "value"},
         maskinporten_client_id,
         "123456789876",
         destination_aws_region,
@@ -31,9 +27,8 @@ def test_send_secrets(mock_aws):
     )
     parameter_names = [param["Name"] for param in parameter_metadata["Parameters"]]
     expected_parameter_names = [
-        f"/okdata/maskinporten/{maskinporten_client_id}/keystore",
-        f"/okdata/maskinporten/{maskinporten_client_id}/key_id",
-        f"/okdata/maskinporten/{maskinporten_client_id}/key_password",
+        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-1",
+        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-2",
     ]
 
     assert expected_parameter_names.sort() == parameter_names.sort()
@@ -44,8 +39,8 @@ def test_send_secrets_fails(raise_assume_role_access_denied):
     destination_aws_region = "eu-west-1"
 
     with pytest.raises(AssumeRoleAccessDeniedException) as e:
-        SendSecretsService().send_secrets(
-            Secrets("some-value", "some-value", "some-value"),
+        send_secrets(
+            {"some": "secret"},
             maskinporten_client_id,
             "123456789876",
             destination_aws_region,

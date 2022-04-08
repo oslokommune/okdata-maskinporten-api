@@ -30,11 +30,7 @@ from maskinporten_api.maskinporten_client import (
     UnsupportedEnvironmentError,
 )
 from maskinporten_api.permissions import create_okdata_permissions
-from maskinporten_api.ssm import (
-    SendSecretsService,
-    Secrets,
-    AssumeRoleAccessDeniedException,
-)
+from maskinporten_api.ssm import AssumeRoleAccessDeniedException, send_secrets
 from maskinporten_api.util import sanitize
 from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
@@ -151,8 +147,6 @@ def create_client_key(
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
-    send_secrets_service = SendSecretsService()
-
     try:
         maskinporten_client.get_client(client_id)
     except requests.HTTPError as e:
@@ -171,20 +165,23 @@ def create_client_key(
     )
 
     key_password = generate_password(pw_length=32)
+    keystore = pkcs12_from_key(key, key_password)
+    ssm_params = None
 
-    try:
-        send_secrets_service.send_secrets(
-            secrets=Secrets(
-                keystore=pkcs12_from_key(key, key_password),
-                key_id=key_id,
-                key_password=key_password,
-            ),
-            maskinporten_client_id=client_id,
-            destination_aws_account_id=body.destination_aws_account,
-            destination_aws_region=body.destination_aws_region,
-        )
-    except AssumeRoleAccessDeniedException as e:
-        raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
+    if body.destination_aws_account:
+        try:
+            ssm_params = send_secrets(
+                secrets={
+                    "keystore": keystore,
+                    "key_id": key_id,
+                    "key_password": key_password,
+                },
+                maskinporten_client_id=client_id,
+                destination_aws_account_id=body.destination_aws_account,
+                destination_aws_region=body.destination_aws_region,
+            )
+        except AssumeRoleAccessDeniedException as e:
+            raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
     try:
         jwks = maskinporten_client.create_client_key(client_id, jwk).json()
@@ -204,7 +201,12 @@ def create_client_key(
         client_id=client_id,
     )
 
-    return CreateClientKeyOut(kid=kid)
+    return CreateClientKeyOut(
+        kid=kid,
+        ssm_params=ssm_params,
+        keystore=None if body.destination_aws_account else keystore,
+        key_password=None if body.destination_aws_account else key_password,
+    )
 
 
 @router.delete(
