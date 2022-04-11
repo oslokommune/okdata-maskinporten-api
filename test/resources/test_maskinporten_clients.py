@@ -60,7 +60,7 @@ def test_create_client(
     assert permissions_request.headers["Authorization"] == f"Bearer {valid_token}"
     assert permissions_request.json() == {
         "owner": {"user_id": username, "user_type": "user"},
-        "resource_name": f"okdata:maskinporten-client:{maskinporten_create_client_body['env']}-{client['client_id']}",
+        "resource_name": f"maskinporten:client:{maskinporten_create_client_body['env']}-{client['client_id']}",
     }
 
 
