@@ -16,6 +16,18 @@ class UnsupportedEnvironmentError(Exception):
         super().__init__(f"Maskinporten environment '{env}' is not supported")
 
 
+class TooManyKeysError(Exception):
+    def __init__(self, client_id, max_keys):
+        super().__init__(
+            f"Client '{client_id}' already has the maximum number of registered keys: {max_keys}"
+        )
+
+
+class KeyNotFoundError(Exception):
+    def __init__(self, client_id, key_id):
+        super().__init__(f"Key '{key_id}' not found for client '{client_id}'")
+
+
 @dataclasses.dataclass
 class EnvConfig:
     name: MaskinportenEnvironment
@@ -67,13 +79,6 @@ def env_config(env):
         raise UnsupportedEnvironmentError(env)
 
 
-class TooManyKeysError(Exception):
-    def __init__(self, client_id, max_keys):
-        super().__init__(
-            f"Client '{client_id}' already has the maximum number of registered keys: {max_keys}"
-        )
-
-
 class MaskinportenClient:
     # The maximum number of keys that a Maskinporten client will hold. This is
     # a restriction in Maskinporten itself.
@@ -115,7 +120,7 @@ class MaskinportenClient:
         return self._request("GET", ["idporten:dcr.read"])
 
     def create_client_key(self, client_id: str, jwk: dict):
-        existing_jwks = self.get_client_keys(client_id).get("keys", [])
+        existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
 
         if len(existing_jwks) >= self.MAX_KEYS:
             raise TooManyKeysError(client_id, self.MAX_KEYS)
@@ -131,8 +136,35 @@ class MaskinportenClient:
             json={"keys": [jwk, *existing_jwks]},
         )
 
+    def delete_client_key(self, client_id, key_id):
+        existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
+        updated_jwks = [jwk for jwk in existing_jwks if jwk["kid"] != key_id]
+
+        if len(existing_jwks) == len(updated_jwks):
+            raise KeyNotFoundError(client_id, key_id)
+
+        if len(updated_jwks) == 0:
+            # When deleting the last key, we need to DELETE instead of POST-ing
+            # an empty `keys` object.
+            return self._request(
+                "DELETE",
+                ["idporten:dcr.write"],
+                f"{client_id}/jwks",
+            )
+
+        return self._request(
+            "POST",
+            ["idporten:dcr.write"],
+            f"{client_id}/jwks",
+            json={"keys": updated_jwks},
+        )
+
     def get_client_keys(self, client_id: str):
-        return self._request("GET", ["idporten:dcr.read"], f"{client_id}/jwks")
+        return self._request(
+            "GET",
+            ["idporten:dcr.read"],
+            f"{client_id}/jwks",
+        )
 
     def _request(self, method, scopes, path="", json=None):
         access_token = self.client.get_access_token(scopes)
@@ -149,4 +181,4 @@ class MaskinportenClient:
         )
         response.raise_for_status()
 
-        return response.json()
+        return response
