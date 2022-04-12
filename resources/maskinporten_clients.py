@@ -167,8 +167,9 @@ def create_client_key(
     key_password = generate_password(pw_length=32)
     keystore = pkcs12_from_key(key, key_password)
     ssm_params = None
+    send_to_aws = body.destination_aws_account and body.destination_aws_region
 
-    if body.destination_aws_account:
+    if send_to_aws:
         try:
             ssm_params = send_secrets(
                 secrets={
@@ -204,8 +205,8 @@ def create_client_key(
     return CreateClientKeyOut(
         kid=kid,
         ssm_params=ssm_params,
-        keystore=None if body.destination_aws_account else keystore,
-        key_password=None if body.destination_aws_account else key_password,
+        keystore=None if send_to_aws else keystore,
+        key_password=None if send_to_aws else key_password,
     )
 
 
