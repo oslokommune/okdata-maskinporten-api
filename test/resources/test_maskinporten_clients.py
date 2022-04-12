@@ -132,7 +132,7 @@ def test_list_clients_validation_error(
     )
 
 
-def test_create_client_key(
+def test_create_client_key_to_aws(
     maskinporten_create_client_key_response,
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
@@ -142,7 +142,7 @@ def test_create_client_key(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten_clients.SendSecretsService, "send_secrets")
+    mocker.spy(maskinporten_clients, "send_secrets")
 
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
@@ -176,15 +176,71 @@ def test_create_client_key(
 
     assert res.status_code == 201
     key = res.json()
-    assert key == {"kid": "1970-01-01-12-00-00"}
+    assert key == {
+        "kid": "1970-01-01-12-00-00",
+        "key_password": None,
+        "keystore": None,
+        "ssm_params": [
+            f"/okdata/maskinporten/{client_id}/keystore",
+            f"/okdata/maskinporten/{client_id}/key_id",
+            f"/okdata/maskinporten/{client_id}/key_password",
+        ],
+    }
 
-    maskinporten_clients.SendSecretsService.send_secrets.assert_called_once_with(
-        ANY,
-        secrets=maskinporten_clients.Secrets(ANY, ANY, ANY),
+    maskinporten_clients.send_secrets.assert_called_once_with(
+        secrets={"keystore": ANY, "key_id": ANY, "key_password": ANY},
         maskinporten_client_id=client_id,
         destination_aws_account_id=destination_aws_account,
         destination_aws_region=destination_aws_region,
     )
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
+    assert audit_log_entry["Item"]["Id"] == key["kid"]
+    assert audit_log_entry["Item"]["Action"] == "create"
+
+
+def test_create_client_key_return_to_client(
+    maskinporten_create_client_key_response,
+    maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    mocker.spy(maskinporten_clients, "send_secrets")
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
+        )
+        rm.post(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_create_client_key_response,
+        )
+        res = mock_client.post(
+            f"/clients/test/{client_id}/keys",
+            json={},
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+
+    assert res.status_code == 201
+    key = res.json()
+    assert key["kid"] == "1970-01-01-12-00-00"
+    assert isinstance(key["key_password"], str)
+    assert isinstance(key["keystore"], str)
+    assert not key["ssm_params"]
+
+    maskinporten_clients.send_secrets.assert_not_called()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
@@ -201,7 +257,7 @@ def test_create_client_key_too_many_keys(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten_clients.SendSecretsService, "send_secrets")
+    mocker.spy(maskinporten_clients, "send_secrets")
 
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
@@ -262,7 +318,7 @@ def test_create_client_key_assume_role_access_denied(
     maskinporten_create_client_key_response,
     mocker,
 ):
-    mocker.spy(maskinporten_clients.SendSecretsService, "send_secrets")
+    mocker.spy(maskinporten_clients, "send_secrets")
 
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
@@ -440,7 +496,6 @@ def test_list_client_keys(
 @pytest.fixture
 def raise_assume_role_access_denied(monkeypatch):
     def send_secrets(
-        self,
         secrets,
         maskinporten_client_id,
         destination_aws_account_id,
@@ -450,6 +505,4 @@ def raise_assume_role_access_denied(monkeypatch):
             "Error message from aws"
         )
 
-    monkeypatch.setattr(
-        maskinporten_clients.SendSecretsService, "send_secrets", send_secrets
-    )
+    monkeypatch.setattr(maskinporten_clients, "send_secrets", send_secrets)
