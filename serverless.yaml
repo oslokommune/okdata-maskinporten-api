@@ -49,12 +49,8 @@ functions:
   app:
     handler: handler.handler
     events:
-      - http:
-          path: /
-          method: ANY
-      - http:
-          path: /{any+}
-          method: ANY
+      - http: ANY /
+      - http: ANY /{any+}
     timeout: 29
 
 plugins:
