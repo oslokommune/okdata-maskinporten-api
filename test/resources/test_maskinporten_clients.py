@@ -7,7 +7,7 @@ from maskinporten_api.maskinporten_client import env_config
 
 from resources import maskinporten_clients
 from test.mock_utils import mock_access_token_generation_requests
-from test.resources.conftest import username, valid_token
+from test.resources.conftest import get_mock_user, valid_client_token
 
 CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
@@ -23,6 +23,7 @@ def test_create_client(
     mocker,
 ):
     with requests_mock.Mocker(real_http=True) as rm:
+        mock_user = get_mock_user("janedoe")
         mock_access_token_generation_requests(rm)
 
         rm.post(
@@ -37,7 +38,7 @@ def test_create_client(
         created_client = mock_client.post(
             "/clients",
             json=maskinporten_create_client_body,
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": mock_user.bearer_token},
         ).json()
 
     client = {
@@ -57,9 +58,11 @@ def test_create_client(
     assert audit_log_entry["Item"]["Action"] == "create"
 
     permissions_request = permissions_adapter.last_request
-    assert permissions_request.headers["Authorization"] == f"Bearer {valid_token}"
+    assert (
+        permissions_request.headers["Authorization"] == f"Bearer {valid_client_token}"
+    )
     assert permissions_request.json() == {
-        "owner": {"user_id": username, "user_type": "user"},
+        "owner": {"user_id": mock_user.principal_id, "user_type": "user"},
         "resource_name": f"maskinporten:client:{maskinporten_create_client_body['env']}-{client['client_id']}",
     }
 
@@ -84,7 +87,7 @@ def test_create_client_rollback(
         res = mock_client.post(
             "/clients",
             json=maskinporten_create_client_body,
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 500
@@ -92,13 +95,37 @@ def test_create_client_rollback(
     assert delete_client_matcher.called_once
 
 
-def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
+def test_create_client_no_create_permission(
+    maskinporten_create_client_body,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
+        rm.post(CLIENTS_ENDPOINT, json={"foo": "bar"})
+        res = mock_client.post(
+            "/clients",
+            json=maskinporten_create_client_body,
+            headers={"Authorization": get_mock_user("homersimpson").bearer_token},
+        )
+        assert res.status_code == 403
+
+
+def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_user = get_mock_user("janedoe")
+        mock_access_token_generation_requests(rm)
         rm.get(CLIENTS_ENDPOINT, json=maskinporten_get_clients_response)
+        rm.get(
+            f"{OKDATA_PERMISSION_API_URL}/my_permissions",
+            json=mock_user.permissions_api_my_permissions_response,
+        )
         response = mock_client.get(
             "/clients/test",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": mock_user.bearer_token},
         )
 
     assert response.json() == [
@@ -114,6 +141,41 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
     ]
 
 
+def test_list_clients_no_permissions(
+    mock_client, mock_authorizer, maskinporten_get_clients_response
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_user = get_mock_user("homersimpson")
+        mock_access_token_generation_requests(rm)
+        rm.get(CLIENTS_ENDPOINT, json=maskinporten_get_clients_response)
+        rm.get(
+            f"{OKDATA_PERMISSION_API_URL}/my_permissions",
+            json=mock_user.permissions_api_my_permissions_response,
+        )
+        response = mock_client.get(
+            "/clients/test",
+            headers={"Authorization": mock_user.bearer_token},
+        )
+
+        assert response.status_code == 200
+        assert len(response.json()) == 0
+
+
+def test_list_clients_unauthorized(
+    mock_client, mock_authorizer, maskinporten_get_clients_response
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(CLIENTS_ENDPOINT, json=maskinporten_get_clients_response)
+        response = mock_client.get(
+            "/clients/test",
+            headers={"Authorization": get_mock_user("nibbler").bearer_token},
+        )
+
+        assert response.status_code == 403
+        assert response.json()["message"] == "Forbidden"
+
+
 def test_list_clients_validation_error(
     mock_client, mock_authorizer, maskinporten_get_clients_response
 ):
@@ -122,7 +184,7 @@ def test_list_clients_validation_error(
         rm.get(CLIENTS_ENDPOINT, json=maskinporten_get_clients_response)
         response = mock_client.get(
             "/clients/hest",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert response.status_code == 400
@@ -169,9 +231,7 @@ def test_create_client_key_to_aws(
                 "destination_aws_account": destination_aws_account,
                 "destination_aws_region": destination_aws_region,
             },
-            headers={
-                "Authorization": f"Bearer {valid_token}",
-            },
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 201
@@ -228,7 +288,7 @@ def test_create_client_key_return_to_client(
         res = mock_client.post(
             f"/clients/test/{client_id}/keys",
             json={},
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 201
@@ -279,9 +339,7 @@ def test_create_client_key_too_many_keys(
                 "destination_aws_account": "123456789876",
                 "destination_aws_region": "eu-west-1",
             },
-            headers={
-                "Authorization": f"Bearer {valid_token}",
-            },
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 409
@@ -298,11 +356,12 @@ def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):
             "destination_aws_account": "123456789876",
             "destination_aws_region": "eu-west-1",
         },
-        headers={
-            "Authorization": f"Bearer {valid_token}",
-        },
+        headers={"Authorization": get_mock_user("janedoe").bearer_token},
     )
-    assert res.status_code == 422
+    assert res.status_code == 400
+    assert (
+        res.json()["message"] == "Invalid client ID (must match pattern ^[0-9a-f-]+$)"
+    )
 
 
 def test_create_client_key_assume_role_access_denied(
@@ -336,9 +395,7 @@ def test_create_client_key_assume_role_access_denied(
                 "destination_aws_account": destination_aws_account,
                 "destination_aws_region": destination_aws_region,
             },
-            headers={
-                "Authorization": f"Bearer {valid_token}",
-            },
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert response.status_code == 422
@@ -373,7 +430,7 @@ def test_delete_client_key_last_remaining(
 
         res = mock_client.delete(
             f"/clients/test/{client_id}/keys/{key_id}",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 200
@@ -419,7 +476,7 @@ def test_delete_client_key_more_than_one_left(
         )
         res = mock_client.delete(
             f"/clients/test/{client_id}/keys/{key_id}",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 200
@@ -453,7 +510,7 @@ def test_delete_client_key_no_keys(
         rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
         res = mock_client.delete(
             f"/clients/test/{client_id}/keys/{key_id}",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 404
@@ -472,7 +529,7 @@ def test_list_client_keys(
         )
         response = mock_client.get(
             f"/clients/test/{client_id}/keys",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert response.status_code == 200
@@ -485,6 +542,21 @@ def test_list_client_keys(
             "last_updated": "2021-09-16T12:34:17.099000+02:00",
         }
     ]
+
+
+def test_list_client_keys_no_permission_for_resource(mock_client, mock_authorizer):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={"foo": "bar"})
+        response = mock_client.get(
+            f"/clients/test/{client_id}/keys",
+            headers={"Authorization": get_mock_user("homersimpson").bearer_token},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["message"] == "Forbidden"
 
 
 @pytest.fixture
