@@ -34,3 +34,11 @@ def create_okdata_permissions(
     create_permissions_response.raise_for_status()
 
     return create_permissions_response
+
+
+def get_user_permissions(bearer_token):
+    return requests.get(
+        f"{OKDATA_PERMISSION_API_URL}/my_permissions",
+        headers={"Authorization": f"Bearer {bearer_token}"},
+        params={"resource_type": "maskinporten:client"},
+    ).json()

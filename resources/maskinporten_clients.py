@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import requests
 from botocore.exceptions import ClientError
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Path, status
 from okdata.aws.logging import log_exception
 
 from models import (
@@ -30,7 +30,7 @@ from maskinporten_api.maskinporten_client import (
     TooManyKeysError,
     UnsupportedEnvironmentError,
 )
-from maskinporten_api.permissions import create_okdata_permissions
+from maskinporten_api.permissions import create_okdata_permissions, get_user_permissions
 from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
     ForeignAccountSecretsClient,
@@ -48,7 +48,6 @@ router = APIRouter()
 
 @router.post(
     "",
-    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_201_CREATED,
     response_model=MaskinportenClientOut,
     responses=error_message_models(
@@ -61,6 +60,8 @@ def create_client(
     auth_info: AuthInfo = Depends(),
     service_client: ServiceClient = Depends(),
 ):
+    authorize(auth_info, scope="maskinporten:client:create")
+
     logger.debug(
         sanitize(
             f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
@@ -102,7 +103,6 @@ def create_client(
 
 @router.get(
     "/{env}",
-    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=list[MaskinportenClientOut],
     responses=error_message_models(
@@ -111,20 +111,38 @@ def create_client(
     ),
 )
 def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
+    required_scope = "maskinporten:client:read"
+    authorize(auth_info, scope=required_scope)
+
+    try:
+        user_permissions = get_user_permissions(auth_info.bearer_token)
+    except requests.RequestException as e:
+        log_exception(e)
+        raise ErrorResponse(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
+        )
+
     try:
         maskinporten_client = MaskinportenClient(env)
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
-    return [
-        MaskinportenClientOut.parse_obj(c)
-        for c in maskinporten_client.get_clients().json()
-    ]
+    clients = []
+
+    for client in maskinporten_client.get_clients().json():
+        resource_name = f"maskinporten:client:{env}-{client['client_id']}"
+
+        if (
+            resource_name in user_permissions
+            and required_scope in user_permissions[resource_name]["scopes"]
+        ):
+            clients.append(MaskinportenClientOut.parse_obj(client))
+
+    return clients
 
 
 @router.post(
     "/{env}/{client_id}/keys",
-    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_201_CREATED,
     response_model=CreateClientKeyOut,
     responses=error_message_models(
@@ -135,11 +153,17 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
     ),
 )
 def create_client_key(
-    env: MaskinportenEnvironment,
-    client_id: str,
     body: CreateClientKeyIn,
+    env: MaskinportenEnvironment,
+    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
 ):
+    authorize(
+        auth_info,
+        scope="maskinporten:client:write",
+        resource=f"maskinporten:client:{env}-{client_id}",
+    )
+
     if not re.fullmatch("[0-9a-f-]+", client_id):
         raise ErrorResponse(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -226,7 +250,6 @@ def create_client_key(
 
 @router.delete(
     "/{env}/{client_id}/keys/{key_id}",
-    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=DeleteClientKeyOut,
     responses=error_message_models(
@@ -238,15 +261,15 @@ def create_client_key(
 )
 def delete_client_key(
     env: MaskinportenEnvironment,
-    client_id: str,
-    key_id: str,
+    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    key_id: str = Path(...),
     auth_info: AuthInfo = Depends(),
 ):
-    if not re.fullmatch("[0-9a-f-]+", client_id):
-        raise ErrorResponse(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            f"Invalid client ID: {client_id}",
-        )
+    authorize(
+        auth_info,
+        scope="maskinporten:client:write",
+        resource=f"maskinporten:client:{env}-{client_id}",
+    )
 
     try:
         maskinporten_client = MaskinportenClient(env)
@@ -285,7 +308,6 @@ def delete_client_key(
 
 @router.get(
     "/{env}/{client_id}/keys",
-    dependencies=[Depends(authorize(scope="maskinporten:client:create"))],
     status_code=status.HTTP_200_OK,
     response_model=list[ClientKeyMetadata],
     responses=error_message_models(
@@ -294,7 +316,17 @@ def delete_client_key(
         status.HTTP_404_NOT_FOUND,
     ),
 )
-def list_client_keys(env: MaskinportenEnvironment, client_id: str):
+def list_client_keys(
+    env: MaskinportenEnvironment,
+    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    auth_info: AuthInfo = Depends(),
+):
+    authorize(
+        auth_info,
+        scope="maskinporten:client:read",
+        resource=f"maskinporten:client:{env}-{client_id}",
+    )
+
     try:
         maskinporten_client = MaskinportenClient(env)
     except UnsupportedEnvironmentError as e:
