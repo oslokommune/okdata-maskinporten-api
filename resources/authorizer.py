@@ -22,10 +22,6 @@ def keycloak_client():
     )
 
 
-def resource_authorizer() -> ResourceAuthorizer:
-    return ResourceAuthorizer()
-
-
 http_bearer = HTTPBearer(scheme_name="Keycloak token")
 
 
