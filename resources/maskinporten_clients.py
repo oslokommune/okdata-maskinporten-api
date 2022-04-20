@@ -4,6 +4,7 @@ import re
 from datetime import datetime, timedelta
 
 import requests
+from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, status
 from okdata.aws.logging import log_exception
 
@@ -30,7 +31,10 @@ from maskinporten_api.maskinporten_client import (
     UnsupportedEnvironmentError,
 )
 from maskinporten_api.permissions import create_okdata_permissions
-from maskinporten_api.ssm import AssumeRoleAccessDeniedException, send_secrets
+from maskinporten_api.ssm import (
+    AssumeRoleAccessDeniedError,
+    ForeignAccountSecretsClient,
+)
 from maskinporten_api.util import sanitize
 from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
@@ -171,25 +175,35 @@ def create_client_key(
 
     if send_to_aws:
         try:
-            ssm_params = send_secrets(
-                secrets={
-                    "keystore": keystore,
-                    "key_id": key_id,
-                    "key_password": key_password,
-                },
-                maskinporten_client_id=client_id,
-                destination_aws_account_id=body.destination_aws_account,
-                destination_aws_region=body.destination_aws_region,
+            secrets_client = ForeignAccountSecretsClient(
+                body.destination_aws_account,
+                body.destination_aws_region,
+                client_id,
             )
-        except AssumeRoleAccessDeniedException as e:
+        except AssumeRoleAccessDeniedError as e:
             raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
     try:
         jwks = maskinporten_client.create_client_key(client_id, jwk).json()
     except TooManyKeysError as e:
-        # TODO: We should revert the secrets injected to AWS here. Actually we
-        #       should do that if any exception is raised.
         raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
+
+    if send_to_aws:
+        try:
+            ssm_params = secrets_client.send_secrets(
+                {
+                    "keystore": keystore,
+                    "key_id": key_id,
+                    "key_password": key_password,
+                }
+            )
+        except ClientError as e:
+            # Secrets injection failed somehow. Retract the newly created key.
+            log_exception(e)
+            maskinporten_client.delete_client_key(client_id, key_id)
+            raise ErrorResponse(
+                status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
+            )
 
     kid = jwks["keys"][0]["kid"]
 
