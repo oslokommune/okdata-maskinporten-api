@@ -360,7 +360,8 @@ def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):
     )
     assert res.status_code == 400
     assert (
-        res.json()["message"] == "Invalid client ID (must match pattern ^[0-9a-f-]+$)"
+        res.json()["message"]
+        == 'Invalid client ID (string does not match regex "^[0-9a-f-]+$")'
     )
 
 

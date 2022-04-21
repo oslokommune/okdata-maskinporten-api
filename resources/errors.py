@@ -28,7 +28,7 @@ def pydantic_error_to_str(err):
         )
 
     if err["loc"] == ("path", "client_id"):
-        return "Invalid client ID (must match pattern ^[0-9a-f-]+$)"
+        return f"Invalid client ID ({err['msg']})"
 
     # Fall back to Pydantic's default in the general case.
     return str(err)
