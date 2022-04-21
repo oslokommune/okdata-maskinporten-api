@@ -56,6 +56,7 @@ def get_mock_user(principal_id):
     for user in mock_user_pool:
         if user.principal_id == principal_id:
             return user
+    return None
 
 
 def generate_mock_client_response(
@@ -167,9 +168,7 @@ def mock_authorizer(monkeypatch):
                 if scope != permission_scope:
                     continue
 
-                if (not resource_name and scope == permission_scope) or (
-                    resource_name == permission_resource
-                ):
+                if not resource_name or resource_name == permission_resource:
                     return True
         return False
 
