@@ -132,10 +132,9 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
     for client in maskinporten_client.get_clients().json():
         resource_name = f"maskinporten:client:{env}-{client['client_id']}"
 
-        if (
-            resource_name in user_permissions
-            and required_scope in user_permissions[resource_name]["scopes"]
-        ):
+        permission = user_permissions.get(resource_name)
+
+        if permission and required_scope in permission["scopes"]:
             clients.append(MaskinportenClientOut.parse_obj(client))
 
     return clients
