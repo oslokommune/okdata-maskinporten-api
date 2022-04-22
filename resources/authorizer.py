@@ -22,10 +22,6 @@ def keycloak_client():
     )
 
 
-def resource_authorizer() -> ResourceAuthorizer:
-    return ResourceAuthorizer()
-
-
 http_bearer = HTTPBearer(scheme_name="Keycloak token")
 
 
@@ -59,12 +55,10 @@ class AuthInfo:
         self.bearer_token = authorization.credentials
 
 
-def authorize(scope: str, resource: Optional[str] = None):
-    def _verify_permission(
-        auth_info: AuthInfo = Depends(),
-        resource_authorizer: ResourceAuthorizer = Depends(resource_authorizer),
-    ):
-        if not resource_authorizer.has_access(auth_info.bearer_token, scope, resource):
-            raise ErrorResponse(403, "Forbidden")
+def authorize(auth_info: AuthInfo, scope: str, resource: Optional[str] = None):
+    resource_authorizer = ResourceAuthorizer()
 
-    return _verify_permission
+    has_access = resource_authorizer.has_access(auth_info.bearer_token, scope, resource)
+
+    if not has_access:
+        raise ErrorResponse(403, "Forbidden")

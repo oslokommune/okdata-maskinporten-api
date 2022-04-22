@@ -27,5 +27,8 @@ def pydantic_error_to_str(err):
             ", ".join([e.value for e in MaskinportenEnvironment])
         )
 
+    if err["loc"] == ("path", "client_id"):
+        return f"Invalid client ID ({err['msg']})"
+
     # Fall back to Pydantic's default in the general case.
     return str(err)
