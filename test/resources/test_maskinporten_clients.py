@@ -142,7 +142,7 @@ def test_create_client_key_to_aws(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten_clients, "send_secrets")
+    mocker.spy(maskinporten_clients.ForeignAccountSecretsClient, "send_secrets")
 
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
@@ -187,11 +187,9 @@ def test_create_client_key_to_aws(
         ],
     }
 
-    maskinporten_clients.send_secrets.assert_called_once_with(
-        secrets={"keystore": ANY, "key_id": ANY, "key_password": ANY},
-        maskinporten_client_id=client_id,
-        destination_aws_account_id=destination_aws_account,
-        destination_aws_region=destination_aws_region,
+    maskinporten_clients.ForeignAccountSecretsClient.send_secrets.assert_called_once_with(
+        ANY,
+        {"keystore": ANY, "key_id": ANY, "key_password": ANY},
     )
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
@@ -210,7 +208,7 @@ def test_create_client_key_return_to_client(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten_clients, "send_secrets")
+    mocker.spy(maskinporten_clients.ForeignAccountSecretsClient, "send_secrets")
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -240,7 +238,7 @@ def test_create_client_key_return_to_client(
     assert isinstance(key["keystore"], str)
     assert not key["ssm_params"]
 
-    maskinporten_clients.send_secrets.assert_not_called()
+    maskinporten_clients.ForeignAccountSecretsClient.send_secrets.assert_not_called()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
@@ -257,8 +255,6 @@ def test_create_client_key_too_many_keys(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten_clients, "send_secrets")
-
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     # Fill up the key chain.
@@ -318,8 +314,6 @@ def test_create_client_key_assume_role_access_denied(
     maskinporten_create_client_key_response,
     mocker,
 ):
-    mocker.spy(maskinporten_clients, "send_secrets")
-
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -495,14 +489,9 @@ def test_list_client_keys(
 
 @pytest.fixture
 def raise_assume_role_access_denied(monkeypatch):
-    def send_secrets(
-        secrets,
-        maskinporten_client_id,
-        destination_aws_account_id,
-        destination_aws_region,
-    ):
-        raise maskinporten_clients.AssumeRoleAccessDeniedException(
-            "Error message from aws"
-        )
+    def init(self, *args, **kwargs):
+        raise maskinporten_clients.AssumeRoleAccessDeniedError("Error message from aws")
 
-    monkeypatch.setattr(maskinporten_clients, "send_secrets", send_secrets)
+    monkeypatch.setattr(
+        maskinporten_clients.ForeignAccountSecretsClient, "__init__", init
+    )

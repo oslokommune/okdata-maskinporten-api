@@ -11,55 +11,55 @@ def get_secret(key):
     return response["Parameter"]["Value"]
 
 
-class AssumeRoleAccessDeniedException(Exception):
-    """Raised when assume role request to aws fails with an access denied error"""
+class AssumeRoleAccessDeniedError(Exception):
+    """Raised when access is denied when assuming an AWS role."""
 
     pass
 
 
-def send_secrets(
-    secrets: dict,
-    maskinporten_client_id: str,
-    destination_aws_account_id: str,
-    destination_aws_region: str,
-):
-    """Send secret values to another AWS account.
+class ForeignAccountSecretsClient:
+    def __init__(self, aws_account, aws_region, client_id):
+        try:
+            assume_role_response = boto3.client("sts").assume_role(
+                RoleArn=f"arn:aws:iam::{aws_account}:role/dataplatform-maskinporten",
+                RoleSessionName="dataplatform-maskinporten",
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "AccessDenied":
+                raise AssumeRoleAccessDeniedError(e.response["Error"]["Message"])
+            raise e
 
-    Secret values are stored as SecureString SSM parameters with prefix
-    '/okdata/maskinporten/`maskinporten_client_id`/' in AWS account with ID
-    `destination_aws_account_id`.
+        credentials = assume_role_response["Credentials"]
 
-    Return a list of the created SSM parameters.
-    """
-    try:
-        assume_role_response = boto3.client("sts").assume_role(
-            RoleArn=f"arn:aws:iam::{destination_aws_account_id}:role/dataplatform-maskinporten",
-            RoleSessionName="dataplatform-maskinporten",
+        self.ssm_client = boto3.client(
+            "ssm",
+            region_name=aws_region,
+            aws_access_key_id=credentials["AccessKeyId"],
+            aws_secret_access_key=credentials["SecretAccessKey"],
+            aws_session_token=credentials["SessionToken"],
         )
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "AccessDenied":
-            raise AssumeRoleAccessDeniedException(e.response["Error"]["Message"])
-        raise e
+        self.client_id = client_id
 
-    credentials = assume_role_response["Credentials"]
+    def ssm_path(self, key):
+        return f"/okdata/maskinporten/{self.client_id}/{key}"
 
-    ssm_client = boto3.client(
-        "ssm",
-        region_name=destination_aws_region,
-        aws_access_key_id=credentials["AccessKeyId"],
-        aws_secret_access_key=credentials["SecretAccessKey"],
-        aws_session_token=credentials["SessionToken"],
-    )
+    def send_secret(self, key, value):
+        """Send a secret value to another AWS account.
 
-    ssm_params = []
-    for key, value in secrets.items():
-        path = f"/okdata/maskinporten/{maskinporten_client_id}/{key}"
-        ssm_client.put_parameter(
-            Name=path,
-            Value=value,
-            Type="SecureString",
-            Overwrite=True,
+        Secret values are stored as SecureString SSM parameters with prefix
+        `/okdata/maskinporten/{self.client_id}/`.
+
+        Return the path of the created SSM parameter.
+        """
+        path = self.ssm_path(key)
+        self.ssm_client.put_parameter(
+            Name=path, Value=value, Type="SecureString", Overwrite=True
         )
-        ssm_params.append(path)
+        return path
 
-    return ssm_params
+    def send_secrets(self, secrets: dict):
+        """Send secret values to another AWS account.
+
+        Return a list of the paths of the created SSM parameters.
+        """
+        return [self.send_secret(key, value) for key, value in secrets.items()]

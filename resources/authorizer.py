@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -29,7 +30,7 @@ http_bearer = HTTPBearer(scheme_name="Keycloak token")
 
 
 class ServiceClient:
-    authorization_header: str
+    authorization_header: dict
 
     def __init__(
         self,
@@ -58,7 +59,7 @@ class AuthInfo:
         self.bearer_token = authorization.credentials
 
 
-def authorize(scope: str, resource: str = None):
+def authorize(scope: str, resource: Optional[str] = None):
     def _verify_permission(
         auth_info: AuthInfo = Depends(),
         resource_authorizer: ResourceAuthorizer = Depends(resource_authorizer),

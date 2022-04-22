@@ -3,20 +3,20 @@ import pytest
 from botocore.exceptions import ClientError
 from moto.sts.models import STSBackend
 
-from maskinporten_api.ssm import AssumeRoleAccessDeniedException, send_secrets
+from maskinporten_api.ssm import (
+    AssumeRoleAccessDeniedError,
+    ForeignAccountSecretsClient,
+)
 
 
 def test_send_secrets(mock_aws):
-
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
-
-    send_secrets(
-        {"some-secret-1": "value", "some-secret-2": "value"},
-        maskinporten_client_id,
-        "123456789876",
-        destination_aws_region,
+    secrets_client = ForeignAccountSecretsClient(
+        "123456789876", destination_aws_region, maskinporten_client_id
     )
+
+    secrets_client.send_secrets({"some-secret-1": "value", "some-secret-2": "value"})
 
     ssm_client = boto3.client("ssm", region_name=destination_aws_region)
 
@@ -38,12 +38,9 @@ def test_send_secrets_fails(raise_assume_role_access_denied):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
 
-    with pytest.raises(AssumeRoleAccessDeniedException) as e:
-        send_secrets(
-            {"some": "secret"},
-            maskinporten_client_id,
-            "123456789876",
-            destination_aws_region,
+    with pytest.raises(AssumeRoleAccessDeniedError) as e:
+        ForeignAccountSecretsClient(
+            "123456789876", destination_aws_region, maskinporten_client_id
         )
         assert str(e) == "Some error"
 
