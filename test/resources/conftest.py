@@ -66,7 +66,7 @@ def generate_mock_client_response(
 ):
     return {
         "client_name": client_name,
-        "description": "Very cool client",
+        "description": "Freg-klient for testing (My team)",
         "scopes": scopes,
         "authorization_lifetime": 0,
         "access_token_lifetime": 0,
@@ -88,8 +88,9 @@ def generate_mock_client_response(
 @pytest.fixture
 def maskinporten_create_client_body():
     return {
-        "name": "some-client",
-        "description": "Very cool client",
+        "team_id": "2cac0456-372f-d20a-054e-f9df155bb2f9",
+        "provider": "freg",
+        "integration": "testing",
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
         "env": "test",
     }
@@ -99,7 +100,7 @@ def maskinporten_create_client_body():
 def maskinporten_create_client_response():
     return generate_mock_client_response(
         client_id="d1427568-1eba-1bf2-59ed-1c4af065f30e",
-        client_name="some-client",
+        client_name="my-team-freg-testing",
     )
 
 
