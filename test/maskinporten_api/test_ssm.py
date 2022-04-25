@@ -20,18 +20,18 @@ def test_send_secrets(mock_aws):
 
     ssm_client = boto3.client("ssm", region_name=destination_aws_region)
 
-    parameter_metadata = ssm_client.describe_parameters()
-
-    assert all(
-        [param["Type"] == "SecureString" for param in parameter_metadata["Parameters"]]
-    )
-    parameter_names = [param["Name"] for param in parameter_metadata["Parameters"]]
-    expected_parameter_names = [
-        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-1",
-        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-2",
+    okdata_parameters = [
+        p
+        for p in ssm_client.describe_parameters()["Parameters"]
+        if p["Name"].startswith("/okdata/")
     ]
 
-    assert expected_parameter_names.sort() == parameter_names.sort()
+    assert all([p["Type"] == "SecureString" for p in okdata_parameters])
+
+    assert {p["Name"] for p in okdata_parameters} == {
+        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-1",
+        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-2",
+    }
 
 
 def test_send_secrets_fails(raise_assume_role_access_denied):
@@ -43,6 +43,32 @@ def test_send_secrets_fails(raise_assume_role_access_denied):
             "123456789876", destination_aws_region, maskinporten_client_id
         )
         assert str(e) == "Some error"
+
+
+def test_delete_secrets(mock_aws):
+    maskinporten_client_id = "some-client"
+    destination_aws_region = "eu-west-1"
+    secrets_client = ForeignAccountSecretsClient(
+        "123456789876", destination_aws_region, maskinporten_client_id
+    )
+
+    secrets_client.send_secrets({"secret-1": "value", "secret-2": "value"})
+
+    assert secrets_client.delete_secrets(["secret-1", "secret-3"]) == [
+        f"/okdata/maskinporten/{maskinporten_client_id}/secret-1"
+    ]
+
+    ssm_client = boto3.client("ssm", region_name=destination_aws_region)
+
+    okdata_parameters = {
+        p["Name"]
+        for p in ssm_client.describe_parameters()["Parameters"]
+        if p["Name"].startswith("/okdata/")
+    }
+
+    assert okdata_parameters == {
+        f"/okdata/maskinporten/{maskinporten_client_id}/secret-2",
+    }
 
 
 @pytest.fixture
