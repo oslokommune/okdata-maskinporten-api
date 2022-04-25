@@ -43,11 +43,8 @@ class ForeignAccountSecretsClient:
     def ssm_path(self, key):
         return f"/okdata/maskinporten/{self.client_id}/{key}"
 
-    def send_secret(self, key, value):
+    def _send_secret(self, key, value):
         """Send a secret value to another AWS account.
-
-        Secret values are stored as SecureString SSM parameters with prefix
-        `/okdata/maskinporten/{self.client_id}/`.
 
         Return the path of the created SSM parameter.
         """
@@ -60,6 +57,18 @@ class ForeignAccountSecretsClient:
     def send_secrets(self, secrets: dict):
         """Send secret values to another AWS account.
 
+        Secret values are stored as SecureString SSM parameters with prefix
+        `/okdata/maskinporten/{self.client_id}/`.
+
         Return a list of the paths of the created SSM parameters.
         """
-        return [self.send_secret(key, value) for key, value in secrets.items()]
+        return [self._send_secret(key, value) for key, value in secrets.items()]
+
+    def delete_secrets(self, secrets):
+        """Delete secrets belonging to a Maskinporten client.
+
+        Return a list of the deleted secrets.
+        """
+        return self.ssm_client.delete_parameters(
+            Names=[self.ssm_path(s) for s in secrets]
+        )["DeletedParameters"]
