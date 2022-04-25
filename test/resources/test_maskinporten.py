@@ -1,10 +1,10 @@
 import os
-import pytest
-import requests_mock
 from unittest.mock import ANY
 
-from maskinporten_api.maskinporten_client import env_config
+import pytest
+import requests_mock
 
+from maskinporten_api.maskinporten_client import env_config
 from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import get_mock_user, valid_client_token
@@ -43,8 +43,8 @@ def test_create_client(
 
     client = {
         "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
-        "client_name": "some-client",
-        "description": "Very cool client",
+        "client_name": "my-team-freg-testing",
+        "description": "Freg-klient for testing (My team)",
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
         "created": "2021-09-15T10:20:43.354000+02:00",
         "last_updated": "2021-09-15T10:20:43.354000+02:00",
@@ -131,8 +131,8 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
     assert response.json() == [
         {
             "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
-            "client_name": "some-client",
-            "description": "Very cool client",
+            "client_name": "my-team-freg-testing",
+            "description": "Freg-klient for testing (My team)",
             "scopes": ["folkeregister:deling/offentligmedhjemmel"],
             "created": "2021-09-15T10:20:43.354000+02:00",
             "last_updated": "2021-09-15T10:20:43.354000+02:00",

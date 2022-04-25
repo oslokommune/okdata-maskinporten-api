@@ -62,9 +62,14 @@ def create_client(
 ):
     authorize(auth_info, scope="maskinporten:client:create")
 
+    # TODO: Look up the actual team name here instead of using the (unreadable)
+    #       team ID once permission-api is extended to support it (T#179).
+    team_name = body.team_id
+
     logger.debug(
         sanitize(
-            f"Creating new client '{body.name}' in {body.env} with scopes {body.scopes}"
+            f"Creating new {body.provider} client for team '{team_name}' in "
+            "{body.env} with scopes {body.scopes}"
         )
     )
     try:
@@ -72,7 +77,9 @@ def create_client(
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
-    new_client = maskinporten_client.create_client(body).json()
+    new_client = maskinporten_client.create_client(
+        team_name, body.provider, body.integration, body.scopes
+    ).json()
     new_client_id = new_client["client_id"]
 
     try:
