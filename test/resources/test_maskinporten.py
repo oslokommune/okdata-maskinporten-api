@@ -5,7 +5,7 @@ from unittest.mock import ANY
 
 from maskinporten_api.maskinporten_client import env_config
 
-from resources import maskinporten_clients
+from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import get_mock_user, valid_client_token
 
@@ -204,7 +204,7 @@ def test_create_client_key_to_aws(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten_clients.ForeignAccountSecretsClient, "send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "send_secrets")
 
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
@@ -247,7 +247,7 @@ def test_create_client_key_to_aws(
         ],
     }
 
-    maskinporten_clients.ForeignAccountSecretsClient.send_secrets.assert_called_once_with(
+    maskinporten.ForeignAccountSecretsClient.send_secrets.assert_called_once_with(
         ANY,
         {"keystore": ANY, "key_id": ANY, "key_password": ANY},
     )
@@ -268,7 +268,7 @@ def test_create_client_key_return_to_client(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten_clients.ForeignAccountSecretsClient, "send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "send_secrets")
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -298,7 +298,7 @@ def test_create_client_key_return_to_client(
     assert isinstance(key["keystore"], str)
     assert not key["ssm_params"]
 
-    maskinporten_clients.ForeignAccountSecretsClient.send_secrets.assert_not_called()
+    maskinporten.ForeignAccountSecretsClient.send_secrets.assert_not_called()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
@@ -563,8 +563,6 @@ def test_list_client_keys_no_permission_for_resource(mock_client, mock_authorize
 @pytest.fixture
 def raise_assume_role_access_denied(monkeypatch):
     def init(self, *args, **kwargs):
-        raise maskinporten_clients.AssumeRoleAccessDeniedError("Error message from aws")
+        raise maskinporten.AssumeRoleAccessDeniedError("Error message from aws")
 
-    monkeypatch.setattr(
-        maskinporten_clients.ForeignAccountSecretsClient, "__init__", init
-    )
+    monkeypatch.setattr(maskinporten.ForeignAccountSecretsClient, "__init__", init)
