@@ -5,6 +5,7 @@ from models.models import (
     DeleteClientKeyOut,
     MaskinportenClientIn,
     MaskinportenClientOut,
+    DeleteMaskinportenClientOut,
     MaskinportenEnvironment,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "DeleteClientKeyOut",
     "MaskinportenClientIn",
     "MaskinportenClientOut",
+    "DeleteMaskinportenClientOut",
     "MaskinportenEnvironment",
 ]
