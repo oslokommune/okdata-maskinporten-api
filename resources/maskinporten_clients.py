@@ -15,6 +15,7 @@ from models import (
     DeleteClientKeyOut,
     MaskinportenClientIn,
     MaskinportenClientOut,
+    DeleteMaskinportenClientOut,
     MaskinportenEnvironment,
 )
 from maskinporten_api.audit import audit_log
@@ -138,6 +139,71 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
             clients.append(MaskinportenClientOut.parse_obj(client))
 
     return clients
+
+
+@router.delete(
+    "/{env}/{client_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=DeleteMaskinportenClientOut,
+    responses=error_message_models(
+        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+    ),
+)
+def delete_client(
+        env: MaskinportenEnvironment,
+        client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+        auth_info: AuthInfo = Depends(),
+):
+    authorize(
+        auth_info,
+        scope="maskinporten:client:write",
+        resource=f"maskinporten:client:{env}-{client_id}",
+    )
+
+    if not re.fullmatch("[0-9a-f-]+", client_id):
+        raise ErrorResponse(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"Invalid client ID: {client_id}",
+        )
+
+    try:
+        maskinporten_client = MaskinportenClient(env)
+    except UnsupportedEnvironmentError as e:
+        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+
+    try:
+        maskinporten_client.get_client(client_id)
+    except requests.HTTPError as e:
+        if e.response.status_code == status.HTTP_403_FORBIDDEN:
+            raise ErrorResponse(
+                status.HTTP_403_FORBIDDEN, f"Client {client_id} cannot be deleted due to active keys associated with client."
+            )
+        raise
+
+    logger.debug(sanitize(f"Deleting maskinporten client {client_id}"))
+
+    try:
+        maskinporten_client.delete_client(client_id)
+    except requests.HTTPError as e:
+        if e.response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
+            raise ErrorResponse(
+                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
+            )
+
+    audit_log(
+        item_id=client_id,
+        item_type="client",
+        env=env,
+        action="delete",
+        user=auth_info.principal_id,
+    )
+
+    # TODO: We should also delete resource from keycloak that was created along with client creation
+    return DeleteMaskinportenClientOut(client_id)
 
 
 @router.post(
