@@ -44,13 +44,6 @@ class CreateClientKeyOut(BaseModel):
     key_password: Optional[str]
 
 
-class DeleteClientKeyOut(BaseModel):
-    # TODO: Remove `deleted_from_ssm` once okdata-cli has stopped using it.
-    #       SSM deletion will be done from the new client deletion endpoint
-    #       instead.
-    deleted_from_ssm: bool
-
-
 class ClientKeyMetadata(BaseModel):
     kid: str
     client_id: str
