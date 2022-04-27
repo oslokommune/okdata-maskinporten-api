@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 log = logging.getLogger()
 
 
-def audit_log(item_id, item_type, env, action, user, scopes=None, client_id=None):
+def audit_log(item_id, item_type, env, action, user, scopes=None, key_id=None):
     """Add a log entry to the API's audit trail."""
 
     dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
@@ -23,7 +23,7 @@ def audit_log(item_id, item_type, env, action, user, scopes=None, client_id=None
                 "User": user,
                 "Timestamp": datetime.now(timezone.utc).isoformat(),
                 **({"Scopes": ",".join(scopes)} if scopes else {}),
-                **({"ClientId": client_id} if client_id else {}),
+                **({"KeyId": key_id} if key_id else {}),
             }
         )
     except ClientError as e:

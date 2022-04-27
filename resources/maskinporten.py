@@ -206,7 +206,7 @@ def create_client_key(
             raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
     try:
-        jwks = maskinporten_client.create_client_key(client_id, jwk).json()
+        maskinporten_client.create_client_key(client_id, jwk).json()
     except TooManyKeysError as e:
         raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
 
@@ -227,19 +227,17 @@ def create_client_key(
                 status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
             )
 
-    kid = jwks["keys"][0]["kid"]
-
     audit_log(
-        item_id=kid,
-        item_type="key",
+        item_id=client_id,
+        item_type="client",
         env=env,
-        action="create",
+        action="add-key",
         user=auth_info.principal_id,
-        client_id=client_id,
+        key_id=key_id,
     )
 
     return CreateClientKeyOut(
-        kid=kid,
+        kid=key_id,
         ssm_params=ssm_params,
         keystore=None if send_to_aws else keystore,
         key_password=None if send_to_aws else key_password,
@@ -290,12 +288,12 @@ def delete_client_key(
         raise ErrorResponse(status.HTTP_404_NOT_FOUND, str(e))
 
     audit_log(
-        item_id=key_id,
-        item_type="key",
+        item_id=client_id,
+        item_type="client",
         env=env,
-        action="delete",
+        action="remove-key",
         user=auth_info.principal_id,
-        client_id=client_id,
+        key_id=key_id,
     )
 
 
