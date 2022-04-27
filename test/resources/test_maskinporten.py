@@ -1,10 +1,11 @@
 import os
-from unittest.mock import ANY
-
 import pytest
 import requests_mock
+from unittest.mock import ANY
 
+from freezegun import freeze_time
 from maskinporten_api.maskinporten_client import env_config
+
 from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import get_mock_user, valid_client_token
@@ -43,8 +44,8 @@ def test_create_client(
 
     client = {
         "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
-        "client_name": "my-team-freg-testing",
-        "description": "Freg-klient for testing (My team)",
+        "client_name": "some-client",
+        "description": "Very cool client",
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
         "created": "2021-09-15T10:20:43.354000+02:00",
         "last_updated": "2021-09-15T10:20:43.354000+02:00",
@@ -131,8 +132,8 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
     assert response.json() == [
         {
             "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
-            "client_name": "my-team-freg-testing",
-            "description": "Freg-klient for testing (My team)",
+            "client_name": "some-client",
+            "description": "Very cool client",
             "scopes": ["folkeregister:deling/offentligmedhjemmel"],
             "created": "2021-09-15T10:20:43.354000+02:00",
             "last_updated": "2021-09-15T10:20:43.354000+02:00",
@@ -194,6 +195,7 @@ def test_list_clients_validation_error(
     )
 
 
+@freeze_time("1970-01-01")
 def test_create_client_key_to_aws(
     maskinporten_create_client_key_response,
     maskinporten_get_client_response,
@@ -237,7 +239,7 @@ def test_create_client_key_to_aws(
     assert res.status_code == 201
     key = res.json()
     assert key == {
-        "kid": "1970-01-01-12-00-00",
+        "kid": "1970-01-01-01-00-00",
         "key_password": None,
         "keystore": None,
         "ssm_params": [
@@ -253,11 +255,12 @@ def test_create_client_key_to_aws(
     )
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
-    assert audit_log_entry["Item"]["Id"] == key["kid"]
-    assert audit_log_entry["Item"]["Action"] == "create"
+    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
+    assert audit_log_entry["Item"]["Action"] == "add-key"
+    assert audit_log_entry["Item"]["KeyId"] == key["kid"]
 
 
+@freeze_time("1970-01-01")
 def test_create_client_key_return_to_client(
     maskinporten_create_client_key_response,
     maskinporten_get_client_response,
@@ -293,7 +296,7 @@ def test_create_client_key_return_to_client(
 
     assert res.status_code == 201
     key = res.json()
-    assert key["kid"] == "1970-01-01-12-00-00"
+    assert key["kid"] == "1970-01-01-01-00-00"
     assert isinstance(key["key_password"], str)
     assert isinstance(key["keystore"], str)
     assert not key["ssm_params"]
@@ -301,9 +304,9 @@ def test_create_client_key_return_to_client(
     maskinporten.ForeignAccountSecretsClient.send_secrets.assert_not_called()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": key["kid"], "Type": "key"})
-    assert audit_log_entry["Item"]["Id"] == key["kid"]
-    assert audit_log_entry["Item"]["Action"] == "create"
+    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
+    assert audit_log_entry["Item"]["Action"] == "add-key"
+    assert audit_log_entry["Item"]["KeyId"] == key["kid"]
 
 
 def test_create_client_key_too_many_keys(
@@ -415,7 +418,7 @@ def test_delete_client_key_last_remaining(
     mocker,
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
-    key_id = "1970-01-01-12-00-00"
+    key_id = "1970-01-01-01-00-00"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -437,9 +440,9 @@ def test_delete_client_key_last_remaining(
     assert res.status_code == 200
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": key_id, "Type": "key"})
-    assert audit_log_entry["Item"]["Id"] == key_id
-    assert audit_log_entry["Item"]["Action"] == "delete"
+    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
+    assert audit_log_entry["Item"]["Action"] == "remove-key"
+    assert audit_log_entry["Item"]["KeyId"] == key_id
 
 
 def test_delete_client_key_more_than_one_left(
@@ -453,7 +456,7 @@ def test_delete_client_key_more_than_one_left(
     mocker,
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
-    key_id = "1970-01-01-12-00-00"
+    key_id = "1970-01-01-01-00-00"
 
     # Add a second key.
     maskinporten_list_client_keys_response["keys"].append(
@@ -482,9 +485,9 @@ def test_delete_client_key_more_than_one_left(
     assert res.status_code == 200
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": key_id, "Type": "key"})
-    assert audit_log_entry["Item"]["Id"] == key_id
-    assert audit_log_entry["Item"]["Action"] == "delete"
+    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
+    assert audit_log_entry["Item"]["Action"] == "remove-key"
+    assert audit_log_entry["Item"]["KeyId"] == key_id
 
 
 def test_delete_client_key_no_keys(
@@ -498,7 +501,7 @@ def test_delete_client_key_no_keys(
     mocker,
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
-    key_id = "1970-01-01-12-00-00"
+    key_id = "1970-01-01-01-00-00"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -534,7 +537,7 @@ def test_list_client_keys(
     assert response.status_code == 200
     assert response.json() == [
         {
-            "kid": "1970-01-01-12-00-00",
+            "kid": "1970-01-01-01-00-00",
             "client_id": client_id,
             "created": "2021-09-16T12:34:17.099000+02:00",
             "expires": "2022-09-16T12:34:17.099000+02:00",
