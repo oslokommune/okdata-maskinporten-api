@@ -12,7 +12,6 @@ from models import (
     ClientKeyMetadata,
     CreateClientKeyIn,
     CreateClientKeyOut,
-    DeleteClientKeyOut,
     MaskinportenClientIn,
     MaskinportenClientOut,
     MaskinportenEnvironment,
@@ -250,7 +249,6 @@ def create_client_key(
 @router.delete(
     "/{env}/{client_id}/keys/{key_id}",
     status_code=status.HTTP_200_OK,
-    response_model=DeleteClientKeyOut,
     responses=error_message_models(
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
@@ -299,10 +297,6 @@ def delete_client_key(
         user=auth_info.principal_id,
         client_id=client_id,
     )
-
-    # TODO: We should also delete the key from SSM. Inform the client with the
-    #       `deleted_from_ssm` field whether this was done or not.
-    return DeleteClientKeyOut(deleted_from_ssm=False)
 
 
 @router.get(

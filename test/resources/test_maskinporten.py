@@ -435,7 +435,6 @@ def test_delete_client_key_last_remaining(
         )
 
     assert res.status_code == 200
-    assert res.json() == {"deleted_from_ssm": False}
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": key_id, "Type": "key"})
@@ -481,7 +480,6 @@ def test_delete_client_key_more_than_one_left(
         )
 
     assert res.status_code == 200
-    assert res.json() == {"deleted_from_ssm": False}
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": key_id, "Type": "key"})
