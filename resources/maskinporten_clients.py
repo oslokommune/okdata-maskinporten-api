@@ -164,12 +164,6 @@ def delete_client(
         resource=f"maskinporten:client:{env}-{client_id}",
     )
 
-    if not re.fullmatch("[0-9a-f-]+", client_id):
-        raise ErrorResponse(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            f"Invalid client ID: {client_id}",
-        )
-
     try:
         maskinporten_client = MaskinportenClient(env)
     except UnsupportedEnvironmentError as e:
@@ -178,9 +172,24 @@ def delete_client(
     try:
         maskinporten_client.get_client(client_id)
     except requests.HTTPError as e:
-        if e.response.status_code == status.HTTP_403_FORBIDDEN:
+        if e.response.status_code == status.HTTP_404_NOT_FOUND:
             raise ErrorResponse(
-                status.HTTP_403_FORBIDDEN, f"Client {client_id} cannot be deleted due to active keys associated with client."
+                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
+            )
+        raise
+
+    try:
+        # Search for active keys associated with client
+        existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
+
+        if len(existing_jwks) > 0:
+            raise ErrorResponse(
+                status.HTTP_422_UNPROCESSABLE_ENTITY, f"Client {client_id} cannot be deleted due to active keys associated with client."
+            )
+    except requests.HTTPError as e:
+        if e.response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
+            raise ErrorResponse(
+                status.HTTP_500_INTERNAL_SERVER_ERROR, f"Client {client_id} cannot be deleted due to internal server error."
             )
         raise
 
@@ -211,10 +220,13 @@ def delete_client(
     status_code=status.HTTP_201_CREATED,
     response_model=CreateClientKeyOut,
     responses=error_message_models(
+        status.HTTP_400_BAD_REQUEST,
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
         status.HTTP_404_NOT_FOUND,
+        status.HTTP_409_CONFLICT,
         status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
     ),
 )
 def create_client_key(
@@ -228,12 +240,6 @@ def create_client_key(
         scope="maskinporten:client:write",
         resource=f"maskinporten:client:{env}-{client_id}",
     )
-
-    if not re.fullmatch("[0-9a-f-]+", client_id):
-        raise ErrorResponse(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            f"Invalid client ID: {client_id}",
-        )
 
     try:
         maskinporten_client = MaskinportenClient(env)
@@ -318,10 +324,10 @@ def create_client_key(
     status_code=status.HTTP_200_OK,
     response_model=DeleteClientKeyOut,
     responses=error_message_models(
+        status.HTTP_400_BAD_REQUEST,
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
         status.HTTP_404_NOT_FOUND,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
     ),
 )
 def delete_client_key(
@@ -376,6 +382,7 @@ def delete_client_key(
     status_code=status.HTTP_200_OK,
     response_model=list[ClientKeyMetadata],
     responses=error_message_models(
+        status.HTTP_400_BAD_REQUEST,
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
         status.HTTP_404_NOT_FOUND,
