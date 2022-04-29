@@ -11,8 +11,9 @@ class MaskinportenEnvironment(str, Enum):
 
 
 class MaskinportenClientIn(BaseModel):
-    name: str
-    description: str
+    team_id: str
+    provider: str
+    integration: str
     scopes: list[str]
     env: MaskinportenEnvironment
 

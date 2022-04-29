@@ -1,5 +1,6 @@
 import base64
 import dataclasses
+import re
 
 import requests
 from OpenSSL import crypto
@@ -8,7 +9,7 @@ from botocore.exceptions import ClientError
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.ssm import get_secret
 from maskinporten_api.util import getenv
-from models import MaskinportenClientIn, MaskinportenEnvironment
+from models import MaskinportenEnvironment
 
 
 class UnsupportedEnvironmentError(Exception):
@@ -98,14 +99,30 @@ class MaskinportenClient:
         self.client = JWTAuthClient(conf, config.idporten_oidc_wellknown)
         self.base_url = config.maskinporten_clients_endpoint
 
-    def create_client(self, client: MaskinportenClientIn):
+    @staticmethod
+    def _slugify_team_name(team_name):
+        return (
+            re.sub("[^a-zæøå0-9 ]", "", team_name.lower()).strip(" ").replace(" ", "-")
+        )
+
+    @classmethod
+    def _make_client_name(cls, team_name, provider, integration):
+        return f"{cls._slugify_team_name(team_name)}-{provider}-{integration}"
+
+    @staticmethod
+    def _make_client_description(team_name, provider, integration):
+        return f"{provider.capitalize()}-klient for {integration} ({team_name})"
+
+    def create_client(self, team_name, provider, integration, scopes):
         return self._request(
             "POST",
             ["idporten:dcr.write"],
             json={
-                "client_name": client.name,
-                "description": client.description,
-                "scopes": client.scopes,
+                "client_name": self._make_client_name(team_name, provider, integration),
+                "description": self._make_client_description(
+                    team_name, provider, integration
+                ),
+                "scopes": scopes,
                 "token_endpoint_auth_method": "private_key_jwt",
                 "grant_types": ["urn:ietf:params:oauth:grant-type:jwt-bearer"],
                 "integration_type": "maskinporten",
