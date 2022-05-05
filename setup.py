@@ -25,6 +25,7 @@ setup(
         "mangum",
         "okdata-aws>=1.0.0,<2.0.0",
         "okdata-resource-auth",
+        "okdata-sdk>=2.0.0,<3.0.0",
         "pydantic",
         "pyjwt",
         "pyopenssl",

@@ -7,6 +7,7 @@ import requests
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, Path, status
 from okdata.aws.logging import log_exception
+from okdata.sdk.team.client import TeamClient
 
 from models import (
     ClientKeyMetadata,
@@ -61,9 +62,15 @@ def create_client(
 ):
     authorize(auth_info, scope="maskinporten:client:create")
 
-    # TODO: Look up the actual team name here instead of using the (unreadable)
-    #       team ID once permission-api is extended to support it (T#179).
-    team_name = body.team_id
+    try:
+        team = TeamClient().get_team(body.team_id)
+        team_name = team["name"]
+    except requests.HTTPError as e:
+        if e.response.status_code == status.HTTP_404_NOT_FOUND:
+            raise ErrorResponse(
+                status.HTTP_404_NOT_FOUND, f"No team with ID {body.team_id}"
+            )
+        raise
 
     logger.debug(
         sanitize(

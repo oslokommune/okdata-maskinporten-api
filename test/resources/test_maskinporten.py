@@ -1,5 +1,5 @@
 import os
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 
 import pytest
 import requests_mock
@@ -14,7 +14,9 @@ CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 
 
+@patch("resources.maskinporten.TeamClient")
 def test_create_client(
+    MockTeamClient,
     maskinporten_create_client_body,
     maskinporten_create_client_response,
     mock_authorizer,
@@ -23,6 +25,8 @@ def test_create_client(
     mock_dynamodb,
     mocker,
 ):
+    MockTeamClient.return_value.get_team.return_value = {"name": "My Team"}
+
     with requests_mock.Mocker(real_http=True) as rm:
         mock_user = get_mock_user("janedoe")
         mock_access_token_generation_requests(rm)
@@ -68,13 +72,17 @@ def test_create_client(
     }
 
 
+@patch("resources.maskinporten.TeamClient")
 def test_create_client_rollback(
+    MockTeamClient,
     maskinporten_create_client_body,
     maskinporten_create_client_response,
     mock_authorizer,
     mock_client,
     mocker,
 ):
+    MockTeamClient.return_value.get_team.return_value = {"name": "My Team"}
+
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         create_client_matcher = rm.post(
