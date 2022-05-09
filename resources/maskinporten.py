@@ -193,11 +193,9 @@ def delete_client(
                 status.HTTP_422_UNPROCESSABLE_ENTITY, f"Client {client_id} cannot be deleted due to active keys associated with client."
             )
     except requests.HTTPError as e:
-        if e.response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
-            raise ErrorResponse(
+        raise ErrorResponse(
                 status.HTTP_500_INTERNAL_SERVER_ERROR, f"Client {client_id} cannot be deleted due to internal server error."
-            )
-        raise
+        )
 
     logger.debug(sanitize(f"Deleting maskinporten client {client_id}"))
 
