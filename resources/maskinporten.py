@@ -186,7 +186,7 @@ def delete_client(
 
     try:
         # Search for active keys associated with client
-        existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
+        existing_jwks = maskinporten_client.get_client_keys(client_id).json().get("keys", [])
 
         if len(existing_jwks) > 0:
             raise ErrorResponse(
@@ -206,7 +206,7 @@ def delete_client(
     except requests.HTTPError as e:
         if e.response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
             raise ErrorResponse(
-                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
+                status.HTTP_500_INTERNAL_SERVER_ERROR, f"No client with ID {client_id}"
             )
 
     audit_log(
