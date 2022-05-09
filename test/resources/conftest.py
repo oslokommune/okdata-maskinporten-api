@@ -29,6 +29,7 @@ class MockUser(BaseModel):
 
 
 valid_client_token = "valid-token"
+team_id = "2cac0456-372f-d20a-054e-f9df155bb2f9"
 
 mock_user_pool = [
     MockUser(
@@ -88,7 +89,7 @@ def generate_mock_client_response(
 @pytest.fixture
 def maskinporten_create_client_body():
     return {
-        "team_id": "2cac0456-372f-d20a-054e-f9df155bb2f9",
+        "team_id": team_id,
         "provider": "freg",
         "integration": "testing",
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
@@ -149,6 +150,14 @@ def maskinporten_delete_client_key_response(maskinporten_create_client_key_respo
 def maskinporten_list_client_keys_response(maskinporten_create_client_key_response):
     """Currently the same response as when creating a new key."""
     return maskinporten_create_client_key_response
+
+
+@pytest.fixture
+def user_team_list_response():
+    return [
+        {"id": team_id, "name": "foobar"},
+        {"id": "abc-123-def-456", "name": "rocket"},
+    ]
 
 
 @pytest.fixture

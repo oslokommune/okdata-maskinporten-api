@@ -17,6 +17,7 @@ OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 def test_create_client(
     maskinporten_create_client_body,
     maskinporten_create_client_response,
+    user_team_list_response,
     mock_authorizer,
     mock_aws,
     mock_client,
@@ -32,6 +33,9 @@ def test_create_client(
             json=maskinporten_create_client_response,
         )
 
+        teams_adapter = rm.get(
+            f"{OKDATA_PERMISSION_API_URL}/teams", json=user_team_list_response
+        )
         permissions_adapter = rm.post(
             f"{OKDATA_PERMISSION_API_URL}/permissions",
         )
@@ -58,12 +62,18 @@ def test_create_client(
     assert audit_log_entry["Item"]["Id"] == client["client_id"]
     assert audit_log_entry["Item"]["Action"] == "create"
 
+    teams_request = teams_adapter.last_request
+    assert teams_request.headers["Authorization"] == f"Bearer {mock_user.access_token}"
+
     permissions_request = permissions_adapter.last_request
     assert (
         permissions_request.headers["Authorization"] == f"Bearer {valid_client_token}"
     )
     assert permissions_request.json() == {
-        "owner": {"user_id": mock_user.principal_id, "user_type": "user"},
+        "owner": {
+            "user_id": user_team_list_response[0]["name"],
+            "user_type": "team",
+        },
         "resource_name": f"maskinporten:client:{maskinporten_create_client_body['env']}-{client['client_id']}",
     }
 
@@ -71,6 +81,7 @@ def test_create_client(
 def test_create_client_rollback(
     maskinporten_create_client_body,
     maskinporten_create_client_response,
+    user_team_list_response,
     mock_authorizer,
     mock_client,
     mocker,
@@ -81,6 +92,7 @@ def test_create_client_rollback(
             CLIENTS_ENDPOINT,
             json=maskinporten_create_client_response,
         )
+        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams", json=user_team_list_response)
         rm.post(f"{OKDATA_PERMISSION_API_URL}/permissions", status_code=403)
         delete_client_matcher = rm.delete(
             f"{CLIENTS_ENDPOINT}{maskinporten_create_client_response['client_id']}"
@@ -112,7 +124,62 @@ def test_create_client_no_create_permission(
             json=maskinporten_create_client_body,
             headers={"Authorization": get_mock_user("homersimpson").bearer_token},
         )
-        assert res.status_code == 403
+
+    assert res.status_code == 403
+
+
+def test_create_client_not_team_member(
+    maskinporten_create_client_body,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_user = get_mock_user("janedoe")
+        mock_access_token_generation_requests(rm)
+
+        create_client_matcher = rm.post(
+            CLIENTS_ENDPOINT, json=maskinporten_create_client_body
+        )
+        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams", json=[])
+
+        res = mock_client.post(
+            "/clients",
+            json=maskinporten_create_client_body,
+            headers={"Authorization": mock_user.bearer_token},
+        )
+
+    assert create_client_matcher.call_count == 0
+    assert res.status_code == 403
+
+
+def test_create_client_team_lookup_fail(
+    maskinporten_create_client_body,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_user = get_mock_user("janedoe")
+        mock_access_token_generation_requests(rm)
+
+        create_client_matcher = rm.post(
+            CLIENTS_ENDPOINT, json=maskinporten_create_client_body
+        )
+        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams", status_code=500)
+
+        res = mock_client.post(
+            "/clients",
+            json=maskinporten_create_client_body,
+            headers={"Authorization": mock_user.bearer_token},
+        )
+
+    assert create_client_matcher.call_count == 0
+    assert res.status_code == 500
 
 
 def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):

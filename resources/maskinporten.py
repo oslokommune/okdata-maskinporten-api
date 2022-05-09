@@ -29,7 +29,11 @@ from maskinporten_api.maskinporten_client import (
     TooManyKeysError,
     UnsupportedEnvironmentError,
 )
-from maskinporten_api.permissions import create_okdata_permissions, get_user_permissions
+from maskinporten_api.permissions import (
+    create_okdata_permissions,
+    get_user_permissions,
+    get_user_team,
+)
 from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
     ForeignAccountSecretsClient,
@@ -52,6 +56,7 @@ router = APIRouter()
     responses=error_message_models(
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
     ),
 )
 def create_client(
@@ -61,9 +66,20 @@ def create_client(
 ):
     authorize(auth_info, scope="maskinporten:client:create")
 
-    # TODO: Look up the actual team name here instead of using the (unreadable)
-    #       team ID once permission-api is extended to support it (T#179).
-    team_name = body.team_id
+    try:
+        team = get_user_team(
+            body.team_id, auth_info.bearer_token, has_role="origo-team"
+        )
+    except requests.RequestException as e:
+        log_exception(e)
+        raise ErrorResponse(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
+        )
+
+    if not team:
+        raise ErrorResponse(status.HTTP_403_FORBIDDEN, "Forbidden")
+
+    team_name = team["name"]
 
     logger.debug(
         sanitize(
@@ -71,6 +87,7 @@ def create_client(
             "{body.env} with scopes {body.scopes}"
         )
     )
+
     try:
         maskinporten_client = MaskinportenClient(body.env)
     except UnsupportedEnvironmentError as e:
@@ -84,7 +101,7 @@ def create_client(
     try:
         create_okdata_permissions(
             resource_name=f"maskinporten:client:{body.env}-{new_client_id}",
-            owner_principal_id=auth_info.principal_id,
+            team_name=team_name,
             auth_header=service_client.authorization_header,
         )
     except requests.RequestException as e:
