@@ -204,11 +204,10 @@ def delete_client(
 
     try:
         maskinporten_client.delete_client(client_id)
-    except requests.HTTPError as e:
-        if e.response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
-            raise ErrorResponse(
-                status.HTTP_500_INTERNAL_SERVER_ERROR, f"No client with ID {client_id}"
-            )
+    except requests.HTTPError:
+        raise ErrorResponse(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"No client with ID {client_id}"
+        )
 
     audit_log(
         item_id=client_id,
