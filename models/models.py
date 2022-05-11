@@ -28,6 +28,11 @@ class MaskinportenClientOut(BaseModel):
     active: bool
 
 
+# TODO: Check if any keycloak resources needs to be deleted
+class DeleteMaskinportenClientOut(BaseModel):
+    client_id: str
+
+
 class CreateClientKeyIn(BaseModel):
     destination_aws_account: Optional[str]
     destination_aws_region: Optional[str]
