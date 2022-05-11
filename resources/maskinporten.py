@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from datetime import datetime, timedelta
 
 import requests
@@ -195,7 +194,7 @@ def delete_client(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 f"Client {client_id} cannot be deleted due to active keys associated with client.",
             )
-    except requests.HTTPError as e:
+    except requests.HTTPError:
         raise ErrorResponse(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             f"Client {client_id} cannot be deleted due to internal server error.",
