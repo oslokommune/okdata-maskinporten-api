@@ -160,9 +160,9 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
     ),
 )
 def delete_client(
-        env: MaskinportenEnvironment,
-        client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
-        auth_info: AuthInfo = Depends(),
+    env: MaskinportenEnvironment,
+    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    auth_info: AuthInfo = Depends(),
 ):
     authorize(
         auth_info,
@@ -186,15 +186,19 @@ def delete_client(
 
     try:
         # Search for active keys associated with client
-        existing_jwks = maskinporten_client.get_client_keys(client_id).json().get("keys", [])
+        existing_jwks = (
+            maskinporten_client.get_client_keys(client_id).json().get("keys", [])
+        )
 
         if len(existing_jwks) > 0:
             raise ErrorResponse(
-                status.HTTP_422_UNPROCESSABLE_ENTITY, f"Client {client_id} cannot be deleted due to active keys associated with client."
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                f"Client {client_id} cannot be deleted due to active keys associated with client.",
             )
     except requests.HTTPError as e:
         raise ErrorResponse(
-                status.HTTP_500_INTERNAL_SERVER_ERROR, f"Client {client_id} cannot be deleted due to internal server error."
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            f"Client {client_id} cannot be deleted due to internal server error.",
         )
 
     logger.debug(sanitize(f"Deleting maskinporten client {client_id}"))
