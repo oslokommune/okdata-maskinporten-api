@@ -235,7 +235,7 @@ def delete_client(
     )
 
     # TODO: We should also delete resource from keycloak that was created along with client creation
-    return DeleteMaskinportenClientOut(client_id)
+    return DeleteMaskinportenClientOut(client_id=client_id)
 
 
 @router.post(
