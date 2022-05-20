@@ -186,6 +186,24 @@ def test_create_client_team_lookup_fail(
     assert res.status_code == 500
 
 
+def test_create_client_invalid_team_id(
+    maskinporten_create_client_body,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+):
+    body = maskinporten_create_client_body
+    body["team_id"] = "invalid#-team-id-123"
+
+    res = mock_client.post(
+        "/clients",
+        json=body,
+        headers={"Authorization": get_mock_user("janedoe").bearer_token},
+    )
+    assert res.status_code == 400
+    assert res.json()["message"] == "Invalid team ID (value is not a valid uuid)"
+
+
 def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_user = get_mock_user("janedoe")

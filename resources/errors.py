@@ -30,5 +30,8 @@ def pydantic_error_to_str(err):
     if err["loc"] == ("path", "client_id"):
         return f"Invalid client ID ({err['msg']})"
 
+    if err["loc"] == ("body", "team_id"):
+        return f"Invalid team ID ({err['msg']})"
+
     # Fall back to Pydantic's default in the general case.
     return str(err)
