@@ -8,7 +8,7 @@ from freezegun import freeze_time
 from maskinporten_api.maskinporten_client import env_config
 from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
-from test.resources.conftest import get_mock_user, valid_client_token
+from test.resources.conftest import get_mock_user, valid_client_token, team_id
 
 CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
@@ -17,7 +17,7 @@ OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 def test_create_client(
     maskinporten_create_client_body,
     maskinporten_create_client_response,
-    user_team_list_response,
+    user_team_response,
     mock_authorizer,
     mock_aws,
     mock_client,
@@ -34,7 +34,8 @@ def test_create_client(
         )
 
         teams_adapter = rm.get(
-            f"{OKDATA_PERMISSION_API_URL}/teams", json=user_team_list_response
+            f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
+            json=user_team_response,
         )
         permissions_adapter = rm.post(
             f"{OKDATA_PERMISSION_API_URL}/permissions",
@@ -71,7 +72,7 @@ def test_create_client(
     )
     assert permissions_request.json() == {
         "owner": {
-            "user_id": user_team_list_response[0]["name"],
+            "user_id": user_team_response["name"],
             "user_type": "team",
         },
         "resource_name": f"maskinporten:client:{maskinporten_create_client_body['env']}-{client['client_id']}",
@@ -81,7 +82,7 @@ def test_create_client(
 def test_create_client_rollback(
     maskinporten_create_client_body,
     maskinporten_create_client_response,
-    user_team_list_response,
+    user_team_response,
     mock_authorizer,
     mock_client,
     mocker,
@@ -92,7 +93,10 @@ def test_create_client_rollback(
             CLIENTS_ENDPOINT,
             json=maskinporten_create_client_response,
         )
-        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams", json=user_team_list_response)
+        rm.get(
+            f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
+            json=user_team_response,
+        )
         rm.post(f"{OKDATA_PERMISSION_API_URL}/permissions", status_code=403)
         delete_client_matcher = rm.delete(
             f"{CLIENTS_ENDPOINT}{maskinporten_create_client_response['client_id']}"
@@ -143,7 +147,7 @@ def test_create_client_not_team_member(
         create_client_matcher = rm.post(
             CLIENTS_ENDPOINT, json=maskinporten_create_client_body
         )
-        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams", json=[])
+        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}", status_code=403)
 
         res = mock_client.post(
             "/clients",
@@ -170,7 +174,7 @@ def test_create_client_team_lookup_fail(
         create_client_matcher = rm.post(
             CLIENTS_ENDPOINT, json=maskinporten_create_client_body
         )
-        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams", status_code=500)
+        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}", status_code=500)
 
         res = mock_client.post(
             "/clients",

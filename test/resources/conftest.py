@@ -153,11 +153,8 @@ def maskinporten_list_client_keys_response(maskinporten_create_client_key_respon
 
 
 @pytest.fixture
-def user_team_list_response():
-    return [
-        {"id": team_id, "name": "foobar"},
-        {"id": "abc-123-def-456", "name": "rocket"},
-    ]
+def user_team_response():
+    return {"id": team_id, "name": "foobar"}
 
 
 @pytest.fixture
