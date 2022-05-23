@@ -40,15 +40,10 @@ def get_user_team(team_id, bearer_token, has_role=None):
     if has_role:
         params["has_role"] = has_role
 
-    # TODO: Use the team details endpoint directly as soon as this also
-    # supports a `has_role` query argument: T#187.
     res = requests.get(
-        f"{OKDATA_PERMISSION_API_URL}/teams",
+        f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
         headers={"Authorization": f"Bearer {bearer_token}"},
         params=params,
     )
     res.raise_for_status()
-    for team in res.json():
-        if team["id"] == team_id:
-            return team
-    return None
+    return res.json()

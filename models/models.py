@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -11,7 +12,7 @@ class MaskinportenEnvironment(str, Enum):
 
 
 class MaskinportenClientIn(BaseModel):
-    team_id: str
+    team_id: UUID
     provider: str
     integration: str
     scopes: list[str]

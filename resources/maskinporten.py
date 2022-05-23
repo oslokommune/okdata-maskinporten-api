@@ -72,12 +72,11 @@ def create_client(
         )
     except requests.RequestException as e:
         log_exception(e)
+        if e.response.status_code == status.HTTP_403_FORBIDDEN:
+            raise ErrorResponse(status.HTTP_403_FORBIDDEN, "Forbidden")
         raise ErrorResponse(
             status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
         )
-
-    if not team:
-        raise ErrorResponse(status.HTTP_403_FORBIDDEN, "Forbidden")
 
     team_name = team["name"]
 
