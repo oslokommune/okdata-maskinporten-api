@@ -21,6 +21,15 @@ def create_okdata_permissions(resource_name, team_name, auth_header):
     return create_permissions_response
 
 
+def delete_okdata_permissions(resource_name, auth_header):
+    res = requests.delete(
+        f"{OKDATA_PERMISSION_API_URL}/permissions/{resource_name}",
+        headers=auth_header,
+    )
+    res.raise_for_status()
+    return res
+
+
 def get_user_permissions(bearer_token):
     res = requests.get(
         f"{OKDATA_PERMISSION_API_URL}/my_permissions",
