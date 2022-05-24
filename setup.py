@@ -24,7 +24,7 @@ setup(
         "fastapi",
         "mangum",
         "okdata-aws>=1.0.0,<2.0.0",
-        "okdata-resource-auth",
+        "okdata-resource-auth>=0.1.4",
         "pydantic",
         "pyjwt",
         "pyopenssl",
