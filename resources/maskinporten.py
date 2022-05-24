@@ -31,6 +31,7 @@ from maskinporten_api.maskinporten_client import (
 )
 from maskinporten_api.permissions import (
     create_okdata_permissions,
+    delete_okdata_permissions,
     get_user_permissions,
     get_user_team,
 )
@@ -178,6 +179,7 @@ def delete_client(
     env: MaskinportenEnvironment,
     client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
+    service_client: ServiceClient = Depends(),
 ):
     authorize(
         auth_info,
@@ -225,6 +227,16 @@ def delete_client(
             status.HTTP_500_INTERNAL_SERVER_ERROR, f"No client with ID {client_id}"
         )
 
+    try:
+        delete_okdata_permissions(
+            resource_name=f"maskinporten:client:{env}-{client_id}",
+            auth_header=service_client.authorization_header,
+        )
+    except requests.RequestException as e:
+        # Permission deletion failed. Don't bother the client about this, but
+        # log it for our sake still.
+        log_exception(e)
+
     audit_log(
         item_id=client_id,
         item_type="client",
@@ -233,7 +245,6 @@ def delete_client(
         user=auth_info.principal_id,
     )
 
-    # TODO: We should also delete resource from keycloak that was created along with client creation
     return DeleteMaskinportenClientOut(client_id=client_id)
 
 
