@@ -28,6 +28,10 @@ setup(
         "pydantic",
         "pyjwt",
         "pyopenssl",
+        # Not needed directly (it's required by `python-keycloak`), but require
+        # version 3.3.0 or higher explicitly to silence some deprecation
+        # warnings.
+        "python-jose>=3.3.0,<4.0.0",
         "python-keycloak",
         "requests>=2.26.0,<3.0.0",
         # We don't really need this, but AWS Lambda started including this

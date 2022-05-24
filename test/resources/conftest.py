@@ -1,7 +1,7 @@
 import boto3
 import pytest
 from keycloak import KeycloakOpenID
-from moto import mock_dynamodb2
+from moto import mock_dynamodb
 from okdata.resource_auth import ResourceAuthorizer
 from pydantic import BaseModel
 
@@ -202,7 +202,7 @@ def mock_authorizer(monkeypatch):
 
 
 @pytest.fixture
-@mock_dynamodb2
+@mock_dynamodb
 def mock_dynamodb():
     dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
     dynamodb.create_table(

@@ -9,7 +9,7 @@ from OpenSSL import crypto
 from authlib.jose import jwk
 
 
-def generate_key():
+def generate_key() -> crypto.PKey:
     """Return a freshly made 4096 bit RSA key pair."""
     key = crypto.PKey()
     key.generate_key(crypto.TYPE_RSA, 4096)
@@ -27,14 +27,16 @@ def jwk_from_key(key: crypto.PKey):
     }
 
 
-def pkcs12_from_key(key, passphrase):
+def pkcs12_from_key(key: crypto.PKey, passphrase: str) -> str:
     """Return a Base64-encoded PKCS #12 archive containing `key`.
 
     `passphrase` is used to encrypt the structure.
     """
     pkcs12 = crypto.PKCS12()
     pkcs12.set_privatekey(key)
-    return base64.b64encode(pkcs12.export(passphrase)).decode("utf-8")
+    return base64.b64encode(
+        pkcs12.export(passphrase.encode("utf-8")),
+    ).decode("utf-8")
 
 
 def generate_password(pw_length: int) -> str:
