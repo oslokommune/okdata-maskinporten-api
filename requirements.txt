@@ -72,8 +72,10 @@ pyrsistent==0.17.3
     # via jsonschema
 python-dateutil==2.8.1
     # via botocore
-python-jose==3.2.0
-    # via python-keycloak
+python-jose==3.3.0
+    # via
+    #   okdata-maskinporten-api (setup.py)
+    #   python-keycloak
 python-keycloak==0.24.0
     # via
     #   okdata-maskinporten-api (setup.py)
@@ -97,7 +99,6 @@ six==1.15.0
     #   jsonschema
     #   pyopenssl
     #   python-dateutil
-    #   python-jose
 starlette==0.14.2
     # via
     #   fastapi
