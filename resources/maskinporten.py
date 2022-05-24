@@ -236,7 +236,6 @@ def delete_client(
         # Permission deletion failed. Don't bother the client about this, but
         # log it for our sake still.
         log_exception(e)
-        pass
 
     audit_log(
         item_id=client_id,
