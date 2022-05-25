@@ -62,7 +62,7 @@ pydantic==1.7.4
     #   fastapi
     #   okdata-aws
     #   okdata-maskinporten-api (setup.py)
-pyjwt==2.0.1
+pyjwt==2.4.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
