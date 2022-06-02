@@ -39,7 +39,7 @@ from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
     ForeignAccountSecretsClient,
 )
-from maskinporten_api.util import sanitize
+from maskinporten_api.util import getenv, sanitize
 from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
 
@@ -296,8 +296,9 @@ def create_client_key(
         sanitize(f"Registering new key with id {key_id} for client {client_id}")
     )
 
+    key_alias = getenv("MASKINPORTEN_KEY_ALIAS")
     key_password = generate_password(pw_length=32)
-    keystore = pkcs12_from_key(key, key_password)
+    keystore = pkcs12_from_key(key, key_alias, key_password)
     ssm_params = None
     send_to_aws = body.destination_aws_account and body.destination_aws_region
 
@@ -320,8 +321,9 @@ def create_client_key(
         try:
             ssm_params = secrets_client.send_secrets(
                 {
-                    "keystore": keystore,
                     "key_id": key_id,
+                    "keystore": keystore,
+                    "key_alias": key_alias,
                     "key_password": key_password,
                 }
             )
@@ -346,6 +348,7 @@ def create_client_key(
         kid=key_id,
         ssm_params=ssm_params,
         keystore=None if send_to_aws else keystore,
+        key_alias=None if send_to_aws else key_alias,
         key_password=None if send_to_aws else key_password,
     )
 

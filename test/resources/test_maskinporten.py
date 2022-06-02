@@ -329,18 +329,25 @@ def test_create_client_key_to_aws(
     key = res.json()
     assert key == {
         "kid": "1970-01-01-01-00-00",
-        "key_password": None,
-        "keystore": None,
         "ssm_params": [
-            f"/okdata/maskinporten/{client_id}/keystore",
             f"/okdata/maskinporten/{client_id}/key_id",
+            f"/okdata/maskinporten/{client_id}/keystore",
+            f"/okdata/maskinporten/{client_id}/key_alias",
             f"/okdata/maskinporten/{client_id}/key_password",
         ],
+        "keystore": None,
+        "key_alias": None,
+        "key_password": None,
     }
 
     maskinporten.ForeignAccountSecretsClient.send_secrets.assert_called_once_with(
         ANY,
-        {"keystore": ANY, "key_id": ANY, "key_password": ANY},
+        {
+            "key_id": ANY,
+            "keystore": ANY,
+            "key_alias": ANY,
+            "key_password": ANY,
+        },
     )
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
@@ -386,9 +393,10 @@ def test_create_client_key_return_to_client(
     assert res.status_code == 201
     key = res.json()
     assert key["kid"] == "1970-01-01-01-00-00"
-    assert isinstance(key["key_password"], str)
-    assert isinstance(key["keystore"], str)
     assert not key["ssm_params"]
+    assert isinstance(key["keystore"], str)
+    assert isinstance(key["key_alias"], str)
+    assert isinstance(key["key_password"], str)
 
     maskinporten.ForeignAccountSecretsClient.send_secrets.assert_not_called()
 

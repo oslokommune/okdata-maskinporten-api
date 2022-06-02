@@ -43,6 +43,7 @@ class CreateClientKeyOut(BaseModel):
     kid: str
     ssm_params: Optional[list[str]]
     keystore: Optional[str]
+    key_alias: Optional[str]
     key_password: Optional[str]
 
 

@@ -30,6 +30,7 @@ provider:
     MASKINPORTEN_ADMIN_CLIENT_ID_TEST: ${ssm:/dataplatform/maskinporten/admin-client-id-test}
     MASKINPORTEN_ADMIN_CLIENT_ID_PROD: ${ssm:/dataplatform/maskinporten/admin-client-id-prod}
     MASKINPORTEN_CONSUMER_ORG: ${ssm:/dataplatform/maskinporten/consumer-org}
+    MASKINPORTEN_KEY_ALIAS: client-key
     KEYCLOAK_SERVER: ${ssm:/dataplatform/shared/keycloak-server-url}
     KEYCLOAK_REALM: api-catalog
     RESOURCE_SERVER_CLIENT_ID: okdata-resource-server
