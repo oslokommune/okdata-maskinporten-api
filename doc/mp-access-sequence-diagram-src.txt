@@ -24,7 +24,7 @@ okdata-cli->okdata-maskinporten-api:Request (m/access token)
 activate okdata-maskinporten-api
 okdata-permission-api<-okdata-maskinporten-api:Autoriser operasjon
 activate okdata-permission-api
-okdata-permission-api-->okdata-maskinporten-api:OK!
+okdata-permission-api-->okdata-maskinporten-api:Status
 deactivate okdata-permission-api
 okdata-maskinporten-api->SSM:Hent Origo virksomhetssertifikat
 activate SSM
@@ -34,13 +34,13 @@ okdata-maskinporten-api->Maskinporten:JWT (m/virksomhetssertifikat)
 activate Maskinporten
 okdata-maskinporten-api<--Maskinporten:Access token
 deactivate Maskinporten
-okdata-maskinporten-api->Maskinporten:REST-operasjon (m/access token)
-activate Maskinporten
-okdata-maskinporten-api<--Maskinporten:Status
-deactivate Maskinporten
 
 ==create-client==#d8f6ec
 
+okdata-maskinporten-api->Maskinporten:POST klientdetaljer (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Status
+deactivate Maskinporten
 okdata-maskinporten-api->okdata-permission-api:Oppdater permissions
 activate okdata-permission-api
 okdata-permission-api->Keycloak:Oppdater permissions
@@ -52,20 +52,34 @@ deactivate okdata-permission-api
 okdata-cli<--okdata-maskinporten-api:Klientdetaljer
 Origo-team<--okdata-cli:Klientdetaljer
 
-==create-client-key (lokal variant)==#d8f6ec
+==list-clients==#d8f6ec
 
-okdata-cli<--okdata-maskinporten-api:Maskinporten-klientnøkkel
-Origo-team<--okdata-cli:Maskinporten-\nklientnøkkel
+okdata-maskinporten-api->Maskinporten:GET klienter (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Liste over klienter
+deactivate Maskinporten
+okdata-maskinporten-api->okdata-permission-api:Filtrer klienter på eierskap
+activate okdata-permission-api
+okdata-maskinporten-api<--okdata-permission-api:Filtrerte klienter
+deactivate okdata-permission-api
+okdata-cli<--okdata-maskinporten-api:Liste over egne klienter
+Origo-team<--okdata-cli:Liste over egne\nklienter
 
-Origo-team->Maskinporten:Ta i bruk Maskinporten 🎉
+==delete-client==#d8f6ec
 
-==list-clients / list-client-keys==#d8f6ec
+okdata-maskinporten-api->Maskinporten:GET klient (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Status
+deactivate Maskinporten
+okdata-maskinporten-api->Maskinporten:GET tilhørende klientnøkler (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Liste over nøkler
+deactivate Maskinporten
 
-okdata-cli<--okdata-maskinporten-api:Liste over klienter/nøkler
-Origo-team<--okdata-cli:Liste over\nklienter/nøkler
-
-==delete-client / delete-client-key==#d8f6ec
-
+okdata-maskinporten-api->Maskinporten:DELETE klient (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Status
+deactivate Maskinporten
 okdata-maskinporten-api->okdata-permission-api:Slett permissions
 activate okdata-permission-api
 okdata-permission-api->Keycloak:Slett permissions
@@ -74,8 +88,46 @@ okdata-permission-api<--Keycloak:Status
 deactivate Keycloak
 okdata-maskinporten-api<--okdata-permission-api:Status
 deactivate okdata-permission-api
-okdata-cli<--okdata-maskinporten-api:OK!
+okdata-cli<--okdata-maskinporten-api:Status
+Origo-team<--okdata-cli:Status
+
+==create-client-key (lokal variant)==#d8f6ec
+
+okdata-maskinporten-api->Maskinporten:GET klient (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Status
+deactivate Maskinporten
+okdata-maskinporten-api->okdata-maskinporten-api:Generer ny Maskinporten-nøkkel
+okdata-maskinporten-api->Maskinporten:POST Maskinporten-nøkkel (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Status
+deactivate Maskinporten
+okdata-cli<--okdata-maskinporten-api:Maskinporten-nøkkel
+Origo-team<--okdata-cli:Maskinporten-\nnøkkel
+
+Origo-team->Maskinporten:Ta i bruk Maskinporten 🎉
+
+==list-client-keys==#d8f6ec
+
+okdata-maskinporten-api->Maskinporten:GET klientnøkler (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Liste over nøkler
+deactivate Maskinporten
+okdata-cli<--okdata-maskinporten-api:Liste over nøkler
+Origo-team<--okdata-cli:Liste over\nnøkler
+
+==delete-client-key==#d8f6ec
+
+okdata-maskinporten-api->Maskinporten:GET klient (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Status
+deactivate Maskinporten
+okdata-maskinporten-api->Maskinporten:DELETE nøkkel / POST nøkler (m/access token)
+activate Maskinporten
+okdata-maskinporten-api<--Maskinporten:Status
+deactivate Maskinporten
+okdata-cli<--okdata-maskinporten-api:Status
 deactivate okdata-maskinporten-api
-Origo-team<--okdata-cli:OK!
+Origo-team<--okdata-cli:Status
 deactivate okdata-cli
 deactivate Origo-team
