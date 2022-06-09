@@ -27,13 +27,16 @@ def jwk_from_key(key: crypto.PKey):
     }
 
 
-def pkcs12_from_key(key: crypto.PKey, passphrase: str) -> str:
+def pkcs12_from_key(key: crypto.PKey, key_alias: str, passphrase: str) -> str:
     """Return a Base64-encoded PKCS #12 archive containing `key`.
+
+    `key_alias` is the alias/friendly name of the key in the keystore.
 
     `passphrase` is used to encrypt the structure.
     """
     pkcs12 = crypto.PKCS12()
     pkcs12.set_privatekey(key)
+    pkcs12.set_friendlyname(key_alias.encode("utf-8"))
     return base64.b64encode(
         pkcs12.export(passphrase.encode("utf-8")),
     ).decode("utf-8")
