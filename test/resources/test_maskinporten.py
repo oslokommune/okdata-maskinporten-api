@@ -1,5 +1,4 @@
 import os
-from unittest.mock import ANY
 
 import pytest
 import requests_mock
@@ -340,15 +339,7 @@ def test_create_client_key_to_aws(
         "key_password": None,
     }
 
-    maskinporten.ForeignAccountSecretsClient.send_secrets.assert_called_once_with(
-        ANY,
-        {
-            "key_id": ANY,
-            "keystore": ANY,
-            "key_alias": ANY,
-            "key_password": ANY,
-        },
-    )
+    maskinporten.ForeignAccountSecretsClient.send_secrets.assert_called_once()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})

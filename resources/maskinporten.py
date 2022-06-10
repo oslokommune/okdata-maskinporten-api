@@ -280,7 +280,7 @@ def create_client_key(
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
     try:
-        maskinporten_client.get_client(client_id)
+        client = maskinporten_client.get_client(client_id).json()
     except requests.HTTPError as e:
         if e.response.status_code == status.HTTP_404_NOT_FOUND:
             raise ErrorResponse(
@@ -318,14 +318,38 @@ def create_client_key(
         raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
 
     if send_to_aws:
+        client_name = client["client_name"]
+
         try:
             ssm_params = secrets_client.send_secrets(
-                {
-                    "key_id": key_id,
-                    "keystore": keystore,
-                    "key_alias": key_alias,
-                    "key_password": key_password,
-                }
+                [
+                    {
+                        "name": "key_id",
+                        "value": key_id,
+                        "description": f"[{env}] {client_name}: Key ID",
+                    },
+                    {
+                        "name": "keystore",
+                        "value": keystore,
+                        "description": (
+                            f"[{env}] {client_name}: PKCS #12 archive "
+                            "containing the key"
+                        ),
+                    },
+                    {
+                        "name": "key_alias",
+                        "value": key_alias,
+                        "description": (
+                            f"[{env}] {client_name}: Alias of the key in the "
+                            "keystore"
+                        ),
+                    },
+                    {
+                        "name": "key_password",
+                        "value": key_password,
+                        "description": f"[{env}] {client_name}: Key password",
+                    },
+                ]
             )
         except ClientError as e:
             # Secrets injection failed somehow. Retract the newly created key.
