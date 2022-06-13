@@ -41,28 +41,24 @@ run: $(BUILD_VENV)/bin/uvicorn
 	$(BUILD_VENV)/bin/uvicorn app:app --reload
 
 .PHONY: undeploy
-undeploy: login-dev
+undeploy: login-dev init
 	@echo "\nUndeploying stage: dev\n"
 	sls remove --stage dev --aws-profile $(.DEV_PROFILE)
 
 .PHONY: undeploy-prod
-undeploy-prod: login-prod
+undeploy-prod: login-prod init
 	@echo "\nUndeploying stage: prod\n"
 	sls remove --stage prod --aws-profile $(.PROD_PROFILE)
 
 .PHONY: login-dev
-login-dev:
-ifndef OKDATA_AWS_ROLE_DEV
-	$(error OKDATA_AWS_ROLE_DEV is not set)
-endif
-	saml2aws login --role=$(OKDATA_AWS_ROLE_DEV) --profile=$(.DEV_PROFILE)
+login-dev: init
+	aws sts get-caller-identity --profile $(.DEV_PROFILE) || aws sso login --profile=$(.DEV_PROFILE)
+	./node_modules/.bin/ssocreds -p $(.DEV_PROFILE) # https://github.com/serverless/serverless/issues/7567
 
 .PHONY: login-prod
-login-prod:
-ifndef OKDATA_AWS_ROLE_PROD
-	$(error OKDATA_AWS_ROLE_PROD is not set)
-endif
-	saml2aws login --role=$(OKDATA_AWS_ROLE_PROD) --profile=$(.PROD_PROFILE)
+login-prod: init
+	aws sts get-caller-identity --profile $(.PROD_PROFILE) || aws sso login --profile=$(.PROD_PROFILE)
+	./node_modules/.bin/ssocreds -p $(.PROD_PROFILE) # https://github.com/serverless/serverless/issues/7567
 
 .PHONY: is-git-clean
 is-git-clean:
