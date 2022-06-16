@@ -340,6 +340,12 @@ def test_create_client_key_to_aws(
     }
 
     maskinporten.ForeignAccountSecretsClient.send_secrets.assert_called_once()
+    assert {
+        s["name"]
+        for s in maskinporten.ForeignAccountSecretsClient.send_secrets.call_args[0][1:][
+            0
+        ]
+    } == {"key_id", "keystore", "key_alias", "key_password"}
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
