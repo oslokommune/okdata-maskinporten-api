@@ -16,7 +16,12 @@ def test_send_secrets(mock_aws):
         "123456789876", destination_aws_region, maskinporten_client_id
     )
 
-    secrets_client.send_secrets({"some-secret-1": "value", "some-secret-2": "value"})
+    secrets_client.send_secrets(
+        [
+            {"name": "some-secret-1", "value": "value", "description": "foo"},
+            {"name": "some-secret-2", "value": "value", "description": "foo"},
+        ]
+    )
 
     ssm_client = boto3.client("ssm", region_name=destination_aws_region)
 
@@ -52,7 +57,12 @@ def test_delete_secrets(mock_aws):
         "123456789876", destination_aws_region, maskinporten_client_id
     )
 
-    secrets_client.send_secrets({"secret-1": "value", "secret-2": "value"})
+    secrets_client.send_secrets(
+        [
+            {"name": "secret-1", "value": "value", "description": "foo"},
+            {"name": "secret-2", "value": "value", "description": "foo"},
+        ]
+    )
 
     assert secrets_client.delete_secrets(["secret-1", "secret-3"]) == [
         f"/okdata/maskinporten/{maskinporten_client_id}/secret-1"
