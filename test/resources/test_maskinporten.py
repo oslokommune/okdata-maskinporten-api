@@ -327,7 +327,7 @@ def test_create_client_key_to_aws(
     assert res.status_code == 201
     key = res.json()
     assert key == {
-        "kid": "1970-01-01-01-00-00",
+        "kid": "kid-1970-01-01-01-00-00",
         "ssm_params": [
             f"/okdata/maskinporten/{client_id}/key_id",
             f"/okdata/maskinporten/{client_id}/keystore",
@@ -389,7 +389,7 @@ def test_create_client_key_return_to_client(
 
     assert res.status_code == 201
     key = res.json()
-    assert key["kid"] == "1970-01-01-01-00-00"
+    assert key["kid"] == "kid-1970-01-01-01-00-00"
     assert not key["ssm_params"]
     assert isinstance(key["keystore"], str)
     assert isinstance(key["key_alias"], str)
@@ -512,7 +512,7 @@ def test_delete_client_key_last_remaining(
     mocker,
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
-    key_id = "1970-01-01-01-00-00"
+    key_id = "kid-1970-01-01-01-00-00"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -550,11 +550,11 @@ def test_delete_client_key_more_than_one_left(
     mocker,
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
-    key_id = "1970-01-01-01-00-00"
+    key_id = "kid-1970-01-01-01-00-00"
 
     # Add a second key.
     maskinporten_list_client_keys_response["keys"].append(
-        {"kid": "1980-01-01-12-00-00"}
+        {"kid": "kid-1980-01-01-12-00-00"}
     )
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -595,7 +595,7 @@ def test_delete_client_key_no_keys(
     mocker,
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
-    key_id = "1970-01-01-01-00-00"
+    key_id = "kid-1970-01-01-01-00-00"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -631,7 +631,7 @@ def test_list_client_keys(
     assert response.status_code == 200
     assert response.json() == [
         {
-            "kid": "1970-01-01-01-00-00",
+            "kid": "kid-1970-01-01-01-00-00",
             "client_id": client_id,
             "created": "2021-09-16T12:34:17.099000+02:00",
             "expires": "2022-09-16T12:34:17.099000+02:00",

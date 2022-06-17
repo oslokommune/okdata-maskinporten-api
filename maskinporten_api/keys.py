@@ -20,7 +20,7 @@ def jwk_from_key(key: crypto.PKey):
     """Return a JSON Web Key (JWK) payload representing `key`."""
     return {
         "kid": datetime.now(tz=ZoneInfo(key=os.environ["TIMEZONE"])).strftime(
-            "%Y-%m-%d-%H-%M-%S"
+            "kid-%Y-%m-%d-%H-%M-%S"
         ),
         "alg": "RS256",
         **jwk.dumps(crypto.dump_publickey(crypto.FILETYPE_PEM, key)),
