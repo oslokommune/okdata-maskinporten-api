@@ -11,9 +11,10 @@ from models import (
     ClientKeyMetadata,
     CreateClientKeyIn,
     CreateClientKeyOut,
+    DeleteMaskinportenClientIn,
+    DeleteMaskinportenClientOut,
     MaskinportenClientIn,
     MaskinportenClientOut,
-    DeleteMaskinportenClientOut,
     MaskinportenEnvironment,
 )
 from maskinporten_api.audit import audit_log
@@ -175,8 +176,9 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
         status.HTTP_422_UNPROCESSABLE_ENTITY,
     ),
 )
-def delete_client(
+def delete_client(  # noqa: C901
     env: MaskinportenEnvironment,
+    body: DeleteMaskinportenClientIn = None,
     client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
     service_client: ServiceClient = Depends(),
@@ -218,6 +220,15 @@ def delete_client(
             f"Client {client_id} cannot be deleted due to internal server error.",
         )
 
+    send_to_aws = body.aws_account and body.aws_region
+    if send_to_aws:
+        try:
+            secrets_client = ForeignAccountSecretsClient(
+                body.aws_account, body.aws_region, client_id
+            )
+        except AssumeRoleAccessDeniedError as e:
+            raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
+
     logger.debug(sanitize(f"Deleting maskinporten client {client_id}"))
 
     try:
@@ -226,6 +237,17 @@ def delete_client(
         raise ErrorResponse(
             status.HTTP_500_INTERNAL_SERVER_ERROR, f"No client with ID {client_id}"
         )
+
+    deleted_ssm_params = []
+    if send_to_aws:
+        try:
+            deleted_ssm_params = secrets_client.delete_secrets(
+                ["key_id", "keystore", "key_alias", "key_password"]
+            )
+        except ClientError:
+            # Secrets deletion failed. The client is informed by the returned
+            # `deleted_ssm_params` being empty.
+            pass
 
     try:
         delete_okdata_permissions(
@@ -245,7 +267,10 @@ def delete_client(
         user=auth_info.principal_id,
     )
 
-    return DeleteMaskinportenClientOut(client_id=client_id)
+    return DeleteMaskinportenClientOut(
+        client_id=client_id,
+        deleted_ssm_params=deleted_ssm_params,
+    )
 
 
 @router.post(
