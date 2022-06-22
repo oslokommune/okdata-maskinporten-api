@@ -29,9 +29,14 @@ class MaskinportenClientOut(BaseModel):
     active: bool
 
 
-# TODO: Check if any keycloak resources needs to be deleted
+class DeleteMaskinportenClientIn(BaseModel):
+    aws_account: Optional[str]
+    aws_region: Optional[str]
+
+
 class DeleteMaskinportenClientOut(BaseModel):
     client_id: str
+    deleted_ssm_params: list[str]
 
 
 class CreateClientKeyIn(BaseModel):
