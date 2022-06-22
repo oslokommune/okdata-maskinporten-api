@@ -220,7 +220,7 @@ def delete_client(  # noqa: C901
             f"Client {client_id} cannot be deleted due to internal server error.",
         )
 
-    send_to_aws = body.aws_account and body.aws_region
+    send_to_aws = body and body.aws_account and body.aws_region
     if send_to_aws:
         try:
             secrets_client = ForeignAccountSecretsClient(

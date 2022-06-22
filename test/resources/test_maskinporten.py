@@ -320,6 +320,41 @@ def test_delete_client(
     assert audit_log_entry["Item"]["User"] == "janedoe"
 
 
+def test_delete_client_no_body(
+    maskinporten_get_client_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
+        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
+        res = mock_client.delete(
+            f"/clients/test/{client_id}",
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
+        )
+
+    assert res.status_code == 200
+    data = res.json()
+    assert data["client_id"] == client_id
+    assert data["deleted_ssm_params"] == []
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
+    assert audit_log_entry["Item"]["Action"] == "delete"
+    assert audit_log_entry["Item"]["User"] == "janedoe"
+
+
 def test_delete_client_remaining_keys(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
