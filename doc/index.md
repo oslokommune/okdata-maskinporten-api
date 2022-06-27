@@ -43,9 +43,17 @@ med lesetilgang dit. På den måten slipper vi at virksomhetssertifikatet spres
 rundt på utviklermaskiner, og lar heller all kommunikasjonen gå gjennom
 `okdata-maskinporten-api`.
 
+#### Audit log
+
 API-et loggfører hvem som gjør hva på hvilke ressurser i Maskinporten i en audit
 log i DynamoDB, slik at man kan gå tilbake og se på historikken dersom det
 skulle bli nødvendig.
+
+[Point-in-time recovery](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/PointInTimeRecovery.html)
+(PITR) er påslått for tabellen og muliggjør gjenopprettelse av tabelldataene til
+et hvilket som helst tidspunkt siste 35 dager. I tillegg trigges en
+[eksport](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DataExport.html)
+av tabellen til S3 én gang i måneden (se egen Lambda handler `jobs.backup.export_audit_trail`).
 
 ### `okdata-permission-api`
 

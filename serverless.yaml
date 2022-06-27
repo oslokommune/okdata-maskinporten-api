@@ -37,12 +37,14 @@ provider:
     RESOURCE_SERVER_CLIENT_ID: okdata-resource-server
     OKDATA_PERMISSION_API_URL: ${ssm:/dataplatform/shared/api-gateway-url}/okdata-permission-api
     TIMEZONE: "Europe/Oslo"
+    BACKUP_BUCKET_NAME: ${self:custom.backupBucket.${self:provider.stage}, self:custom.backupBucket.dev}
 
 package:
   patterns:
     - '!**/*'
     - app.py
     - handler.py
+    - jobs/*.py
     - maskinporten_api/*.py
     - models/*.py
     - resources/*.py
@@ -54,6 +56,11 @@ functions:
       - http: ANY /
       - http: ANY /{any+}
     timeout: 29
+  export-audit-trail:
+    handler: jobs.backup.export_audit_trail
+    events:
+      - schedule: cron(0 0 1 * ? *)
+    timeout: 30
 
 plugins:
   - serverless-plugin-git-variables
@@ -69,6 +76,7 @@ custom:
   version: 0.1.0
   pythonRequirements:
     dockerizePip: non-linux
+    dockerImage: public.ecr.aws/sam/build-python3.9:latest
     slim: true
     usePoetry: false
   prune:
@@ -78,3 +86,6 @@ custom:
   deploymentBucket:
     prod: ok-origo-dataplatform-config-prod
     dev: ok-origo-dataplatform-config-dev
+  backupBucket:
+    prod: ok-origo-dataplatform-backup-prod
+    dev: ok-origo-dataplatform-backup-dev
