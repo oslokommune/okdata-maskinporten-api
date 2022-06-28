@@ -12,6 +12,7 @@ from test.resources.conftest import get_mock_user, valid_client_token, team_id
 
 CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
+SLACK_WEBHOOK_URL = os.environ["SLACK_MASKINPORTEN_API_ALERTS_WEBHOOK_URL"]
 
 
 def test_create_client(
@@ -33,13 +34,14 @@ def test_create_client(
             json=maskinporten_create_client_response,
         )
 
-        teams_adapter = rm.get(
+        teams_api_matcher = rm.get(
             f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
             json=user_team_response,
         )
-        permissions_adapter = rm.post(
+        permissions_api_matcher = rm.post(
             f"{OKDATA_PERMISSION_API_URL}/permissions",
         )
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
 
         created_client = mock_client.post(
             "/clients",
@@ -58,15 +60,10 @@ def test_create_client(
     }
     assert created_client == client
 
-    table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client["client_id"], "Type": "client"})
-    assert audit_log_entry["Item"]["Id"] == client["client_id"]
-    assert audit_log_entry["Item"]["Action"] == "create"
-
-    teams_request = teams_adapter.last_request
+    teams_request = teams_api_matcher.last_request
     assert teams_request.headers["Authorization"] == f"Bearer {mock_user.access_token}"
 
-    permissions_request = permissions_adapter.last_request
+    permissions_request = permissions_api_matcher.last_request
     assert (
         permissions_request.headers["Authorization"] == f"Bearer {valid_client_token}"
     )
@@ -77,6 +74,17 @@ def test_create_client(
         },
         "resource_name": f"maskinporten:client:{maskinporten_create_client_body['env']}-{client['client_id']}",
     }
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.get_item(Key={"Id": client["client_id"], "Type": "client"})
+    assert audit_log_entry["Item"]["Id"] == client["client_id"]
+    assert audit_log_entry["Item"]["Action"] == "create"
+
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        f"created in `{maskinporten_create_client_body['env']}`."
+    )
 
 
 def test_create_client_rollback(
@@ -296,6 +304,7 @@ def test_delete_client(
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
 
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
@@ -319,6 +328,13 @@ def test_delete_client(
     assert audit_log_entry["Item"]["Action"] == "delete"
     assert audit_log_entry["Item"]["User"] == "janedoe"
 
+    client = maskinporten_get_client_response
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        "deleted in `test`."
+    )
+
 
 def test_delete_client_no_body(
     maskinporten_get_client_response,
@@ -333,6 +349,7 @@ def test_delete_client_no_body(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
 
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
@@ -353,6 +370,13 @@ def test_delete_client_no_body(
     audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
     assert audit_log_entry["Item"]["Action"] == "delete"
     assert audit_log_entry["Item"]["User"] == "janedoe"
+
+    client = maskinporten_get_client_response
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        "deleted in `test`."
+    )
 
 
 def test_delete_client_remaining_keys(
@@ -408,6 +432,7 @@ def test_delete_client_delete_from_ssm(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
 
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
@@ -438,6 +463,13 @@ def test_delete_client_delete_from_ssm(
     assert audit_log_entry["Item"]["Action"] == "delete"
     assert audit_log_entry["Item"]["User"] == "janedoe"
 
+    client = maskinporten_get_client_response
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        "deleted in `test`."
+    )
+
 
 @freeze_time("1970-01-01")
 def test_create_client_key_to_aws(
@@ -456,6 +488,8 @@ def test_create_client_key_to_aws(
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
+
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
@@ -508,6 +542,13 @@ def test_create_client_key_to_aws(
     assert audit_log_entry["Item"]["Action"] == "add-key"
     assert audit_log_entry["Item"]["KeyId"] == key["kid"]
 
+    client = maskinporten_get_client_response
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client key for `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        "created in `test`."
+    )
+
 
 @freeze_time("1970-01-01")
 def test_create_client_key_return_to_client(
@@ -525,6 +566,8 @@ def test_create_client_key_return_to_client(
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
+
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
@@ -557,6 +600,13 @@ def test_create_client_key_return_to_client(
     audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
     assert audit_log_entry["Item"]["Action"] == "add-key"
     assert audit_log_entry["Item"]["KeyId"] == key["kid"]
+
+    client = maskinporten_get_client_response
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client key for `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        "created in `test`."
+    )
 
 
 def test_create_client_key_too_many_keys(
@@ -672,6 +722,8 @@ def test_delete_client_key_last_remaining(
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
+
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
@@ -694,6 +746,13 @@ def test_delete_client_key_last_remaining(
     assert audit_log_entry["Item"]["Action"] == "remove-key"
     assert audit_log_entry["Item"]["KeyId"] == key_id
 
+    client = maskinporten_get_client_response
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client key for `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        "deleted in `test`."
+    )
+
 
 def test_delete_client_key_more_than_one_left(
     maskinporten_get_client_response,
@@ -715,6 +774,8 @@ def test_delete_client_key_more_than_one_left(
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
+
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
             f"{CLIENTS_ENDPOINT}{client_id}",
             json=maskinporten_get_client_response,
@@ -738,6 +799,13 @@ def test_delete_client_key_more_than_one_left(
     audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
     assert audit_log_entry["Item"]["Action"] == "remove-key"
     assert audit_log_entry["Item"]["KeyId"] == key_id
+
+    client = maskinporten_get_client_response
+    assert audit_notify_matcher.last_request.json()["text"] == (
+        f"Client key for `{client['client_name']}` with scope "
+        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
+        "deleted in `test`."
+    )
 
 
 def test_delete_client_key_no_keys(
