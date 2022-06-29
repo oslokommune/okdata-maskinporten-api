@@ -17,7 +17,7 @@ from models import (
     MaskinportenClientOut,
     MaskinportenEnvironment,
 )
-from maskinporten_api.audit import audit_log
+from maskinporten_api.audit import audit_log, audit_notify
 from maskinporten_api.keys import (
     generate_key,
     jwk_from_key,
@@ -97,7 +97,9 @@ def create_client(
     new_client = maskinporten_client.create_client(
         team_name, body.provider, body.integration, body.scopes
     ).json()
+
     new_client_id = new_client["client_id"]
+    new_client_scopes = new_client["scopes"]
 
     try:
         create_okdata_permissions(
@@ -119,7 +121,10 @@ def create_client(
         env=body.env,
         action="create",
         user=auth_info.principal_id,
-        scopes=new_client["scopes"],
+        scopes=new_client_scopes,
+    )
+    audit_notify(
+        "Client created", new_client["client_name"], body.env, new_client_scopes
     )
 
     return MaskinportenClientOut.parse_obj(new_client)
@@ -195,7 +200,7 @@ def delete_client(  # noqa: C901
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
     try:
-        maskinporten_client.get_client(client_id)
+        client = maskinporten_client.get_client(client_id).json()
     except requests.HTTPError as e:
         if e.response.status_code == status.HTTP_404_NOT_FOUND:
             raise ErrorResponse(
@@ -266,6 +271,7 @@ def delete_client(  # noqa: C901
         action="delete",
         user=auth_info.principal_id,
     )
+    audit_notify("Client deleted", client["client_name"], env, client["scopes"])
 
     return DeleteMaskinportenClientOut(
         client_id=client_id,
@@ -342,9 +348,9 @@ def create_client_key(
     except TooManyKeysError as e:
         raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
 
-    if send_to_aws:
-        client_name = client["client_name"]
+    client_name = client["client_name"]
 
+    if send_to_aws:
         try:
             ssm_params = secrets_client.send_secrets(
                 [
@@ -392,6 +398,7 @@ def create_client_key(
         user=auth_info.principal_id,
         key_id=key_id,
     )
+    audit_notify("Client key added", client_name, env, client["scopes"])
 
     return CreateClientKeyOut(
         kid=key_id,
@@ -430,7 +437,7 @@ def delete_client_key(
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
     try:
-        maskinporten_client.get_client(client_id)
+        client = maskinporten_client.get_client(client_id).json()
     except requests.HTTPError as e:
         if e.response.status_code == status.HTTP_404_NOT_FOUND:
             raise ErrorResponse(
@@ -453,6 +460,7 @@ def delete_client_key(
         user=auth_info.principal_id,
         key_id=key_id,
     )
+    audit_notify("Client key removed", client["client_name"], env, client["scopes"])
 
 
 @router.get(

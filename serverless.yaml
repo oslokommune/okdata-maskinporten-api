@@ -38,6 +38,7 @@ provider:
     OKDATA_PERMISSION_API_URL: ${ssm:/dataplatform/shared/api-gateway-url}/okdata-permission-api
     TIMEZONE: "Europe/Oslo"
     BACKUP_BUCKET_NAME: ${self:custom.backupBucket.${self:provider.stage}, self:custom.backupBucket.dev}
+    SLACK_MASKINPORTEN_API_ALERTS_WEBHOOK_URL: ${ssm:/dataplatform/slack/maskinporten-api-slack-webhook}
 
 package:
   patterns:
