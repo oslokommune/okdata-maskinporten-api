@@ -6,6 +6,7 @@ import requests_mock
 
 from freezegun import freeze_time
 from maskinporten_api.maskinporten_client import env_config
+from maskinporten_api.audit import _slack_message_payload
 from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import get_mock_user, valid_client_token, team_id
@@ -80,10 +81,11 @@ def test_create_client(
     assert audit_log_entry["Item"]["Id"] == client["client_id"]
     assert audit_log_entry["Item"]["Action"] == "create"
 
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        f"created in `{maskinporten_create_client_body['env']}`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client created",
+        client["client_name"],
+        maskinporten_create_client_body["env"],
+        client["scopes"],
     )
 
 
@@ -329,10 +331,11 @@ def test_delete_client(
     assert audit_log_entry["Item"]["User"] == "janedoe"
 
     client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        "deleted in `test`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client deleted",
+        client["client_name"],
+        "test",
+        client["scopes"],
     )
 
 
@@ -372,10 +375,11 @@ def test_delete_client_no_body(
     assert audit_log_entry["Item"]["User"] == "janedoe"
 
     client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        "deleted in `test`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client deleted",
+        client["client_name"],
+        "test",
+        client["scopes"],
     )
 
 
@@ -464,10 +468,11 @@ def test_delete_client_delete_from_ssm(
     assert audit_log_entry["Item"]["User"] == "janedoe"
 
     client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        "deleted in `test`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client deleted",
+        client["client_name"],
+        "test",
+        client["scopes"],
     )
 
 
@@ -543,10 +548,11 @@ def test_create_client_key_to_aws(
     assert audit_log_entry["Item"]["KeyId"] == key["kid"]
 
     client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client key for `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        "created in `test`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client key added",
+        client["client_name"],
+        "test",
+        client["scopes"],
     )
 
 
@@ -602,10 +608,11 @@ def test_create_client_key_return_to_client(
     assert audit_log_entry["Item"]["KeyId"] == key["kid"]
 
     client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client key for `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        "created in `test`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client key added",
+        client["client_name"],
+        "test",
+        client["scopes"],
     )
 
 
@@ -747,10 +754,11 @@ def test_delete_client_key_last_remaining(
     assert audit_log_entry["Item"]["KeyId"] == key_id
 
     client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client key for `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        "deleted in `test`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client key removed",
+        client["client_name"],
+        "test",
+        client["scopes"],
     )
 
 
@@ -801,10 +809,11 @@ def test_delete_client_key_more_than_one_left(
     assert audit_log_entry["Item"]["KeyId"] == key_id
 
     client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json()["text"] == (
-        f"Client key for `{client['client_name']}` with scope "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        "deleted in `test`."
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client key removed",
+        client["client_name"],
+        "test",
+        client["scopes"],
     )
 
 

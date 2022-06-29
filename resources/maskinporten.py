@@ -124,10 +124,7 @@ def create_client(
         scopes=new_client_scopes,
     )
     audit_notify(
-        f"Client `{new_client['client_name']}` "
-        f"with scope{'s'[:len(new_client_scopes)^1]} "
-        f"{','.join([f'`{scope}`' for scope in new_client_scopes])} "
-        f"created in `{body.env}`."
+        "Client created", new_client["client_name"], body.env, new_client_scopes
     )
 
     return MaskinportenClientOut.parse_obj(new_client)
@@ -274,12 +271,7 @@ def delete_client(  # noqa: C901
         action="delete",
         user=auth_info.principal_id,
     )
-    audit_notify(
-        f"Client `{client['client_name']}` "
-        f"with scope{'s'[:len(client['scopes'])^1]} "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        f"deleted in `{env}`."
-    )
+    audit_notify("Client deleted", client["client_name"], env, client["scopes"])
 
     return DeleteMaskinportenClientOut(
         client_id=client_id,
@@ -406,12 +398,7 @@ def create_client_key(
         user=auth_info.principal_id,
         key_id=key_id,
     )
-    audit_notify(
-        f"Client key for `{client_name}` "
-        f"with scope{'s'[:len(client['scopes'])^1]} "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        f"created in `{env}`."
-    )
+    audit_notify("Client key added", client_name, env, client["scopes"])
 
     return CreateClientKeyOut(
         kid=key_id,
@@ -473,12 +460,7 @@ def delete_client_key(
         user=auth_info.principal_id,
         key_id=key_id,
     )
-    audit_notify(
-        f"Client key for `{client['client_name']}` "
-        f"with scope{'s'[:len(client['scopes'])^1]} "
-        f"{','.join([f'`{scope}`' for scope in client['scopes']])} "
-        f"deleted in `{env}`."
-    )
+    audit_notify("Client key removed", client["client_name"], env, client["scopes"])
 
 
 @router.get(
