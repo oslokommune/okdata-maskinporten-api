@@ -2,8 +2,6 @@ import os
 
 import requests
 
-OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
-
 
 def create_okdata_permissions(resource_name, team_name, auth_header):
     create_permissions_body = {
@@ -12,7 +10,7 @@ def create_okdata_permissions(resource_name, team_name, auth_header):
     }
 
     create_permissions_response = requests.post(
-        f"{OKDATA_PERMISSION_API_URL}/permissions",
+        f"{os.environ['OKDATA_PERMISSION_API_URL']}/permissions",
         json=create_permissions_body,
         headers=auth_header,
     )
@@ -23,7 +21,7 @@ def create_okdata_permissions(resource_name, team_name, auth_header):
 
 def delete_okdata_permissions(resource_name, auth_header):
     res = requests.delete(
-        f"{OKDATA_PERMISSION_API_URL}/permissions/{resource_name}",
+        f"{os.environ['OKDATA_PERMISSION_API_URL']}/permissions/{resource_name}",
         headers=auth_header,
     )
     res.raise_for_status()
@@ -32,7 +30,7 @@ def delete_okdata_permissions(resource_name, auth_header):
 
 def get_user_permissions(bearer_token):
     res = requests.get(
-        f"{OKDATA_PERMISSION_API_URL}/my_permissions",
+        f"{os.environ['OKDATA_PERMISSION_API_URL']}/my_permissions",
         headers={"Authorization": f"Bearer {bearer_token}"},
         params={"resource_type": "maskinporten:client"},
     )
@@ -50,7 +48,7 @@ def get_user_team(team_id, bearer_token, has_role=None):
         params["has_role"] = has_role
 
     res = requests.get(
-        f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
+        f"{os.environ['OKDATA_PERMISSION_API_URL']}/teams/{team_id}",
         headers={"Authorization": f"Bearer {bearer_token}"},
         params=params,
     )
