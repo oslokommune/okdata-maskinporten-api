@@ -76,7 +76,7 @@ python-jose==3.3.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   python-keycloak
-python-keycloak==0.24.0
+python-keycloak==1.8.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
@@ -110,6 +110,7 @@ typing-extensions==3.10.0.0
 urllib3==1.26.5
     # via
     #   botocore
+    #   python-keycloak
     #   requests
 wrapt==1.12.1
     # via aws-xray-sdk

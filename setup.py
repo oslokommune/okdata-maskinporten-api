@@ -32,7 +32,7 @@ setup(
         # version 3.3.0 or higher explicitly to silence some deprecation
         # warnings.
         "python-jose>=3.3.0,<4.0.0",
-        "python-keycloak",
+        "python-keycloak>=1,<2",
         "requests>=2.26.0,<3.0.0",
         # We don't really need this, but AWS Lambda started including this
         # library in the Python 3.9 runtime, and `requests` will swap the
