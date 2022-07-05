@@ -40,6 +40,8 @@ provider:
     TIMEZONE: "Europe/Oslo"
     BACKUP_BUCKET_NAME: ${self:custom.backupBucket.${self:provider.stage}, self:custom.backupBucket.dev}
     SLACK_MASKINPORTEN_API_ALERTS_WEBHOOK_URL: ${ssm:/dataplatform/slack/maskinporten-api-slack-webhook}
+    EMAIL_API_URL: ${ssm:/dataplatform/shared/email-api-url}
+    EMAIL_API_KEY: ${ssm:/dataplatform/shared/email-api-key}
 
 package:
   patterns:
@@ -63,6 +65,13 @@ functions:
     events:
       - schedule: cron(0 0 1 * ? *)
     timeout: 30
+  client-report:
+    handler: jobs.client_report.client_report
+    events:
+      - schedule:
+          rate: cron(0 0 1 * ? *)
+          enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
+    timeout: 300
 
 plugins:
   - serverless-plugin-git-variables
@@ -91,3 +100,6 @@ custom:
   backupBucket:
     prod: ok-origo-dataplatform-backup-prod
     dev: ok-origo-dataplatform-backup-dev
+  clientReportEnabled:
+    prod: true
+    dev: false

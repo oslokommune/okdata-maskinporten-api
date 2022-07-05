@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 
 import requests
 
@@ -28,6 +29,15 @@ def delete_okdata_permissions(resource_name, auth_header):
     return res
 
 
+def get_resource_permissions(resource_name, auth_header):
+    res = requests.get(
+        f"{os.environ['OKDATA_PERMISSION_API_URL']}/permissions/{resource_name}",
+        headers=auth_header,
+    )
+    res.raise_for_status()
+    return res.json()
+
+
 def get_user_permissions(bearer_token):
     res = requests.get(
         f"{os.environ['OKDATA_PERMISSION_API_URL']}/my_permissions",
@@ -38,9 +48,10 @@ def get_user_permissions(bearer_token):
     return res.json()
 
 
-# TODO: Use `okdata-sdk-python` team client. Requires a better way of
-# calling the SDK as an already authenticated user (by using the access
-# token, not requiring re-auth using username/password).
+# TODO: Use `okdata-sdk-python` team client for the two functions
+# below. Requires a better way of calling the SDK as an already authenticated
+# user (by using the access token, not requiring re-auth using
+# username/password).
 def get_user_team(team_id, bearer_token, has_role=None):
     params = {}
 
@@ -52,5 +63,15 @@ def get_user_team(team_id, bearer_token, has_role=None):
         headers={"Authorization": f"Bearer {bearer_token}"},
         params=params,
     )
+    res.raise_for_status()
+    return res.json()
+
+
+def get_team_by_name(team_name, auth_header):
+    """Return details for a team by name."""
+    url = "{}/teams/name/{}".format(
+        os.environ["OKDATA_PERMISSION_API_URL"], quote(team_name)
+    )
+    res = requests.get(url, headers=auth_header)
     res.raise_for_status()
     return res.json()
