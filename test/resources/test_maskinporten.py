@@ -7,6 +7,7 @@ from boto3.dynamodb.conditions import Key
 from freezegun import freeze_time
 
 from maskinporten_api.audit import _slack_message_payload
+from maskinporten_api.auto_rotate import clients_to_rotate
 from maskinporten_api.maskinporten_client import env_config
 from maskinporten_api.permissions import client_resource_name
 from resources import maskinporten
@@ -577,7 +578,7 @@ def test_create_client_key_to_aws(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten.ForeignAccountSecretsClient, "send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
 
     env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
@@ -626,12 +627,12 @@ def test_create_client_key_to_aws(
         "key_password": None,
     }
 
-    maskinporten.ForeignAccountSecretsClient.send_secrets.assert_called_once()
+    maskinporten.ForeignAccountSecretsClient._send_secrets.assert_called_once()
     assert {
         s["name"]
-        for s in maskinporten.ForeignAccountSecretsClient.send_secrets.call_args[0][1:][
-            0
-        ]
+        for s in maskinporten.ForeignAccountSecretsClient._send_secrets.call_args[0][
+            1:
+        ][0]
     } == {"key_id", "keystore", "key_alias", "key_password"}
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
@@ -692,13 +693,16 @@ def test_create_client_key_auto_rotate(
         )
 
     assert res.status_code == 201
-
-    table = mock_dynamodb.Table("maskinporten-key-rotation")
-    item = table.get_item(Key={"ClientId": client_id, "Env": env})["Item"]
-    assert item["AwsAccount"] == "123456789876"
-    assert item["AwsRegion"] == "eu-west-1"
-    assert item["LastUpdated"] == "1970-01-01T00:00:00+00:00"
-    assert item["ClientName"] == "my-team-freg-testing"
+    assert clients_to_rotate() == [
+        {
+            "ClientId": client_id,
+            "Env": "test",
+            "AwsAccount": "123456789876",
+            "AwsRegion": "eu-west-1",
+            "LastUpdated": "1970-01-01T00:00:00+00:00",
+            "ClientName": "my-team-freg-testing",
+        }
+    ]
 
 
 @freeze_time("1970-01-01")
@@ -712,7 +716,7 @@ def test_create_client_key_return_to_client(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten.ForeignAccountSecretsClient, "send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
 
     env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
@@ -747,7 +751,7 @@ def test_create_client_key_return_to_client(
     assert isinstance(key["key_alias"], str)
     assert isinstance(key["key_password"], str)
 
-    maskinporten.ForeignAccountSecretsClient.send_secrets.assert_not_called()
+    maskinporten.ForeignAccountSecretsClient._send_secrets.assert_not_called()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.query(

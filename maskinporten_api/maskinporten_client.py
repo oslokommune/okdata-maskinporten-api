@@ -1,6 +1,7 @@
 import base64
 import dataclasses
 import re
+import threading
 
 import requests
 from OpenSSL import crypto
@@ -98,6 +99,7 @@ class MaskinportenClient:
         )
         self.client = JWTAuthClient(conf, config.idporten_oidc_wellknown)
         self.base_url = config.maskinporten_clients_endpoint
+        self._delete_client_key_lock = threading.Lock()
 
     @staticmethod
     def _slugify_team_name(team_name):
@@ -157,27 +159,32 @@ class MaskinportenClient:
         )
 
     def delete_client_key(self, client_id, key_id):
-        existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
-        updated_jwks = [jwk for jwk in existing_jwks if jwk["kid"] != key_id]
+        self._delete_client_key_lock.acquire()
 
-        if len(existing_jwks) == len(updated_jwks):
-            raise KeyNotFoundError(client_id, key_id)
+        try:
+            existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
+            updated_jwks = [jwk for jwk in existing_jwks if jwk["kid"] != key_id]
 
-        if len(updated_jwks) == 0:
-            # When deleting the last key, we need to DELETE instead of POST-ing
-            # an empty `keys` object.
+            if len(existing_jwks) == len(updated_jwks):
+                raise KeyNotFoundError(client_id, key_id)
+
+            if len(updated_jwks) == 0:
+                # When deleting the last key, we need to DELETE instead of
+                # POST-ing an empty `keys` object.
+                return self._request(
+                    "DELETE",
+                    ["idporten:dcr.write"],
+                    f"{client_id}/jwks",
+                )
+
             return self._request(
-                "DELETE",
+                "POST",
                 ["idporten:dcr.write"],
                 f"{client_id}/jwks",
+                json={"keys": updated_jwks},
             )
-
-        return self._request(
-            "POST",
-            ["idporten:dcr.write"],
-            f"{client_id}/jwks",
-            json={"keys": updated_jwks},
-        )
+        finally:
+            self._delete_client_key_lock.release()
 
     def get_client_keys(self, client_id: str):
         return self._request(
