@@ -315,12 +315,6 @@ def create_client_key(
             )
         raise
 
-    key = create_key()
-    kid = key.jwk["kid"]
-    logger.debug(
-        sanitize(f"Registering new key with id {kid} for client {client_id}"),
-    )
-    ssm_params = None
     send_to_aws = body.destination_aws_account and body.destination_aws_region
 
     if send_to_aws:
@@ -333,45 +327,23 @@ def create_client_key(
         except AssumeRoleAccessDeniedError as e:
             raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
+    key = create_key()
+    kid = key.jwk["kid"]
+    logger.debug(
+        sanitize(f"Registering new key with id {kid} for client {client_id}"),
+    )
+
     try:
         maskinporten_client.create_client_key(client_id, key.jwk).json()
     except TooManyKeysError as e:
         raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
 
+    ssm_params = None
     client_name = client["client_name"]
 
     if send_to_aws:
         try:
-            ssm_params = secrets_client.send_secrets(
-                [
-                    {
-                        "name": "key_id",
-                        "value": kid,
-                        "description": f"[{env}] {client_name}: Key ID",
-                    },
-                    {
-                        "name": "keystore",
-                        "value": key.keystore,
-                        "description": (
-                            f"[{env}] {client_name}: PKCS #12 archive "
-                            "containing the key"
-                        ),
-                    },
-                    {
-                        "name": "key_alias",
-                        "value": key.alias,
-                        "description": (
-                            f"[{env}] {client_name}: Alias of the key in the "
-                            "keystore"
-                        ),
-                    },
-                    {
-                        "name": "key_password",
-                        "value": key.password,
-                        "description": f"[{env}] {client_name}: Key password",
-                    },
-                ]
-            )
+            ssm_params = secrets_client.send_key_to_aws(key, env, client_name)
             if body.enable_auto_rotate:
                 enable_auto_rotate(
                     client_id,
