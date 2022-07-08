@@ -42,6 +42,7 @@ class DeleteMaskinportenClientOut(BaseModel):
 class CreateClientKeyIn(BaseModel):
     destination_aws_account: Optional[str]
     destination_aws_region: Optional[str]
+    enable_auto_rotate: Optional[bool]
 
 
 class CreateClientKeyOut(BaseModel):
