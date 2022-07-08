@@ -19,12 +19,7 @@ from models import (
 )
 from maskinporten_api.audit import audit_log, audit_notify
 from maskinporten_api.auto_rotate import enable_auto_rotate
-from maskinporten_api.keys import (
-    generate_key,
-    jwk_from_key,
-    pkcs12_from_key,
-    generate_password,
-)
+from maskinporten_api.keys import create_key
 from maskinporten_api.maskinporten_client import (
     KeyNotFoundError,
     MaskinportenClient,
@@ -41,7 +36,7 @@ from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
     ForeignAccountSecretsClient,
 )
-from maskinporten_api.util import getenv, sanitize
+from maskinporten_api.util import sanitize
 from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
 
@@ -320,17 +315,11 @@ def create_client_key(
             )
         raise
 
-    key = generate_key()
-    jwk = jwk_from_key(key)
-    key_id = jwk["kid"]
-
+    key = create_key()
+    kid = key.jwk["kid"]
     logger.debug(
-        sanitize(f"Registering new key with id {key_id} for client {client_id}")
+        sanitize(f"Registering new key with id {kid} for client {client_id}"),
     )
-
-    key_alias = getenv("MASKINPORTEN_KEY_ALIAS")
-    key_password = generate_password(pw_length=32)
-    keystore = pkcs12_from_key(key, key_alias, key_password)
     ssm_params = None
     send_to_aws = body.destination_aws_account and body.destination_aws_region
 
@@ -345,7 +334,7 @@ def create_client_key(
             raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
     try:
-        maskinporten_client.create_client_key(client_id, jwk).json()
+        maskinporten_client.create_client_key(client_id, key.jwk).json()
     except TooManyKeysError as e:
         raise ErrorResponse(status.HTTP_409_CONFLICT, str(e))
 
@@ -357,12 +346,12 @@ def create_client_key(
                 [
                     {
                         "name": "key_id",
-                        "value": key_id,
+                        "value": kid,
                         "description": f"[{env}] {client_name}: Key ID",
                     },
                     {
                         "name": "keystore",
-                        "value": keystore,
+                        "value": key.keystore,
                         "description": (
                             f"[{env}] {client_name}: PKCS #12 archive "
                             "containing the key"
@@ -370,7 +359,7 @@ def create_client_key(
                     },
                     {
                         "name": "key_alias",
-                        "value": key_alias,
+                        "value": key.alias,
                         "description": (
                             f"[{env}] {client_name}: Alias of the key in the "
                             "keystore"
@@ -378,7 +367,7 @@ def create_client_key(
                     },
                     {
                         "name": "key_password",
-                        "value": key_password,
+                        "value": key.password,
                         "description": f"[{env}] {client_name}: Key password",
                     },
                 ]
@@ -394,7 +383,7 @@ def create_client_key(
         except ClientError as e:
             # Secrets injection failed somehow. Retract the newly created key.
             log_exception(e)
-            maskinporten_client.delete_client_key(client_id, key_id)
+            maskinporten_client.delete_client_key(client_id, kid)
             raise ErrorResponse(
                 status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
             )
@@ -405,16 +394,16 @@ def create_client_key(
         env=env,
         action="add-key",
         user=auth_info.principal_id,
-        key_id=key_id,
+        key_id=kid,
     )
     audit_notify("Client key added", client_name, env, client["scopes"])
 
     return CreateClientKeyOut(
-        kid=key_id,
+        kid=kid,
         ssm_params=ssm_params,
-        keystore=None if send_to_aws else keystore,
-        key_alias=None if send_to_aws else key_alias,
-        key_password=None if send_to_aws else key_password,
+        keystore=None if send_to_aws else key.keystore,
+        key_alias=None if send_to_aws else key.alias,
+        key_password=None if send_to_aws else key.password,
     )
 
 
