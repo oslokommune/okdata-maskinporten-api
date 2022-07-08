@@ -220,4 +220,19 @@ def mock_dynamodb():
             "WriteCapacityUnits": 5,
         },
     )
+    dynamodb.create_table(
+        TableName="maskinporten-key-rotation",
+        KeySchema=[
+            {"AttributeName": "ClientId", "KeyType": "HASH"},
+            {"AttributeName": "Env", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "ClientId", "AttributeType": "S"},
+            {"AttributeName": "Env", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={
+            "ReadCapacityUnits": 5,
+            "WriteCapacityUnits": 5,
+        },
+    )
     return dynamodb

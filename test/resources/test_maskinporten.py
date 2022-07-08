@@ -515,6 +515,7 @@ def test_create_client_key_to_aws(
             json={
                 "destination_aws_account": destination_aws_account,
                 "destination_aws_region": destination_aws_region,
+                "enable_auto_rotate": False,
             },
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -554,6 +555,54 @@ def test_create_client_key_to_aws(
         "test",
         client["scopes"],
     )
+
+
+@freeze_time("1970-01-01")
+def test_create_client_key_auto_rotate(
+    maskinporten_create_client_key_response,
+    maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
+        )
+        rm.post(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_create_client_key_response,
+        )
+        res = mock_client.post(
+            f"/clients/test/{client_id}/keys",
+            json={
+                "destination_aws_account": "123456789876",
+                "destination_aws_region": "eu-west-1",
+                "enable_auto_rotate": True,
+            },
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
+        )
+
+    assert res.status_code == 201
+
+    table = mock_dynamodb.Table("maskinporten-key-rotation")
+    item = table.get_item(Key={"ClientId": client_id, "Env": "test"})["Item"]
+    assert item["AwsAccount"] == "123456789876"
+    assert item["AwsRegion"] == "eu-west-1"
+    assert item["LastUpdated"] == "1970-01-01T00:00:00+00:00"
+    assert item["ClientName"] == "my-team-freg-testing"
 
 
 @freeze_time("1970-01-01")
@@ -648,6 +697,7 @@ def test_create_client_key_too_many_keys(
             json={
                 "destination_aws_account": "123456789876",
                 "destination_aws_region": "eu-west-1",
+                "enable_auto_rotate": False,
             },
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -665,6 +715,7 @@ def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):
         json={
             "destination_aws_account": "123456789876",
             "destination_aws_region": "eu-west-1",
+            "enable_auto_rotate": False,
         },
         headers={"Authorization": get_mock_user("janedoe").bearer_token},
     )
@@ -705,6 +756,7 @@ def test_create_client_key_assume_role_access_denied(
             json={
                 "destination_aws_account": destination_aws_account,
                 "destination_aws_region": destination_aws_region,
+                "enable_auto_rotate": False,
             },
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )

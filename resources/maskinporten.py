@@ -18,6 +18,7 @@ from models import (
     MaskinportenEnvironment,
 )
 from maskinporten_api.audit import audit_log, audit_notify
+from maskinporten_api.auto_rotate import enable_auto_rotate
 from maskinporten_api.keys import (
     generate_key,
     jwk_from_key,
@@ -382,6 +383,14 @@ def create_client_key(
                     },
                 ]
             )
+            if body.enable_auto_rotate:
+                enable_auto_rotate(
+                    client_id,
+                    env,
+                    body.destination_aws_account,
+                    body.destination_aws_region,
+                    client_name,
+                )
         except ClientError as e:
             # Secrets injection failed somehow. Retract the newly created key.
             log_exception(e)
