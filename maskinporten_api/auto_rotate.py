@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 import boto3
 from botocore.exceptions import ClientError
+from okdata.aws.logging import log_exception
 
 from maskinporten_api.util import getenv
 
@@ -39,11 +40,43 @@ def enable_auto_rotate(client_id, env, aws_account, aws_region, client_name):
         error_code = e.response["Error"]["Code"]
         msg = e.response["Error"]["Message"]
         _log_error(client_name, error_code, msg)
+        log_exception(e)
         return None
 
     status_code = db_response["ResponseMetadata"]["HTTPStatusCode"]
     if status_code != 200:
         _log_error(client_name, status_code, db_response)
+        return None
+
+    return db_response
+
+
+def disable_auto_rotate(client_id, env):
+    """Disable automatic key rotation for client `client_id` in `env`.
+
+    Behaves as a no-op if the client hadn't enabled key rotation.
+    """
+
+    dynamodb = boto3.resource("dynamodb", region_name=getenv("AWS_REGION"))
+    table = dynamodb.Table("maskinporten-key-rotation")
+
+    try:
+        db_response = table.delete_item(
+            Key={"ClientId": client_id, "Env": env},
+            ConditionExpression="attribute_exists(ClientId) AND attribute_exists(Env)",
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            return None
+        error_code = e.response["Error"]["Code"]
+        msg = e.response["Error"]["Message"]
+        _log_error(f"{client_id} [{env}]", error_code, msg)
+        log_exception(e)
+        return None
+
+    status_code = db_response["ResponseMetadata"]["HTTPStatusCode"]
+    if status_code != 200:
+        _log_error(f"{client_id} [{env}]", status_code, db_response)
         return None
 
     return db_response

@@ -18,7 +18,7 @@ from models import (
     MaskinportenEnvironment,
 )
 from maskinporten_api.audit import audit_log, audit_notify
-from maskinporten_api.auto_rotate import enable_auto_rotate
+from maskinporten_api.auto_rotate import disable_auto_rotate, enable_auto_rotate
 from maskinporten_api.keys import create_key
 from maskinporten_api.maskinporten_client import (
     KeyNotFoundError,
@@ -260,6 +260,9 @@ def delete_client(  # noqa: C901
         # log it for our sake still.
         log_exception(e)
 
+    logger.debug(sanitize(f"Disabling key rotation for {client_id}"))
+    disable_auto_rotate(client_id, env)
+
     audit_log(
         item_id=client_id,
         item_type="client",
@@ -373,6 +376,9 @@ def create_client_key(
                 ]
             )
             if body.enable_auto_rotate:
+                logger.debug(
+                    sanitize(f"Enabling key rotation for {client_id}"),
+                )
                 enable_auto_rotate(
                     client_id,
                     env,
