@@ -1,4 +1,5 @@
 from models.models import (
+    AuditLogEntry,
     ClientKeyMetadata,
     CreateClientKeyIn,
     CreateClientKeyOut,
@@ -10,6 +11,7 @@ from models.models import (
 )
 
 __all__ = [
+    "AuditLogEntry",
     "ClientKeyMetadata",
     "CreateClientKeyIn",
     "CreateClientKeyOut",

@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from okdata.aws.logging import add_fastapi_logging
 
-from resources import maskinporten
+from resources import audit, maskinporten
 from resources.errors import ErrorResponse, pydantic_error_to_str
 
 root_path = os.environ.get("ROOT_PATH", "")
@@ -19,6 +19,7 @@ app = FastAPI(
 add_fastapi_logging(app)
 
 app.include_router(maskinporten.router, prefix="/clients")
+app.include_router(audit.router, prefix="/audit")
 
 
 @app.exception_handler(ErrorResponse)

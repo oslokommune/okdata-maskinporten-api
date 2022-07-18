@@ -1,19 +1,39 @@
 import logging
 import os
+import time
 from datetime import datetime, timezone
 
 import boto3
 import requests
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+from maskinporten_api.permissions import client_resource_name
+
 log = logging.getLogger()
+
+
+_TABLE_NAME = "maskinporten-audit-trail"
+
+
+def _query_all(table, **query):
+    """Return every result from `table` by evaluating `query`."""
+    res = table.query(**query)
+    items = res["Items"]
+
+    while "LastEvaluatedKey" in res:
+        time.sleep(1)  # Let's be nice
+        res = table.query(ExclusiveStartKey=res["LastEvaluatedKey"], **query)
+        items.extend(res["Items"])
+
+    return items
 
 
 def audit_log(item_id, action, user, scopes=None, key_id=None):
     """Add a log entry to the API's audit trail."""
 
     dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-    table = dynamodb.Table("maskinporten-audit-trail")
+    table = dynamodb.Table(_TABLE_NAME)
 
     try:
         db_response = table.put_item(
@@ -89,3 +109,14 @@ def _slack_message_payload(header, client_name, env, scopes):
             },
         ]
     }
+
+
+def audit_log_for_client(env, client_id):
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+
+    return _query_all(
+        dynamodb.Table(_TABLE_NAME),
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(env, client_id),
+        ),
+    )
