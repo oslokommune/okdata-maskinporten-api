@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 log = logging.getLogger()
 
 
-def audit_log(item_id, item_type, env, action, user, scopes=None, key_id=None):
+def audit_log(item_id, action, user, scopes=None, key_id=None):
     """Add a log entry to the API's audit trail."""
 
     dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
@@ -19,11 +19,9 @@ def audit_log(item_id, item_type, env, action, user, scopes=None, key_id=None):
         db_response = table.put_item(
             Item={
                 "Id": item_id,
-                "Type": item_type,
-                "Env": env,
+                "Timestamp": datetime.now(timezone.utc).isoformat(),
                 "Action": action,
                 "User": user,
-                "Timestamp": datetime.now(timezone.utc).isoformat(),
                 **({"Scopes": ",".join(scopes)} if scopes else {}),
                 **({"KeyId": key_id} if key_id else {}),
             }

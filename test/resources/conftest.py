@@ -209,11 +209,11 @@ def mock_dynamodb():
         TableName="maskinporten-audit-trail",
         KeySchema=[
             {"AttributeName": "Id", "KeyType": "HASH"},
-            {"AttributeName": "Type", "KeyType": "RANGE"},
+            {"AttributeName": "Timestamp", "KeyType": "RANGE"},
         ],
         AttributeDefinitions=[
             {"AttributeName": "Id", "AttributeType": "S"},
-            {"AttributeName": "Type", "AttributeType": "S"},
+            {"AttributeName": "Timestamp", "AttributeType": "S"},
         ],
         ProvisionedThroughput={
             "ReadCapacityUnits": 5,

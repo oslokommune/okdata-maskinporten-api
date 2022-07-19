@@ -3,10 +3,12 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-
+from boto3.dynamodb.conditions import Key
 from freezegun import freeze_time
-from maskinporten_api.maskinporten_client import env_config
+
 from maskinporten_api.audit import _slack_message_payload
+from maskinporten_api.maskinporten_client import env_config
+from maskinporten_api.permissions import client_resource_name
 from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import get_mock_user, valid_client_token, team_id
@@ -68,18 +70,22 @@ def test_create_client(
     assert (
         permissions_request.headers["Authorization"] == f"Bearer {valid_client_token}"
     )
+    resource_name = client_resource_name(
+        maskinporten_create_client_body["env"], client["client_id"]
+    )
     assert permissions_request.json() == {
         "owner": {
             "user_id": user_team_response["name"],
             "user_type": "team",
         },
-        "resource_name": f"maskinporten:client:{maskinporten_create_client_body['env']}-{client['client_id']}",
+        "resource_name": resource_name,
     }
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client["client_id"], "Type": "client"})
-    assert audit_log_entry["Item"]["Id"] == client["client_id"]
-    assert audit_log_entry["Item"]["Action"] == "create"
+    audit_log_entry = table.query(KeyConditionExpression=Key("Id").eq(resource_name))[
+        "Items"
+    ][0]
+    assert audit_log_entry["Action"] == "create"
 
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
         "Client created",
@@ -302,6 +308,7 @@ def test_delete_client(
     mock_dynamodb,
     mocker,
 ):
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -315,7 +322,7 @@ def test_delete_client(
         rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
         rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
         res = mock_client.delete(
-            f"/clients/test/{client_id}",
+            f"/clients/{env}/{client_id}",
             json={"aws_account": None, "aws_region": None},
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -326,16 +333,20 @@ def test_delete_client(
     assert data["deleted_ssm_params"] == []
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
-    assert audit_log_entry["Item"]["Action"] == "delete"
-    assert audit_log_entry["Item"]["User"] == "janedoe"
+    audit_log_entry = table.query(
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(
+                env,
+                client_id,
+            )
+        )
+    )["Items"][0]
+    assert audit_log_entry["Action"] == "delete"
+    assert audit_log_entry["User"] == "janedoe"
 
     client = maskinporten_get_client_response
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client deleted",
-        client["client_name"],
-        "test",
-        client["scopes"],
+        "Client deleted", client["client_name"], env, client["scopes"]
     )
 
 
@@ -347,6 +358,7 @@ def test_delete_client_no_body(
     mock_dynamodb,
     mocker,
 ):
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -360,7 +372,7 @@ def test_delete_client_no_body(
         rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
         rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
         res = mock_client.delete(
-            f"/clients/test/{client_id}",
+            f"/clients/{env}/{client_id}",
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
@@ -370,16 +382,21 @@ def test_delete_client_no_body(
     assert data["deleted_ssm_params"] == []
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
-    assert audit_log_entry["Item"]["Action"] == "delete"
-    assert audit_log_entry["Item"]["User"] == "janedoe"
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.query(
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(
+                env,
+                client_id,
+            )
+        )
+    )["Items"][0]
+    assert audit_log_entry["Action"] == "delete"
+    assert audit_log_entry["User"] == "janedoe"
 
     client = maskinporten_get_client_response
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client deleted",
-        client["client_name"],
-        "test",
-        client["scopes"],
+        "Client deleted", client["client_name"], env, client["scopes"]
     )
 
 
@@ -425,6 +442,7 @@ def test_delete_client_delete_from_ssm(
     mock_dynamodb,
     mocker,
 ):
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
     MockForeignAccountSecretsClient.return_value.delete_secrets.return_value = [
         "key_id",
@@ -447,7 +465,7 @@ def test_delete_client_delete_from_ssm(
         aws_account = "123456789876"
         aws_region = "eu-west-1"
         res = mock_client.delete(
-            f"/clients/test/{client_id}",
+            f"/clients/{env}/{client_id}",
             json={"aws_account": aws_account, "aws_region": aws_region},
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -463,16 +481,20 @@ def test_delete_client_delete_from_ssm(
     }
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
-    assert audit_log_entry["Item"]["Action"] == "delete"
-    assert audit_log_entry["Item"]["User"] == "janedoe"
+    audit_log_entry = table.query(
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(
+                env,
+                client_id,
+            )
+        )
+    )["Items"][0]
+    assert audit_log_entry["Action"] == "delete"
+    assert audit_log_entry["User"] == "janedoe"
 
     client = maskinporten_get_client_response
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client deleted",
-        client["client_name"],
-        "test",
-        client["scopes"],
+        "Client deleted", client["client_name"], env, client["scopes"]
     )
 
 
@@ -558,6 +580,7 @@ def test_create_client_key_to_aws(
 ):
     mocker.spy(maskinporten.ForeignAccountSecretsClient, "send_secrets")
 
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -580,7 +603,7 @@ def test_create_client_key_to_aws(
         destination_aws_account = "123456789876"
         destination_aws_region = "eu-west-1"
         res = mock_client.post(
-            f"/clients/test/{client_id}/keys",
+            f"/clients/{env}/{client_id}/keys",
             json={
                 "destination_aws_account": destination_aws_account,
                 "destination_aws_region": destination_aws_region,
@@ -613,16 +636,20 @@ def test_create_client_key_to_aws(
     } == {"key_id", "keystore", "key_alias", "key_password"}
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
-    assert audit_log_entry["Item"]["Action"] == "add-key"
-    assert audit_log_entry["Item"]["KeyId"] == key["kid"]
+    audit_log_entry = table.query(
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(
+                env,
+                client_id,
+            )
+        )
+    )["Items"][0]
+    assert audit_log_entry["Action"] == "add-key"
+    assert audit_log_entry["KeyId"] == key["kid"]
 
     client = maskinporten_get_client_response
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client key added",
-        client["client_name"],
-        "test",
-        client["scopes"],
+        "Client key added", client["client_name"], env, client["scopes"]
     )
 
 
@@ -637,6 +664,7 @@ def test_create_client_key_auto_rotate(
     mock_dynamodb,
     mocker,
 ):
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -655,7 +683,7 @@ def test_create_client_key_auto_rotate(
             json=maskinporten_create_client_key_response,
         )
         res = mock_client.post(
-            f"/clients/test/{client_id}/keys",
+            f"/clients/{env}/{client_id}/keys",
             json={
                 "destination_aws_account": "123456789876",
                 "destination_aws_region": "eu-west-1",
@@ -667,7 +695,7 @@ def test_create_client_key_auto_rotate(
     assert res.status_code == 201
 
     table = mock_dynamodb.Table("maskinporten-key-rotation")
-    item = table.get_item(Key={"ClientId": client_id, "Env": "test"})["Item"]
+    item = table.get_item(Key={"ClientId": client_id, "Env": env})["Item"]
     assert item["AwsAccount"] == "123456789876"
     assert item["AwsRegion"] == "eu-west-1"
     assert item["LastUpdated"] == "1970-01-01T00:00:00+00:00"
@@ -686,6 +714,8 @@ def test_create_client_key_return_to_client(
     mocker,
 ):
     mocker.spy(maskinporten.ForeignAccountSecretsClient, "send_secrets")
+
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -705,7 +735,7 @@ def test_create_client_key_return_to_client(
             json=maskinporten_create_client_key_response,
         )
         res = mock_client.post(
-            f"/clients/test/{client_id}/keys",
+            f"/clients/{env}/{client_id}/keys",
             json={},
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -721,16 +751,20 @@ def test_create_client_key_return_to_client(
     maskinporten.ForeignAccountSecretsClient.send_secrets.assert_not_called()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
-    assert audit_log_entry["Item"]["Action"] == "add-key"
-    assert audit_log_entry["Item"]["KeyId"] == key["kid"]
+    audit_log_entry = table.query(
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(
+                env,
+                client_id,
+            )
+        )
+    )["Items"][0]
+    assert audit_log_entry["Action"] == "add-key"
+    assert audit_log_entry["KeyId"] == key["kid"]
 
     client = maskinporten_get_client_response
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client key added",
-        client["client_name"],
-        "test",
-        client["scopes"],
+        "Client key added", client["client_name"], env, client["scopes"]
     )
 
 
@@ -845,6 +879,7 @@ def test_delete_client_key_last_remaining(
     mock_dynamodb,
     mocker,
 ):
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
     key_id = "kid-1970-01-01-01-00-00"
 
@@ -863,23 +898,27 @@ def test_delete_client_key_last_remaining(
         rm.delete(f"{CLIENTS_ENDPOINT}{client_id}/jwks")
 
         res = mock_client.delete(
-            f"/clients/test/{client_id}/keys/{key_id}",
+            f"/clients/{env}/{client_id}/keys/{key_id}",
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 200
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
-    assert audit_log_entry["Item"]["Action"] == "remove-key"
-    assert audit_log_entry["Item"]["KeyId"] == key_id
+    audit_log_entry = table.query(
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(
+                env,
+                client_id,
+            )
+        )
+    )["Items"][0]
+    assert audit_log_entry["Action"] == "remove-key"
+    assert audit_log_entry["KeyId"] == key_id
 
     client = maskinporten_get_client_response
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client key removed",
-        client["client_name"],
-        "test",
-        client["scopes"],
+        "Client key removed", client["client_name"], env, client["scopes"]
     )
 
 
@@ -893,6 +932,7 @@ def test_delete_client_key_more_than_one_left(
     mock_dynamodb,
     mocker,
 ):
+    env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
     key_id = "kid-1970-01-01-01-00-00"
 
@@ -918,23 +958,27 @@ def test_delete_client_key_more_than_one_left(
             json=maskinporten_delete_client_key_response,
         )
         res = mock_client.delete(
-            f"/clients/test/{client_id}/keys/{key_id}",
+            f"/clients/{env}/{client_id}/keys/{key_id}",
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
     assert res.status_code == 200
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.get_item(Key={"Id": client_id, "Type": "client"})
-    assert audit_log_entry["Item"]["Action"] == "remove-key"
-    assert audit_log_entry["Item"]["KeyId"] == key_id
+    audit_log_entry = table.query(
+        KeyConditionExpression=Key("Id").eq(
+            client_resource_name(
+                env,
+                client_id,
+            )
+        )
+    )["Items"][0]
+    assert audit_log_entry["Action"] == "remove-key"
+    assert audit_log_entry["KeyId"] == key_id
 
     client = maskinporten_get_client_response
     assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client key removed",
-        client["client_name"],
-        "test",
-        client["scopes"],
+        "Client key removed", client["client_name"], env, client["scopes"]
     )
 
 
