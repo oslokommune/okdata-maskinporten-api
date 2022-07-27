@@ -53,7 +53,7 @@ skulle bli nødvendig.
 (PITR) er påslått for tabellen og muliggjør gjenopprettelse av tabelldataene til
 et hvilket som helst tidspunkt siste 35 dager. I tillegg trigges en
 [eksport](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DataExport.html)
-av tabellen til S3 én gang i måneden (se egen Lambda handler `jobs.backup.export_audit_trail`).
+av tabellen til S3 én gang i måneden (se egen Lambda handler `jobs.backup.export_tables`).
 
 ### `okdata-permission-api`
 

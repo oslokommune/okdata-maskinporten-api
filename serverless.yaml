@@ -60,9 +60,10 @@ functions:
       - http: ANY /
       - http: ANY /{any+}
     timeout: 29
-  export-audit-trail:
-    handler: jobs.backup.export_audit_trail
+  export-tables:
+    handler: jobs.backup.export_tables
     events:
+      # Midnight at the first day of every month.
       - schedule: cron(0 0 1 * ? *)
     timeout: 30
   client-report-internal:
