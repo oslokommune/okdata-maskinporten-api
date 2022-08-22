@@ -30,8 +30,8 @@ from maskinporten_api.permissions import (
     client_resource_name,
     create_okdata_permissions,
     delete_okdata_permissions,
+    get_team,
     get_user_permissions,
-    get_user_team,
 )
 from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
@@ -66,9 +66,13 @@ def create_client(
     authorize(auth_info, scope="maskinporten:client:create")
 
     try:
-        team = get_user_team(
-            body.team_id, auth_info.bearer_token, has_role="origo-team"
+        team = get_team(
+            body.team_id,
+            auth_info.bearer_token,
+            has_role="origo-team",
         )
+        if "is_member" in team and not team["is_member"]:
+            raise ErrorResponse(status.HTTP_403_FORBIDDEN, "Forbidden")
     except requests.RequestException as e:
         log_exception(e)
         if e.response.status_code == status.HTTP_403_FORBIDDEN:
