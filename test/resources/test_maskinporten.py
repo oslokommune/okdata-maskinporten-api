@@ -476,6 +476,75 @@ def test_delete_client_delete_from_ssm(
     )
 
 
+def test_delete_client_auto_rotate_disabled(
+    maskinporten_create_client_key_response,
+    maskinporten_get_client_response,
+    maskinporten_list_client_keys_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+    kid = maskinporten_create_client_key_response["keys"][0]["kid"]
+    table = mock_dynamodb.Table("maskinporten-key-rotation")
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}",
+            json=maskinporten_get_client_response,
+        )
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
+        )
+        rm.post(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_create_client_key_response,
+        )
+        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
+        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}/jwks")
+
+        res = mock_client.post(
+            f"/clients/test/{client_id}/keys",
+            json={
+                "destination_aws_account": "123456789876",
+                "destination_aws_region": "eu-west-1",
+                "enable_auto_rotate": True,
+            },
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
+        )
+        assert res.status_code == 201
+
+        # Key rotation got enabled
+        assert "Item" in table.get_item(
+            Key={"ClientId": client_id, "Env": "test"},
+        )
+
+        res = mock_client.delete(
+            f"/clients/test/{client_id}/keys/{kid}",
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
+        )
+        assert res.status_code == 200
+
+        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={"keys": []})
+
+        res = mock_client.delete(
+            f"/clients/test/{client_id}",
+            json={"aws_account": None, "aws_region": None},
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
+        )
+        assert res.status_code == 200
+
+    # Key rotation got disabled
+    assert "Item" not in table.get_item(
+        Key={"ClientId": client_id, "Env": "test"},
+    )
+
+
 @freeze_time("1970-01-01")
 def test_create_client_key_to_aws(
     maskinporten_create_client_key_response,
