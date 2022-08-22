@@ -48,6 +48,11 @@ def get_user_permissions(bearer_token):
     return res.json()
 
 
+def client_resource_name(env, client_id):
+    """Return the resource name used to identify a Maskinporten client."""
+    return f"maskinporten:client:{env}-{client_id}"
+
+
 # TODO: Use `okdata-sdk-python` team client for the two functions
 # below. Requires a better way of calling the SDK as an already authenticated
 # user (by using the access token, not requiring re-auth using

@@ -14,7 +14,11 @@ from maskinporten_api.maskinporten_client import (
     MaskinportenClient,
     UnsupportedEnvironmentError,
 )
-from maskinporten_api.permissions import get_resource_permissions, get_team_by_name
+from maskinporten_api.permissions import (
+    client_resource_name,
+    get_resource_permissions,
+    get_team_by_name,
+)
 from models import MaskinportenEnvironment
 from resources.authorizer import ServiceClient, keycloak_client
 
@@ -78,7 +82,7 @@ def _client_teams(client, env):
 
     try:
         permissions = get_resource_permissions(
-            f"maskinporten:client:{env}-{client_id}",
+            client_resource_name(env, client_id),
             service_client.authorization_header,
         )
     except HTTPError as e:

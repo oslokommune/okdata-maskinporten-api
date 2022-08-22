@@ -27,6 +27,7 @@ from maskinporten_api.maskinporten_client import (
     UnsupportedEnvironmentError,
 )
 from maskinporten_api.permissions import (
+    client_resource_name,
     create_okdata_permissions,
     delete_okdata_permissions,
     get_user_permissions,
@@ -96,10 +97,11 @@ def create_client(
 
     new_client_id = new_client["client_id"]
     new_client_scopes = new_client["scopes"]
+    resource_name = client_resource_name(body.env, new_client_id)
 
     try:
         create_okdata_permissions(
-            resource_name=f"maskinporten:client:{body.env}-{new_client_id}",
+            resource_name=resource_name,
             team_name=team_name,
             auth_header=service_client.authorization_header,
         )
@@ -112,9 +114,7 @@ def create_client(
         )
 
     audit_log(
-        item_id=new_client_id,
-        item_type="client",
-        env=body.env,
+        item_id=resource_name,
         action="create",
         user=auth_info.principal_id,
         scopes=new_client_scopes,
@@ -155,10 +155,9 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
     clients = []
 
     for client in maskinporten_client.get_clients().json():
-        resource_name = f"maskinporten:client:{env}-{client['client_id']}"
-
-        permission = user_permissions.get(resource_name)
-
+        permission = user_permissions.get(
+            client_resource_name(env, client["client_id"])
+        )
         if permission and required_scope in permission["scopes"]:
             clients.append(MaskinportenClientOut.parse_obj(client))
 
@@ -184,10 +183,12 @@ def delete_client(  # noqa: C901
     auth_info: AuthInfo = Depends(),
     service_client: ServiceClient = Depends(),
 ):
+    resource_name = client_resource_name(env, client_id)
+
     authorize(
         auth_info,
         scope="maskinporten:client:write",
-        resource=f"maskinporten:client:{env}-{client_id}",
+        resource=resource_name,
     )
 
     try:
@@ -252,7 +253,7 @@ def delete_client(  # noqa: C901
 
     try:
         delete_okdata_permissions(
-            resource_name=f"maskinporten:client:{env}-{client_id}",
+            resource_name=resource_name,
             auth_header=service_client.authorization_header,
         )
     except requests.RequestException as e:
@@ -264,9 +265,7 @@ def delete_client(  # noqa: C901
     disable_auto_rotate(client_id, env)
 
     audit_log(
-        item_id=client_id,
-        item_type="client",
-        env=env,
+        item_id=resource_name,
         action="delete",
         user=auth_info.principal_id,
     )
@@ -298,10 +297,12 @@ def create_client_key(
     client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
 ):
+    resource_name = client_resource_name(env, client_id)
+
     authorize(
         auth_info,
         scope="maskinporten:client:write",
-        resource=f"maskinporten:client:{env}-{client_id}",
+        resource=resource_name,
     )
 
     try:
@@ -395,9 +396,7 @@ def create_client_key(
             )
 
     audit_log(
-        item_id=client_id,
-        item_type="client",
-        env=env,
+        item_id=resource_name,
         action="add-key",
         user=auth_info.principal_id,
         key_id=kid,
@@ -429,10 +428,12 @@ def delete_client_key(
     key_id: str = Path(...),
     auth_info: AuthInfo = Depends(),
 ):
+    resource_name = client_resource_name(env, client_id)
+
     authorize(
         auth_info,
         scope="maskinporten:client:write",
-        resource=f"maskinporten:client:{env}-{client_id}",
+        resource=resource_name,
     )
 
     try:
@@ -457,9 +458,7 @@ def delete_client_key(
         raise ErrorResponse(status.HTTP_404_NOT_FOUND, str(e))
 
     audit_log(
-        item_id=client_id,
-        item_type="client",
-        env=env,
+        item_id=resource_name,
         action="remove-key",
         user=auth_info.principal_id,
         key_id=key_id,
@@ -486,7 +485,7 @@ def list_client_keys(
     authorize(
         auth_info,
         scope="maskinporten:client:read",
-        resource=f"maskinporten:client:{env}-{client_id}",
+        resource=client_resource_name(env, client_id),
     )
 
     try:
