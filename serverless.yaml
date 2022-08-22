@@ -42,6 +42,7 @@ provider:
     SLACK_MASKINPORTEN_API_ALERTS_WEBHOOK_URL: ${ssm:/dataplatform/slack/maskinporten-api-slack-webhook}
     EMAIL_API_URL: ${ssm:/dataplatform/shared/email-api-url}
     EMAIL_API_KEY: ${ssm:/dataplatform/shared/email-api-key}
+    KEY_ROTATION_GRACE_PERIOD_SECONDS: 300
 
 package:
   patterns:
@@ -82,6 +83,14 @@ functions:
           rate: cron(0 10 10 10 ? *)
           enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
     timeout: 300
+  key-rotator:
+    handler: jobs.auto_rotate.rotate_keys
+    events:
+      - schedule:
+          # At 2:00 every weekday.
+          rate: cron(0 2 ? * MON-FRI *)
+          enabled: ${self:custom.keyRotationEnabled.${opt:stage, self:provider.stage}}
+    timeout: 900
 
 plugins:
   - serverless-plugin-git-variables
@@ -111,5 +120,8 @@ custom:
     prod: ok-origo-dataplatform-backup-prod
     dev: ok-origo-dataplatform-backup-dev
   clientReportEnabled:
+    prod: true
+    dev: false
+  keyRotationEnabled:
     prod: true
     dev: false

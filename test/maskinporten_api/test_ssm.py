@@ -16,7 +16,7 @@ def test_send_secrets(mock_aws):
         "123456789876", destination_aws_region, maskinporten_client_id
     )
 
-    secrets_client.send_secrets(
+    secrets_client._send_secrets(
         [
             {"name": "some-secret-1", "value": "value", "description": "foo"},
             {"name": "some-secret-2", "value": "value", "description": "foo"},
@@ -57,7 +57,7 @@ def test_delete_secrets(mock_aws):
         "123456789876", destination_aws_region, maskinporten_client_id
     )
 
-    secrets_client.send_secrets(
+    secrets_client._send_secrets(
         [
             {"name": "secret-1", "value": "value", "description": "foo"},
             {"name": "secret-2", "value": "value", "description": "foo"},

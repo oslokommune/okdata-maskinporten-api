@@ -3,9 +3,10 @@ import os
 import boto3
 import pytest
 from fastapi.testclient import TestClient
-from moto import mock_ssm, mock_sts
+from moto import mock_dynamodb, mock_ssm, mock_sts
 
 from app import app
+from models import MaskinportenEnvironment
 
 
 @pytest.fixture
@@ -31,15 +32,53 @@ def initialize_parameter_store():
         Value="supersecretpassword",
         Type="SecureString",
     )
-    ssm_client.put_parameter(
-        Name="/dataplatform/maskinporten/origo-certificate-password-test",
-        Value="test",
-        Type="SecureString",
-    )
 
-    with open("test/data/test.p12.txt") as f:
+    for env in MaskinportenEnvironment:
         ssm_client.put_parameter(
-            Name="/dataplatform/maskinporten/origo-certificate-test",
-            Value=f.read(),
+            Name=f"/dataplatform/maskinporten/origo-certificate-password-{env.value}",
+            Value="test",
             Type="SecureString",
         )
+        with open("test/data/test.p12.txt") as f:
+            ssm_client.put_parameter(
+                Name=f"/dataplatform/maskinporten/origo-certificate-{env.value}",
+                Value=f.read(),
+                Type="SecureString",
+            )
+
+
+@pytest.fixture
+@mock_dynamodb
+def mock_dynamodb():
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+    dynamodb.create_table(
+        TableName="maskinporten-audit-trail",
+        KeySchema=[
+            {"AttributeName": "Id", "KeyType": "HASH"},
+            {"AttributeName": "Timestamp", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "Id", "AttributeType": "S"},
+            {"AttributeName": "Timestamp", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={
+            "ReadCapacityUnits": 5,
+            "WriteCapacityUnits": 5,
+        },
+    )
+    dynamodb.create_table(
+        TableName="maskinporten-key-rotation",
+        KeySchema=[
+            {"AttributeName": "ClientId", "KeyType": "HASH"},
+            {"AttributeName": "Env", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "ClientId", "AttributeType": "S"},
+            {"AttributeName": "Env", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={
+            "ReadCapacityUnits": 5,
+            "WriteCapacityUnits": 5,
+        },
+    )
+    return dynamodb
