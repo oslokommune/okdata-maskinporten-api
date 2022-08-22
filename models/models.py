@@ -1,9 +1,9 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MaskinportenEnvironment(str, Enum):
@@ -59,3 +59,15 @@ class ClientKeyMetadata(BaseModel):
     created: datetime
     expires: datetime
     last_updated: datetime
+
+
+class AuditLogEntry(BaseModel):
+    item_id: str = Field(alias="id")
+    action: str
+    timestamp: datetime
+    user: str
+    scopes: Union[list[str], None]
+    key_id: Union[str, None]
+
+    class Config:
+        allow_population_by_field_name = True
