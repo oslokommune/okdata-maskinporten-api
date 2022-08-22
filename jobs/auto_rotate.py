@@ -83,7 +83,7 @@ def _rotate_client(
 
 
 @logging_wrapper
-@xray_recorder.capture("client_report")
+@xray_recorder.capture("rotate_keys")
 def rotate_keys(event, context):
     maskinporten_clients = {env: MaskinportenClient(env) for env in MASKINPORTEN_ENVS}
     scheduled_deletions = []
