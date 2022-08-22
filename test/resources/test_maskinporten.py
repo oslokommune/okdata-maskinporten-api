@@ -382,7 +382,6 @@ def test_delete_client_no_body(
     assert data["deleted_ssm_params"] == []
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
-    table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.query(
         KeyConditionExpression=Key("Id").eq(
             client_resource_name(
