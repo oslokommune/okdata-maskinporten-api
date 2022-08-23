@@ -10,6 +10,7 @@ from aws_xray_sdk.core import patch_all, xray_recorder
 from okdata.aws.logging import logging_wrapper
 from requests.exceptions import HTTPError
 
+from maskinporten_api.auto_rotate import has_auto_rotate_enabled
 from maskinporten_api.maskinporten_client import (
     MaskinportenClient,
     UnsupportedEnvironmentError,
@@ -122,6 +123,7 @@ def _format_warnings(title, warnings):
 
 def _format_client(client):
     scopes = client["scopes"]
+    auto_rotate = has_auto_rotate_enabled(client["client_id"], client["env"])
 
     return "\n".join(
         [
@@ -131,6 +133,8 @@ def _format_client(client):
             f"Scope: {scopes[0] if scopes else 'ingen'}"
             if len(scopes) <= 1
             else "\n".join(["Scopes:", *[f"- {scope}" for scope in scopes]]),
+            f"Maskinporten-miljø: {client['env']}",
+            f"Automatisk nøkkelrotering: {'Ja' if auto_rotate else 'Nei'}",
         ]
     )
 
@@ -209,6 +213,7 @@ def send_client_report_external(event, context):
 
     for env in MASKINPORTEN_ENVS:
         for client in _active_clients(env):
+            client["env"] = env
             try:
                 for team in _client_teams(client, env):
                     if email := team["attributes"].get("email"):

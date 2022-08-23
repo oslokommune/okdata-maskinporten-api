@@ -99,3 +99,12 @@ def disable_auto_rotate(client_id, env):
         return None
 
     return db_response
+
+
+def has_auto_rotate_enabled(client_id, env):
+    """Return true if key rotation is enabled for client `client_id` in `env`."""
+
+    dynamodb = boto3.resource("dynamodb", region_name=getenv("AWS_REGION"))
+    table = dynamodb.Table("maskinporten-key-rotation")
+
+    return "Item" in table.get_item(Key={"ClientId": client_id, "Env": env})
