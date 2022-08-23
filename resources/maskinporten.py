@@ -71,7 +71,7 @@ def create_client(
             auth_info.bearer_token,
             has_role="origo-team",
         )
-        if "is_member" in team and not team["is_member"]:
+        if not team.get("is_member"):
             raise ErrorResponse(status.HTTP_403_FORBIDDEN, "Forbidden")
     except requests.RequestException as e:
         log_exception(e)
