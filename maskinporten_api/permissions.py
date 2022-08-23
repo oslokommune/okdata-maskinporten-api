@@ -57,7 +57,7 @@ def client_resource_name(env, client_id):
 # below. Requires a better way of calling the SDK as an already authenticated
 # user (by using the access token, not requiring re-auth using
 # username/password).
-def get_user_team(team_id, bearer_token, has_role=None):
+def get_team(team_id, bearer_token, has_role=None):
     params = {}
 
     if has_role:

@@ -151,6 +151,37 @@ def test_create_client_no_create_permission(
 
 def test_create_client_not_team_member(
     maskinporten_create_client_body,
+    user_team_response,
+    mock_authorizer,
+    mock_aws,
+    mock_client,
+    mock_dynamodb,
+    mocker,
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_user = get_mock_user("janedoe")
+        mock_access_token_generation_requests(rm)
+
+        create_client_matcher = rm.post(
+            CLIENTS_ENDPOINT, json=maskinporten_create_client_body
+        )
+        user_team_response["is_member"] = False
+        rm.get(
+            f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
+            json=user_team_response,
+        )
+        res = mock_client.post(
+            "/clients",
+            json=maskinporten_create_client_body,
+            headers={"Authorization": mock_user.bearer_token},
+        )
+
+    assert create_client_matcher.call_count == 0
+    assert res.status_code == 403
+
+
+def test_create_client_403_from_permission_api(
+    maskinporten_create_client_body,
     mock_authorizer,
     mock_aws,
     mock_client,

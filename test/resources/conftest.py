@@ -152,7 +152,7 @@ def maskinporten_list_client_keys_response(maskinporten_create_client_key_respon
 
 @pytest.fixture
 def user_team_response():
-    return {"id": team_id, "name": "foobar"}
+    return {"id": team_id, "name": "foobar", "is_member": True}
 
 
 @pytest.fixture
