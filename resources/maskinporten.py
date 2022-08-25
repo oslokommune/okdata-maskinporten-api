@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 
 import requests
 from botocore.exceptions import ClientError
@@ -478,20 +478,11 @@ def list_client_keys(
             )
         raise
 
-    if "keys" not in jwks:
-        return []
-
-    created = jwks["created"]
-    last_updated = jwks["last_updated"]
-    expires = datetime.fromisoformat(created) + timedelta(days=365)
-
     return [
         ClientKeyMetadata(
             kid=key["kid"],
             client_id=client_id,
-            created=created,
-            expires=expires,
-            last_updated=last_updated,
+            expires=datetime.fromtimestamp(int(key["exp"]), tz=timezone.utc),
         )
-        for key in jwks["keys"]
+        for key in jwks.get("keys", [])
     ]

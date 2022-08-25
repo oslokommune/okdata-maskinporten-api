@@ -56,9 +56,7 @@ class CreateClientKeyOut(BaseModel):
 class ClientKeyMetadata(BaseModel):
     kid: str
     client_id: str
-    created: datetime
     expires: datetime
-    last_updated: datetime
 
 
 class AuditLogEntry(BaseModel):
