@@ -151,10 +151,8 @@ class MaskinportenClient:
             "POST",
             ["idporten:dcr.write"],
             f"{client_id}/jwks",
-            # XXX: We need to send every existing key together with the new
-            # one, otherwise all the existing keys are deleted. This comes with
-            # an additional quirk: The expiration date of the existing keys are
-            # renewed as well... Digdir is looking into a fix for this.
+            # We need to send every existing key together with the new one,
+            # otherwise all the existing keys are deleted.
             json={"keys": [jwk, *existing_jwks]},
         )
 
