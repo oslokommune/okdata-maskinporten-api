@@ -126,4 +126,4 @@ custom:
     dev: false
   keyRotationEnabled:
     prod: true
-    dev: false
+    dev: true
