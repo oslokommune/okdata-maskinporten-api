@@ -725,6 +725,21 @@ def test_create_client_key_auto_rotate(
         )
 
     assert res.status_code == 201
+    key = res.json()
+    assert key == {
+        "kid": "kid-1970-01-01-01-00-00",
+        "expires": "1970-01-08T00:00:00+00:00",
+        "ssm_params": [
+            f"/okdata/maskinporten/{client_id}/key_id",
+            f"/okdata/maskinporten/{client_id}/keystore",
+            f"/okdata/maskinporten/{client_id}/key_alias",
+            f"/okdata/maskinporten/{client_id}/key_password",
+        ],
+        "keystore": None,
+        "key_alias": None,
+        "key_password": None,
+    }
+
     assert clients_to_rotate() == [
         {
             "ClientId": client_id,
