@@ -64,7 +64,7 @@ def _rotate_client(
         client_id,
     )
 
-    key = create_key()
+    key = create_key(int(getenv("KEY_UNDER_ROTATION_EXPIRATION_DAYS")))
     existing_keys = (
         maskinporten_client.get_client_keys(client_id).json().get("keys", [])
     )

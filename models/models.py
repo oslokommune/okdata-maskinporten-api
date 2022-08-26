@@ -47,6 +47,7 @@ class CreateClientKeyIn(BaseModel):
 
 class CreateClientKeyOut(BaseModel):
     kid: str
+    expires: datetime
     ssm_params: Optional[list[str]]
     keystore: Optional[str]
     key_alias: Optional[str]

@@ -37,7 +37,7 @@ from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
     ForeignAccountSecretsClient,
 )
-from maskinporten_api.util import sanitize
+from maskinporten_api.util import getenv, sanitize
 from resources.authorizer import AuthInfo, authorize, ServiceClient
 from resources.errors import error_message_models, ErrorResponse
 
@@ -335,7 +335,15 @@ def create_client_key(
         except AssumeRoleAccessDeniedError as e:
             raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
-    key = create_key()
+    key = create_key(
+        int(
+            getenv(
+                "KEY_UNDER_ROTATION_EXPIRATION_DAYS"
+                if body.enable_auto_rotate
+                else "KEY_DEFAULT_EXPIRATION_DAYS"
+            )
+        )
+    )
     kid = key.jwk["kid"]
     logger.debug(
         sanitize(f"Registering new key with id {kid} for client {client_id}"),
@@ -381,6 +389,7 @@ def create_client_key(
 
     return CreateClientKeyOut(
         kid=kid,
+        expires=datetime.fromtimestamp(int(key.jwk["exp"]), tz=timezone.utc),
         ssm_params=ssm_params,
         keystore=None if send_to_aws else key.keystore,
         key_alias=None if send_to_aws else key.alias,
