@@ -43,6 +43,8 @@ provider:
     EMAIL_API_URL: ${ssm:/dataplatform/shared/email-api-url}
     EMAIL_API_KEY: ${ssm:/dataplatform/shared/email-api-key}
     KEY_ROTATION_GRACE_PERIOD_SECONDS: 300
+    KEY_DEFAULT_EXPIRATION_DAYS: 90
+    KEY_UNDER_ROTATION_EXPIRATION_DAYS: 7
 
 package:
   patterns:

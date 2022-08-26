@@ -647,6 +647,7 @@ def test_create_client_key_to_aws(
     key = res.json()
     assert key == {
         "kid": "kid-1970-01-01-01-00-00",
+        "expires": "1970-04-01T00:00:00+00:00",
         "ssm_params": [
             f"/okdata/maskinporten/{client_id}/key_id",
             f"/okdata/maskinporten/{client_id}/keystore",
