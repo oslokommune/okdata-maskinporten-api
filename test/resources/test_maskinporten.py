@@ -1065,11 +1065,30 @@ def test_list_client_keys(
         {
             "kid": "kid-1970-01-01-01-00-00",
             "client_id": client_id,
-            "created": "2021-09-16T12:34:17.099000+02:00",
-            "expires": "2022-09-16T12:34:17.099000+02:00",
-            "last_updated": "2021-09-16T12:34:17.099000+02:00",
+            "expires": "2020-01-01T00:00:00+00:00",
         }
     ]
+
+
+def test_list_client_keys_empty(
+    mock_client, mock_authorizer, maskinporten_list_client_keys_response
+):
+    client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        del maskinporten_list_client_keys_response["keys"]
+        rm.get(
+            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            json=maskinporten_list_client_keys_response,
+        )
+        response = mock_client.get(
+            f"/clients/test/{client_id}/keys",
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 def test_list_client_keys_no_permission_for_resource(mock_client, mock_authorizer):

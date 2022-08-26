@@ -130,7 +130,7 @@ def maskinporten_create_client_key_response():
                 "n": "nYFc81LY5FoxWcKh",
                 "e": "AQAB",
                 "kty": "RSA",
-                "exp": 1663324457,
+                "exp": 1577836800,
             }
         ],
         "last_updated": "2021-09-16T12:34:17.099+02:00",
