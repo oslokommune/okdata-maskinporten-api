@@ -32,7 +32,7 @@ Bruker får feilmelding a la denne ved bruk av nøkkel mot Maskinporten:
 {
   "error": "forbidden",
   "error_description": "Consumer has not been granted access to the scope folkeregister:deling/offentligutenhjemmel. (correlation id: 2d4fa134-eacb-eae8-63f4-eeb2ea408979)"
-  }
+}
 ```
 
 **Svar**: Bruker mangler sannsynligvis å sette `consumer_org` til Oslo kommunes
@@ -52,6 +52,21 @@ Bruker får feilmelding a la denne ved bruk av nøkkel mot Maskinporten:
 **Svar**: Her mangler det delegering av rettigheter fra Oslo kommunes
 organisasjonsnummer (958935420) til Origos (920204368). Dette må løses på høyere
 nivå, begynn med å ta kontakt på `#freg-tilgang-prosess`.
+
+## Feilmelding om ukjent kid
+
+Bruker får feilmelding a la denne ved bruk av nøkkel mot Maskinporten:
+
+```json
+{
+  "error": "invalid_grant",
+  "error_description": "Invalid assertion. Client authentication failed. Unknown key identifier (kid) for client. (correlation id: 023510ad-58bb-b65b-1623-107935a6bf95)"
+}
+```
+
+**Svar**: Dobbeltsjekk at `iss` (issuer) er satt til riktig klient ID i
+forespørselen mot Maskinporten (ID-en til klienten som nøkkelen tilhører, ikke
+nøkkel ID-en).
 
 ## Er klient- og nøkkel ID-er hemmelige?
 
