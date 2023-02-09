@@ -27,7 +27,7 @@ setup(
         "okdata-resource-auth>=0.1.4",
         "pydantic",
         "pyjwt",
-        "pyopenssl",
+        "pyopenssl>=23.0.0,<24.0.0",
         # Not needed directly (it's required by `python-keycloak`), but require
         # version 3.3.0 or higher explicitly to silence some deprecation
         # warnings.
