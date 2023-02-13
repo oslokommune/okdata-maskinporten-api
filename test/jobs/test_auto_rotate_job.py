@@ -116,8 +116,8 @@ def test_rotate_client_multiple_existing_keys(mock_aws, mocker):
     # ... but not twice (even if there are two keys to delete).
     #
     # Admittedly this test isn't guaranteed to be stable, but it seems safe
-    # enough to assume that pytest won't spend more than two seconds
-    # extra. Let's see whether works out in practice. If two seconds isn't
+    # enough to assume that pytest won't spend more than three seconds
+    # extra. Let's see whether works out in practice. If three seconds isn't
     # enough, KEY_ROTATION_GRACE_PERIOD_SECONDS could be increased a bit.
     assert (
         pre_run_timestamp
