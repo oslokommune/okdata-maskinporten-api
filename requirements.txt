@@ -99,7 +99,7 @@ six==1.15.0
     #   jsonschema
     #   pyopenssl
     #   python-dateutil
-starlette==0.14.2
+starlette==0.25.0
     # via
     #   fastapi
     #   okdata-aws
