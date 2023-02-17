@@ -23,7 +23,7 @@ setup(
         "boto3",
         "fastapi",
         "mangum",
-        "okdata-aws>=1.0.0,<2.0.0",
+        "okdata-aws>=1.0.1,<2.0.0",
         "okdata-resource-auth>=0.1.4",
         "pydantic",
         "pyjwt",
