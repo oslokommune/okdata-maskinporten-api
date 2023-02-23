@@ -39,9 +39,15 @@ def initialize_parameter_store():
             Value="test",
             Type="SecureString",
         )
-        with open("test/data/test.p12.txt") as f:
+        with open("test/data/test.p12.txt.part1") as f:
             ssm_client.put_parameter(
-                Name=f"/dataplatform/maskinporten/origo-certificate-{env.value}",
+                Name=f"/dataplatform/maskinporten/origo-certificate-{env.value}.part1",
+                Value=f.read(),
+                Type="SecureString",
+            )
+        with open("test/data/test.p12.txt.part2") as f:
+            ssm_client.put_parameter(
+                Name=f"/dataplatform/maskinporten/origo-certificate-{env.value}.part2",
                 Value=f.read(),
                 Type="SecureString",
             )
