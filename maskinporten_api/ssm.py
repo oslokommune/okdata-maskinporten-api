@@ -1,3 +1,4 @@
+import json
 import os
 
 import boto3
@@ -90,28 +91,47 @@ class ForeignAccountSecretsClient:
         return self._send_secrets(
             [
                 {
+                    "name": "key.json",
+                    "value": json.dumps(
+                        {
+                            "key_id": key.jwk["kid"],
+                            "keystore": key.keystore,
+                            "key_alias": key.alias,
+                            "key_password": key.password,
+                        }
+                    ),
+                    "description": (
+                        f"[{env}] {client_name}: JSON-encoded string "
+                        "containing the key ID, the PKCS #12 archive "
+                        "containing the key, the alias of the key in the "
+                        "keystore, and the key password."
+                    ),
+                },
+                # TODO: Remove these four after all users have migrated away
+                # from them.
+                {
                     "name": "key_id",
                     "value": key.jwk["kid"],
-                    "description": f"[{env}] {client_name}: Key ID",
+                    "description": f"(Deprecated) [{env}] {client_name}: Key ID",
                 },
                 {
                     "name": "keystore",
                     "value": key.keystore,
                     "description": (
-                        f"[{env}] {client_name}: PKCS #12 archive " "containing the key"
+                        f"(Deprecated) [{env}] {client_name}: PKCS #12 archive containing the key"
                     ),
                 },
                 {
                     "name": "key_alias",
                     "value": key.alias,
                     "description": (
-                        f"[{env}] {client_name}: Alias of the key in the " "keystore"
+                        f"(Deprecated) [{env}] {client_name}: Alias of the key in the keystore"
                     ),
                 },
                 {
                     "name": "key_password",
                     "value": key.password,
-                    "description": f"[{env}] {client_name}: Key password",
+                    "description": f"(Deprecated) [{env}] {client_name}: Key password",
                 },
             ]
         )

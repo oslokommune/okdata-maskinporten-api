@@ -248,7 +248,7 @@ def delete_client(  # noqa: C901
     if send_to_aws:
         try:
             deleted_ssm_params = secrets_client.delete_secrets(
-                ["key_id", "keystore", "key_alias", "key_password"]
+                ["key.json", "key_id", "keystore", "key_alias", "key_password"]
             )
         except ClientError:
             # Secrets deletion failed. The client is informed by the returned

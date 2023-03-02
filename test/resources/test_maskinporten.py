@@ -476,6 +476,7 @@ def test_delete_client_delete_from_ssm(
     env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
     MockForeignAccountSecretsClient.return_value.delete_secrets.return_value = [
+        "key.json",
         "key_id",
         "keystore",
         "key_alias",
@@ -505,6 +506,7 @@ def test_delete_client_delete_from_ssm(
     data = res.json()
     assert data["client_id"] == client_id
     assert set(data["deleted_ssm_params"]) == {
+        "key.json",
         "key_id",
         "keystore",
         "key_alias",
@@ -649,6 +651,7 @@ def test_create_client_key_to_aws(
         "kid": "kid-1970-01-01-01-00-00",
         "expires": "1970-04-01T00:00:00+00:00",
         "ssm_params": [
+            f"/okdata/maskinporten/{client_id}/key.json",
             f"/okdata/maskinporten/{client_id}/key_id",
             f"/okdata/maskinporten/{client_id}/keystore",
             f"/okdata/maskinporten/{client_id}/key_alias",
@@ -665,7 +668,7 @@ def test_create_client_key_to_aws(
         for s in maskinporten.ForeignAccountSecretsClient._send_secrets.call_args[0][
             1:
         ][0]
-    } == {"key_id", "keystore", "key_alias", "key_password"}
+    } == {"key.json", "key_id", "keystore", "key_alias", "key_password"}
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.query(
@@ -730,6 +733,7 @@ def test_create_client_key_auto_rotate(
         "kid": "kid-1970-01-01-01-00-00",
         "expires": "1970-01-08T00:00:00+00:00",
         "ssm_params": [
+            f"/okdata/maskinporten/{client_id}/key.json",
             f"/okdata/maskinporten/{client_id}/key_id",
             f"/okdata/maskinporten/{client_id}/keystore",
             f"/okdata/maskinporten/{client_id}/key_alias",
