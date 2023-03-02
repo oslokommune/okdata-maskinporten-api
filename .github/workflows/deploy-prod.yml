@@ -9,16 +9,16 @@ jobs:
   deploy-prod:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
       with:
         python-version: 3.9
     - name: Install Python dependencies
       run: pip install tox
     - name: Test with tox
       run: tox -e py,flake8,black
-    - uses: actions/setup-node@v1
+    - uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
       with:
         node-version: '12.x'
     - name: Install NPM dependencies
