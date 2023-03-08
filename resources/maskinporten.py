@@ -168,8 +168,8 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
     return clients
 
 
-@router.delete(
-    "/{env}/{client_id}",
+@router.post(
+    "/{env}/{client_id}/delete",
     status_code=status.HTTP_200_OK,
     response_model=DeleteMaskinportenClientOut,
     responses=error_message_models(
@@ -279,6 +279,30 @@ def delete_client(  # noqa: C901
         client_id=client_id,
         deleted_ssm_params=deleted_ssm_params,
     )
+
+
+# TODO: Delete this route after a grace period for CLI users to migrate to the
+#       new `POST /{env}/{client_id}/delete` path.
+@router.delete(
+    "/{env}/{client_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=DeleteMaskinportenClientOut,
+    responses=error_message_models(
+        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+    ),
+)
+def delete_client_obsolete(
+    env: MaskinportenEnvironment,
+    body: DeleteMaskinportenClientIn = None,
+    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    auth_info: AuthInfo = Depends(),
+    service_client: ServiceClient = Depends(),
+):
+    return delete_client(env, body, client_id, auth_info, service_client)
 
 
 @router.post(

@@ -353,8 +353,8 @@ def test_delete_client(
         )
         rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
         rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
-        res = mock_client.delete(
-            f"/clients/{env}/{client_id}",
+        res = mock_client.post(
+            f"/clients/{env}/{client_id}/delete",
             json={"aws_account": None, "aws_region": None},
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -403,8 +403,8 @@ def test_delete_client_no_body(
         )
         rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
         rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
-        res = mock_client.delete(
-            f"/clients/{env}/{client_id}",
+        res = mock_client.post(
+            f"/clients/{env}/{client_id}/delete",
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
@@ -454,8 +454,8 @@ def test_delete_client_remaining_keys(
             json=maskinporten_list_client_keys_response,
         )
         rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
-        res = mock_client.delete(
-            f"/clients/test/{client_id}",
+        res = mock_client.post(
+            f"/clients/test/{client_id}/delete",
             json={"aws_account": None, "aws_region": None},
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -496,8 +496,8 @@ def test_delete_client_delete_from_ssm(
 
         aws_account = "123456789876"
         aws_region = "eu-west-1"
-        res = mock_client.delete(
-            f"/clients/{env}/{client_id}",
+        res = mock_client.post(
+            f"/clients/{env}/{client_id}/delete",
             json={"aws_account": aws_account, "aws_region": aws_region},
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -587,8 +587,8 @@ def test_delete_client_auto_rotate_disabled(
 
         rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={"keys": []})
 
-        res = mock_client.delete(
-            f"/clients/test/{client_id}",
+        res = mock_client.post(
+            f"/clients/test/{client_id}/delete",
             json={"aws_account": None, "aws_region": None},
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
