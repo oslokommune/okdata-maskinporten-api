@@ -45,7 +45,9 @@ class EnvConfig:
     def certificate(self):
         try:
             return get_secret(
-                f"/dataplatform/maskinporten/origo-certificate-{self.name}"
+                f"/dataplatform/maskinporten/origo-certificate-{self.name}.part1"
+            ) + get_secret(
+                f"/dataplatform/maskinporten/origo-certificate-{self.name}.part2"
             )
         except ClientError:
             raise UnsupportedEnvironmentError(self.name)
