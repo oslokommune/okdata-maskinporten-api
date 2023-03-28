@@ -1,6 +1,0 @@
-handler: boilerplate.handler.get_boilerplate
-events:
-  - http:
-      path: "boilerplate"
-      method: "get"
-      cors: true
