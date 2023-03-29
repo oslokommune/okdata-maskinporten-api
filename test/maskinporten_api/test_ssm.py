@@ -1,11 +1,16 @@
+import json
+
 import boto3
 import pytest
 from botocore.exceptions import ClientError
+from freezegun import freeze_time
 from moto.sts.models import STSBackend
 
+from maskinporten_api.keys import create_key
 from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
     ForeignAccountSecretsClient,
+    get_secret,
 )
 
 
@@ -79,6 +84,22 @@ def test_delete_secrets(mock_aws):
     assert okdata_parameters == {
         f"/okdata/maskinporten/{maskinporten_client_id}/secret-2",
     }
+
+
+@freeze_time("1970-01-01")
+def test_send_key_to_aws(mock_aws):
+    client = ForeignAccountSecretsClient("123456789876", "eu-west-1", "some-client")
+
+    # Key expires in three days
+    client.send_key_to_aws(create_key(3), "test", "foo")
+
+    key = json.loads(get_secret("/okdata/maskinporten/some-client/key.json"))
+
+    assert key["key_id"] == "kid-1970-01-01-01-00-00"
+    assert isinstance(key["keystore"], str)
+    assert key["key_alias"] == "client-key"
+    assert isinstance(key["key_password"], str)
+    assert key["key_expiry"] == "1970-01-04T00:00:00+00:00"  # Three days in the future
 
 
 @pytest.fixture

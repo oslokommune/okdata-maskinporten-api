@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime, timezone
 
 import boto3
 from botocore.exceptions import ClientError
@@ -88,6 +89,8 @@ class ForeignAccountSecretsClient:
         )["DeletedParameters"]
 
     def send_key_to_aws(self, key: Key, env, client_name):
+        exp = datetime.fromtimestamp(int(key.jwk["exp"]), tz=timezone.utc)
+
         return self._send_secrets(
             [
                 {
@@ -98,13 +101,15 @@ class ForeignAccountSecretsClient:
                             "keystore": key.keystore,
                             "key_alias": key.alias,
                             "key_password": key.password,
+                            "key_expiry": exp.isoformat(),
                         }
                     ),
                     "description": (
                         f"[{env}] {client_name}: JSON-encoded string "
                         "containing the key ID, the PKCS #12 archive "
                         "containing the key, the alias of the key in the "
-                        "keystore, and the key password."
+                        "keystore, the key password, and the key expiration "
+                        "time."
                     ),
                 },
                 # TODO: Remove these four after all users have migrated away
