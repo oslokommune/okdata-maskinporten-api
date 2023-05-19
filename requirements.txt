@@ -31,7 +31,7 @@ cryptography==3.4.8
     #   pyopenssl
 ecdsa==0.14.1
     # via python-jose
-fastapi==0.92.0
+fastapi==0.95.2
     # via okdata-maskinporten-api (setup.py)
 future==0.18.3
     # via aws-xray-sdk
