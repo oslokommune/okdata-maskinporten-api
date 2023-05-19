@@ -21,7 +21,7 @@ setup(
         "authlib",
         "aws-xray-sdk",
         "boto3",
-        "fastapi",
+        "fastapi>=0.95.2",
         "mangum",
         "okdata-aws>=1.0.1,<2.0.0",
         "okdata-resource-auth>=0.1.4",

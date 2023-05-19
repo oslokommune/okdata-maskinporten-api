@@ -31,7 +31,7 @@ cryptography==3.4.8
     #   pyopenssl
 ecdsa==0.14.1
     # via python-jose
-fastapi==0.92.0
+fastapi==0.95.2
     # via okdata-maskinporten-api (setup.py)
 future==0.18.3
     # via aws-xray-sdk
@@ -105,7 +105,7 @@ six==1.15.0
     #   python-dateutil
 sniffio==1.3.0
     # via anyio
-starlette==0.25.0
+starlette==0.27.0
     # via
     #   fastapi
     #   okdata-aws
