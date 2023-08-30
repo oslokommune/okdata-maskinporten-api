@@ -145,7 +145,7 @@ def _send_email(to_emails, body):
         json={
             "mottakerepost": to_emails,
             "avsenderepost": "dataplattform@oslo.kommune.no",
-            "avsendernavn": "Datapatruljen",
+            "avsendernavn": "Dataspeilet",
             "emne": "Maskinporten klientrapport",
             "meldingskropp": body.replace("\n", "<br />"),
         },
@@ -240,7 +240,7 @@ def send_client_report_external(event, context):
                         "ikke lenger er i bruk kan slettes ved å bruke "
                         "okdata-cli."
                     ),
-                    "Hilsen Datapatruljen",
+                    "Hilsen Dataspeilet",
                 ]
             ),
         )
