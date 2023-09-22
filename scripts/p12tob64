@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# p12tob64: Encode a PKCS #12 certificate file into (possibly
+# multiple) Base64 files, each file being at most 8192 bytes long.
+
+if [[ -z "$1" ]]; then
+    echo "Usage: $0 <certificate.p12>"
+    exit 1
+fi
+
+if [ ! -f "$1" ]; then
+    echo "File not found: '$1'"
+    exit 1
+fi
+
+base64 "$1" | split --numeric-suffixes=1 --suffix-length=1 --bytes=8192 - "$(basename "$1" .p12).part"
