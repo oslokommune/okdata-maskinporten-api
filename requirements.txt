@@ -113,7 +113,7 @@ structlog==20.2.0
     # via okdata-aws
 typing-extensions==3.10.0.0
     # via mangum
-urllib3==1.26.5
+urllib3==1.26.17
     # via
     #   botocore
     #   python-keycloak
