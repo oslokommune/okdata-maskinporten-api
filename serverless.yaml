@@ -95,6 +95,7 @@ functions:
     timeout: 900
 
 plugins:
+  - serverless-better-credentials # must be first
   - serverless-plugin-git-variables
   - serverless-prune-plugin
   - serverless-python-requirements
