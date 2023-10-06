@@ -19,21 +19,21 @@ setup(
     packages=find_packages(),
     install_requires=[
         "authlib",
-        "aws-xray-sdk",
-        "boto3",
+        "aws-xray-sdk>=2.12,<3",
+        "boto3>=1.28.11,<2",
         "fastapi>=0.95.2",
-        "mangum",
+        "mangum>=0.12.4,<1",
         "okdata-aws>=1.0.1,<2.0.0",
         "okdata-resource-auth>=0.1.4",
-        "pydantic",
-        "pyjwt",
+        "pydantic>=1.10,<2",
+        "pyjwt>=2.7,<3",
         "pyopenssl",
         # Not needed directly (it's required by `python-keycloak`), but require
         # version 3.3.0 or higher explicitly to silence some deprecation
         # warnings.
         "python-jose>=3.3.0,<4.0.0",
         "python-keycloak>=1,<2",
-        "requests>=2.26.0,<3.0.0",
+        "requests>=2.28.0,<3",
         # We don't really need this, but AWS Lambda started including this
         # library in the Python 3.9 runtime, and `requests` will swap the
         # standard library `json` out for it when it's present in the
@@ -42,6 +42,6 @@ setup(
         #
         # TODO: Remove once `requests` 3.0.0 is out, since `simplejson` support
         # is dropped there.
-        "simplejson",
+        "simplejson>=3.18.1,<4",
     ],
 )
