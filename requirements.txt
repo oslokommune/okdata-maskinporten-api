@@ -21,8 +21,10 @@ botocore==1.31.61
     #   s3transfer
 certifi==2023.7.22
     # via requests
-cffi==1.14.6
-    # via cryptography
+cffi==1.16.0
+    # via
+    #   cryptography
+    #   okdata-maskinporten-api (setup.py)
 charset-normalizer==2.0.4
     # via requests
 cryptography==3.4.8
