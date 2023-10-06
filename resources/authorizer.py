@@ -22,7 +22,7 @@ def keycloak_client():
     )
 
 
-http_bearer = HTTPBearer(scheme_name="Keycloak token")
+http_bearer = HTTPBearer(scheme_name="KeycloakToken")
 
 
 class ServiceClient:
