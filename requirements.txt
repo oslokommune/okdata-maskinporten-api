@@ -27,9 +27,10 @@ cffi==1.16.0
     #   okdata-maskinporten-api (setup.py)
 charset-normalizer==2.0.4
     # via requests
-cryptography==3.4.8
+cryptography==41.0.4
     # via
     #   authlib
+    #   okdata-maskinporten-api (setup.py)
     #   pyopenssl
 ecdsa==0.14.1
     # via python-jose
@@ -68,9 +69,9 @@ pyjwt==2.8.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
-pyopenssl==20.0.1
+pyopenssl==23.2.0
     # via okdata-maskinporten-api (setup.py)
-pyrsistent==0.17.3
+pyrsistent==0.19.3
     # via jsonschema
 python-dateutil==2.8.1
     # via botocore
@@ -99,7 +100,6 @@ six==1.15.0
     # via
     #   ecdsa
     #   jsonschema
-    #   pyopenssl
     #   python-dateutil
 sniffio==1.3.0
     # via anyio
@@ -118,7 +118,7 @@ urllib3==1.26.18
     #   botocore
     #   python-keycloak
     #   requests
-wrapt==1.12.1
+wrapt==1.15.0
     # via aws-xray-sdk
 
 # The following packages are considered to be unsafe in a requirements file:

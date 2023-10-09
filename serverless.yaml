@@ -111,6 +111,7 @@ custom:
     dockerizePip: non-linux
     dockerImage: public.ecr.aws/sam/build-python3.10:latest
     slim: true
+    pipCmdExtraArgs: ['--platform', 'manylinux2014_x86_64', '--only-binary=:all:']
     usePoetry: false
   prune:
     automatic: true
