@@ -10,11 +10,11 @@ attrs==20.3.0
     # via jsonschema
 authlib==0.15.4
     # via okdata-maskinporten-api (setup.py)
-aws-xray-sdk==2.6.0
+aws-xray-sdk==2.12.0
     # via okdata-maskinporten-api (setup.py)
-boto3==1.18.38
+boto3==1.28.61
     # via okdata-maskinporten-api (setup.py)
-botocore==1.21.38
+botocore==1.31.61
     # via
     #   aws-xray-sdk
     #   boto3
@@ -33,8 +33,6 @@ ecdsa==0.14.1
     # via python-jose
 fastapi==0.95.2
     # via okdata-maskinporten-api (setup.py)
-future==0.18.3
-    # via aws-xray-sdk
 idna==2.10
     # via
     #   anyio
@@ -43,11 +41,9 @@ jmespath==0.10.0
     # via
     #   boto3
     #   botocore
-jsonpickle==1.5.0
-    # via aws-xray-sdk
 jsonschema==3.2.0
     # via okdata-sdk
-mangum==0.12.2
+mangum==0.17.0
     # via okdata-maskinporten-api (setup.py)
 okdata-aws==1.0.1
     # via okdata-maskinporten-api (setup.py)
@@ -61,12 +57,12 @@ pyasn1==0.4.8
     #   rsa
 pycparser==2.20
     # via cffi
-pydantic==1.7.4
+pydantic==1.10.13
     # via
     #   fastapi
     #   okdata-aws
     #   okdata-maskinporten-api (setup.py)
-pyjwt==2.4.0
+pyjwt==2.8.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
@@ -93,9 +89,9 @@ requests==2.31.0
     #   python-keycloak
 rsa==4.7
     # via python-jose
-s3transfer==0.5.0
+s3transfer==0.7.0
     # via boto3
-simplejson==3.17.5
+simplejson==3.19.1
     # via okdata-maskinporten-api (setup.py)
 six==1.15.0
     # via
@@ -111,8 +107,10 @@ starlette==0.27.0
     #   okdata-aws
 structlog==20.2.0
     # via okdata-aws
-typing-extensions==3.10.0.0
-    # via mangum
+typing-extensions==4.8.0
+    # via
+    #   mangum
+    #   pydantic
 urllib3==1.26.17
     # via
     #   botocore
