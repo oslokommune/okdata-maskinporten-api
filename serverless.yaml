@@ -4,7 +4,7 @@ service: okdata-maskinporten-api
 
 provider:
   name: aws
-  runtime: python3.9
+  runtime: python3.10
   memorySize: 1024
   region: eu-west-1
   endpointType: REGIONAL
@@ -109,7 +109,7 @@ custom:
   version: 0.1.0
   pythonRequirements:
     dockerizePip: non-linux
-    dockerImage: public.ecr.aws/sam/build-python3.9:latest
+    dockerImage: public.ecr.aws/sam/build-python3.10:latest
     slim: true
     usePoetry: false
   prune:

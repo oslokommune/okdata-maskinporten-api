@@ -21,6 +21,9 @@ setup(
         "authlib",
         "aws-xray-sdk>=2.12,<3",
         "boto3>=1.28.11,<2",
+        # Not needed directly (it's required by `pyopenssl`), but require
+        # version 1.15.0 or higher explicitly in order to support Python 3.10+.
+        "cffi>=1.15.0,<2",
         "fastapi>=0.95.2",
         "mangum>=0.12.4,<1",
         "okdata-aws>=1.0.1,<2.0.0",
