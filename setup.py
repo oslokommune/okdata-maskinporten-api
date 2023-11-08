@@ -24,13 +24,17 @@ setup(
         # Not needed directly (it's required by `pyopenssl`), but require
         # version 1.15.0 or higher explicitly in order to support Python 3.10+.
         "cffi>=1.15.0,<2",
+        # Not needed directly (it's required by `pyopenssl`), but require
+        # version 41.0.4 or higher explicitly in order to mitigate a bunch of
+        # security issues.
+        "cryptography>=41.0.4,<42",
         "fastapi>=0.95.2",
         "mangum>=0.12.4,<1",
         "okdata-aws>=1.0.1,<2.0.0",
         "okdata-resource-auth>=0.1.4",
         "pydantic>=1.10,<2",
         "pyjwt>=2.7,<3",
-        "pyopenssl",
+        "pyopenssl>=23.2.0,<24",
         # Not needed directly (it's required by `python-keycloak`), but require
         # version 3.3.0 or higher explicitly to silence some deprecation
         # warnings.
