@@ -68,3 +68,9 @@ files where each file is at most 8192 bytes long. This is useful when preparing
 a certificate file for storage in AWS SSM, as SSM parameters can't be longer
 than 8192 bytes. Each part is stored in its own SSM parameter and they're later
 stitched together again by this API.
+
+Example usage:
+
+```bash
+./p12tob64 my-certificate.p12
+```

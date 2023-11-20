@@ -3,6 +3,8 @@
 # p12tob64: Encode a PKCS #12 certificate file into (possibly
 # multiple) Base64 files, each file being at most 8192 bytes long.
 
+# Example usage: ./p12tob64 my-certificate.p12
+
 if [[ -z "$1" ]]; then
     echo "Usage: $0 <certificate.p12>"
     exit 1
