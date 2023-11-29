@@ -27,7 +27,7 @@ cffi==1.16.0
     #   okdata-maskinporten-api (setup.py)
 charset-normalizer==2.0.4
     # via requests
-cryptography==41.0.4
+cryptography==41.0.6
     # via
     #   authlib
     #   okdata-maskinporten-api (setup.py)
