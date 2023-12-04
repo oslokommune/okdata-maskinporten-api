@@ -57,12 +57,20 @@ can alternatively deploy from local machine with: `make deploy` or `make
 deploy-prod`.
 
 
-## Self-service
+## Scripts
 
-In order to open up for self service here, we will need to take some measures:
+Utility scripts live in the top level `scripts` directory.
 
-* Ensure that the user making the request is an Origo user (ooo123456)
-* Ensure that the associated team is an Origo Team
-    * This can be acquired by assigning this [Keycloak role](https://github.com/oslokommune/dataplatform-config/blob/main/devops/modules/keycloak-resource-server/main.tf#L121-L128) to origo-teams
-    * Attaching roles to existing Origo teams can be done using the Keycloak console
-    * Attaching roles to new teams can be done by extending the Teams API. An example can be found in [this branch](https://github.com/oslokommune/teams)
+### p12tob64
+
+This script encodes a PKCS #12 certificate file into (possible multiple) Base64
+files where each file is at most 8192 bytes long. This is useful when preparing
+a certificate file for storage in AWS SSM, as SSM parameters can't be longer
+than 8192 bytes. Each part is stored in its own SSM parameter and they're later
+stitched together again by this API.
+
+Example usage:
+
+```bash
+./p12tob64 my-certificate.p12
+```
