@@ -130,9 +130,11 @@ def _format_client(client):
             f"Navn: {client['client_name']}",
             f"Beskrivelse: {client['description']}",
             f"Opprettet: {client['created'][:10]}",
-            f"Scope: {scopes[0] if scopes else 'ingen'}"
-            if len(scopes) <= 1
-            else "\n".join(["Scopes:", *[f"- {scope}" for scope in scopes]]),
+            (
+                f"Scope: {scopes[0] if scopes else 'ingen'}"
+                if len(scopes) <= 1
+                else "\n".join(["Scopes:", *[f"- {scope}" for scope in scopes]])
+            ),
             f"Maskinporten-miljø: {client['env']}",
             f"Automatisk nøkkelrotering: {'Ja' if auto_rotate else 'Nei'}",
         ]
