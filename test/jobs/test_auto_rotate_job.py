@@ -143,8 +143,13 @@ def test_rotate_client_multiple_existing_keys(mock_aws, mocker):
 
 @patch("jobs.auto_rotate._rotate_client")
 @patch("jobs.auto_rotate.clients_to_rotate")
+@patch("jobs.auto_rotate.MaskinportenClient")
 def test_rotate_keys(
-    mock_clients_to_rotate, mock_rotate_client, mock_aws, mock_dynamodb
+    mock_maskinporten_client,
+    mock_clients_to_rotate,
+    mock_rotate_client,
+    mock_aws,
+    mock_dynamodb,
 ):
     client_id = "19ba4329-2c11-234b-a66d-69a4174e9e49"
     mock_clients_to_rotate.return_value = [
