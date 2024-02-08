@@ -34,7 +34,7 @@ cryptography==41.0.6
     #   pyopenssl
 ecdsa==0.14.1
     # via python-jose
-fastapi==0.95.2
+fastapi==0.109.1
     # via okdata-maskinporten-api (setup.py)
 idna==2.10
     # via
