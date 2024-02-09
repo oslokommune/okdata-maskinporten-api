@@ -56,7 +56,7 @@ def test_jwt_generator_generate_jwt(jwt_generator):
 def test_jwt_auth_client_get_access_token(jwt_config, requests_mock):
     mock_access_token_generation_requests(requests_mock)
 
-    client = JWTAuthClient(jwt_config, env_config("test").idporten_oidc_wellknown)
+    client = JWTAuthClient(jwt_config, env_config("test").oidc_wellknown)
     token = client.get_access_token(["foo:bar.read"])
 
     assert token.access_token == "access_token"

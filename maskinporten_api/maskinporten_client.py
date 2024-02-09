@@ -33,7 +33,7 @@ class KeyNotFoundError(Exception):
 @dataclasses.dataclass
 class EnvConfig:
     name: MaskinportenEnvironment
-    idporten_oidc_wellknown: str
+    oidc_wellknown: str
     maskinporten_clients_endpoint: str
 
     def maskinporten_admin_client_id(self):
@@ -64,12 +64,12 @@ class EnvConfig:
 _ENV_CONFIGS = [
     EnvConfig(
         MaskinportenEnvironment.test.value,
-        "https://oidc-ver2.difi.no/idporten-oidc-provider/.well-known/openid-configuration",
+        "https://test.maskinporten.no/.well-known/oauth-authorization-server",
         "https://integrasjon-ver2.difi.no/clients/",
     ),
     EnvConfig(
         MaskinportenEnvironment.prod.value,
-        "https://oidc.difi.no/idporten-oidc-provider/.well-known/openid-configuration",
+        "https://maskinporten.no/.well-known/oauth-authorization-server",
         "https://integrasjon.difi.no/clients/",
     ),
 ]
@@ -99,7 +99,7 @@ class MaskinportenClient:
             certificate=p12.get_certificate(),
             private_key=p12.get_privatekey(),
         )
-        self.client = JWTAuthClient(conf, config.idporten_oidc_wellknown)
+        self.client = JWTAuthClient(conf, config.oidc_wellknown)
         self.base_url = config.maskinporten_clients_endpoint
         self._delete_client_key_lock = threading.Lock()
 
