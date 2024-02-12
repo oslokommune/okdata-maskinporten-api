@@ -27,7 +27,7 @@ setup(
         # Not needed directly (it's required by `pyopenssl`), but require
         # version 41.0.4 or higher explicitly in order to mitigate a bunch of
         # security issues.
-        "cryptography>=41.0.4,<42",
+        "cryptography>=41.0.4,<43",
         "fastapi>=0.109.2",
         "mangum>=0.12.4,<1",
         "okdata-aws>=1.0.1,<2.0.0",
