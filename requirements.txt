@@ -34,7 +34,7 @@ cryptography==41.0.6
     #   pyopenssl
 ecdsa==0.14.1
     # via python-jose
-fastapi==0.95.2
+fastapi==0.109.2
     # via okdata-maskinporten-api (setup.py)
 idna==2.10
     # via
@@ -103,7 +103,7 @@ six==1.15.0
     #   python-dateutil
 sniffio==1.3.0
     # via anyio
-starlette==0.27.0
+starlette==0.36.3
     # via
     #   fastapi
     #   okdata-aws
@@ -111,6 +111,7 @@ structlog==20.2.0
     # via okdata-aws
 typing-extensions==4.8.0
     # via
+    #   fastapi
     #   mangum
     #   pydantic
 urllib3==1.26.18

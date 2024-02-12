@@ -28,7 +28,7 @@ setup(
         # version 41.0.4 or higher explicitly in order to mitigate a bunch of
         # security issues.
         "cryptography>=41.0.4,<42",
-        "fastapi>=0.95.2",
+        "fastapi>=0.109.2",
         "mangum>=0.12.4,<1",
         "okdata-aws>=1.0.1,<2.0.0",
         "okdata-resource-auth>=0.1.4",

@@ -183,7 +183,7 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
 def delete_client(  # noqa: C901
     env: MaskinportenEnvironment,
     body: DeleteMaskinportenClientIn = None,
-    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    client_id: str = Path(..., pattern=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
     service_client: ServiceClient = Depends(),
 ):
@@ -298,7 +298,7 @@ def delete_client(  # noqa: C901
 def create_client_key(
     body: CreateClientKeyIn,
     env: MaskinportenEnvironment,
-    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    client_id: str = Path(..., pattern=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
 ):
     resource_name = client_resource_name(env, client_id)
@@ -409,7 +409,7 @@ def create_client_key(
 )
 def delete_client_key(
     env: MaskinportenEnvironment,
-    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    client_id: str = Path(..., pattern=r"^[0-9a-f-]+$"),
     key_id: str = Path(...),
     auth_info: AuthInfo = Depends(),
 ):
@@ -464,7 +464,7 @@ def delete_client_key(
 )
 def list_client_keys(
     env: MaskinportenEnvironment,
-    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    client_id: str = Path(..., pattern=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
 ):
     authorize(

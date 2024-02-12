@@ -27,7 +27,7 @@ router = APIRouter()
 )
 def get_audit_log(
     env: MaskinportenEnvironment,
-    client_id: str = Path(..., regex=r"^[0-9a-f-]+$"),
+    client_id: str = Path(..., pattern=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
 ):
     authorize(
