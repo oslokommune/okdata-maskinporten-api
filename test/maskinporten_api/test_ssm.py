@@ -5,12 +5,12 @@ import pytest
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
 from moto.sts.models import STSBackend
+from okdata.aws.ssm import get_secret
 
 from maskinporten_api.keys import create_key
 from maskinporten_api.ssm import (
     AssumeRoleAccessDeniedError,
     ForeignAccountSecretsClient,
-    get_secret,
 )
 
 

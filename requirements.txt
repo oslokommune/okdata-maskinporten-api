@@ -13,7 +13,9 @@ authlib==0.15.4
 aws-xray-sdk==2.12.0
     # via okdata-maskinporten-api (setup.py)
 boto3==1.28.61
-    # via okdata-maskinporten-api (setup.py)
+    # via
+    #   okdata-aws
+    #   okdata-maskinporten-api (setup.py)
 botocore==1.31.61
     # via
     #   aws-xray-sdk
@@ -48,11 +50,11 @@ jsonschema==3.2.0
     # via okdata-sdk
 mangum==0.17.0
     # via okdata-maskinporten-api (setup.py)
-okdata-aws==1.0.1
+okdata-aws==2.1.0
     # via okdata-maskinporten-api (setup.py)
 okdata-resource-auth==0.1.4
     # via okdata-maskinporten-api (setup.py)
-okdata-sdk==0.9.2
+okdata-sdk==3.1.0
     # via okdata-aws
 pyasn1==0.4.8
     # via
@@ -78,6 +80,7 @@ python-dateutil==2.8.1
 python-jose==3.3.0
     # via
     #   okdata-maskinporten-api (setup.py)
+    #   okdata-sdk
     #   python-keycloak
 python-keycloak==1.8.0
     # via
@@ -117,6 +120,7 @@ typing-extensions==4.8.0
 urllib3==1.26.18
     # via
     #   botocore
+    #   okdata-sdk
     #   python-keycloak
     #   requests
 wrapt==1.15.0

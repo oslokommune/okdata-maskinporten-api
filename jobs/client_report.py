@@ -8,6 +8,7 @@ from itertools import chain
 import requests
 from aws_xray_sdk.core import patch_all, xray_recorder
 from okdata.aws.logging import logging_wrapper
+from okdata.aws.ssm import get_secret
 from requests.exceptions import HTTPError
 
 from maskinporten_api.auto_rotate import has_auto_rotate_enabled
@@ -151,7 +152,7 @@ def _send_email(to_emails, body):
             "emne": "Maskinporten klientrapport",
             "meldingskropp": body.replace("\n", "<br />"),
         },
-        headers={"apikey": os.environ["EMAIL_API_KEY"]},
+        headers={"apikey": get_secret("/dataplatform/shared/email-api-key")},
     )
     res.raise_for_status()
     return res

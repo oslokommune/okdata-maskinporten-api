@@ -6,9 +6,9 @@ import threading
 import requests
 from OpenSSL import crypto
 from botocore.exceptions import ClientError
+from okdata.aws.ssm import get_secret
 
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
-from maskinporten_api.ssm import get_secret
 from maskinporten_api.util import getenv
 from models import MaskinportenEnvironment
 

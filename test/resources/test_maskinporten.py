@@ -16,7 +16,7 @@ from test.resources.conftest import get_mock_user, valid_client_token, team_id
 
 CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
-SLACK_WEBHOOK_URL = os.environ["SLACK_MASKINPORTEN_API_ALERTS_WEBHOOK_URL"]
+SLACK_WEBHOOK_URL = "http://hooks.slack.arpa/services/123"
 
 
 def test_create_client(
