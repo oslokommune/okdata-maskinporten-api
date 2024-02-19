@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from datetime import datetime, timezone
 
@@ -7,6 +6,7 @@ import boto3
 import requests
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
+from okdata.aws.ssm import get_secret
 
 from maskinporten_api.permissions import client_resource_name
 
@@ -61,11 +61,15 @@ def audit_log(item_id, action, user, scopes=None, key_id=None):
 
 
 def audit_notify(header, client_name, env, scopes):
-    notify_endpoint = os.getenv("SLACK_MASKINPORTEN_API_ALERTS_WEBHOOK_URL")
-
-    if not notify_endpoint:
-        log.warning("No notify endpoint configured")
-        return
+    try:
+        notify_endpoint = get_secret(
+            "/dataplatform/slack/maskinporten-api-slack-webhook"
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "AccessDeniedException":
+            log.warning("No notify endpoint configured")
+            return
+        raise
 
     try:
         response = requests.post(

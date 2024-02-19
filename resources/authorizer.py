@@ -4,9 +4,9 @@ from typing import Optional
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from keycloak import KeycloakOpenID
+from okdata.aws.ssm import get_secret
 from okdata.resource_auth import ResourceAuthorizer
 
-from maskinporten_api.ssm import get_secret
 from resources.errors import ErrorResponse
 
 

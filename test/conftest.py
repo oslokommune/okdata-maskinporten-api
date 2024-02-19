@@ -32,6 +32,11 @@ def initialize_parameter_store():
         Value="supersecretpassword",
         Type="SecureString",
     )
+    ssm_client.put_parameter(
+        Name="/dataplatform/slack/maskinporten-api-slack-webhook",
+        Value="http://hooks.slack.arpa/services/123",
+        Type="SecureString",
+    )
 
     for env in MaskinportenEnvironment:
         ssm_client.put_parameter(
