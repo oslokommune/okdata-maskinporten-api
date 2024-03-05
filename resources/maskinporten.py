@@ -120,9 +120,22 @@ def create_client(
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
-    new_client = maskinporten_client.create_client(
-        team_name, client_in.provider, client_in.integration, client_in.scopes
-    ).json()
+    new_client = (
+        maskinporten_client.create_idporten_client(
+            team_name,
+            client_in.provider,
+            client_in.integration,
+            client_in.redirect_uris,
+            client_in.post_logout_redirect_uris,
+        ).json()
+        if body.client_type == ClientType.idporten
+        else maskinporten_client.create_maskinporten_client(
+            team_name,
+            client_in.provider,
+            client_in.integration,
+            client_in.scopes,
+        ).json()
+    )
 
     new_client_id = new_client["client_id"]
     new_client_scopes = new_client["scopes"]
