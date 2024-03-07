@@ -135,7 +135,14 @@ class MaskinportenClient:
         )
 
     def create_idporten_client(
-        self, team_name, provider, integration, redirect_uris, post_logout_redirect_uris
+        self,
+        team_name,
+        provider,
+        integration,
+        client_uri,
+        redirect_uris,
+        post_logout_redirect_uris,
+        frontchannel_logout_uri=None,
     ):
         return self._request(
             "POST",
@@ -145,10 +152,13 @@ class MaskinportenClient:
                 "application_type": "web",
                 "authorization_lifetime": 0,
                 "client_name": self._make_client_name(team_name, provider, integration),
+                "client_uri": client_uri,
                 "description": self._make_client_description(
                     team_name, provider, integration
                 ),
-                "frontchannel_logout_session_required": False,  # Påkrevd etter hvert
+                "code_challenge_method": "S256",
+                "frontchannel_logout_session_required": True,
+                "frontchannel_logout_uri": frontchannel_logout_uri,
                 "grant_types": ["authorization_code", "refresh_token"],
                 "integration_type": "idporten",
                 "post_logout_redirect_uris": post_logout_redirect_uris,

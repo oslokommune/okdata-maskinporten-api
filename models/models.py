@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 
 class MaskinportenEnvironment(str, Enum):
@@ -25,8 +25,11 @@ class ClientIn(BaseModel):
     env: MaskinportenEnvironment
 
     scopes: Optional[list[str]]
-    redirect_uris: Optional[list[HttpUrl]]
-    post_logout_redirect_uris: Optional[list[HttpUrl]]
+
+    client_uri: Optional[AnyHttpUrl]
+    frontchannel_logout_uri: Optional[AnyHttpUrl]
+    redirect_uris: Optional[list[AnyHttpUrl]]
+    post_logout_redirect_uris: Optional[list[AnyHttpUrl]]
 
 
 class MaskinportenClientIn(ClientIn):
@@ -34,8 +37,10 @@ class MaskinportenClientIn(ClientIn):
 
 
 class IdPortenClientIn(ClientIn):
-    redirect_uris: list[HttpUrl]
-    post_logout_redirect_uris: list[HttpUrl]
+    client_uri: AnyHttpUrl
+    frontchannel_logout_uri: Optional[AnyHttpUrl] = None
+    redirect_uris: list[AnyHttpUrl]
+    post_logout_redirect_uris: list[AnyHttpUrl]
 
 
 class MaskinportenClientOut(BaseModel):

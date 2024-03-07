@@ -125,8 +125,10 @@ def create_client(
             team_name,
             client_in.provider,
             client_in.integration,
+            client_in.client_uri,
             client_in.redirect_uris,
             client_in.post_logout_redirect_uris,
+            client_in.frontchannel_logout_uri,
         ).json()
         if body.client_type == ClientType.idporten
         else maskinporten_client.create_maskinporten_client(
