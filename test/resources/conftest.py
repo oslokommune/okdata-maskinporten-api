@@ -87,6 +87,7 @@ def generate_mock_client_response(
 @pytest.fixture
 def maskinporten_create_client_body():
     return {
+        "client_type": "maskinporten",
         "team_id": team_id,
         "provider": "freg",
         "integration": "testing",
@@ -96,11 +97,31 @@ def maskinporten_create_client_body():
 
 
 @pytest.fixture
+def idporten_create_client_body():
+    return {
+        "client_type": "idporten",
+        "team_id": team_id,
+        "provider": "idporten",
+        "integration": "testing",
+        "env": "test",
+        "client_uri": "http://localhost",
+        "frontchannel_logout_uri": "http://localhost",
+        "redirect_uris": ["http://localhost"],
+        "post_logout_redirect_uris": ["http://localhost"],
+    }
+
+
+@pytest.fixture
 def maskinporten_create_client_response():
     return generate_mock_client_response(
         client_id="d1427568-1eba-1bf2-59ed-1c4af065f30e",
         client_name="my-team-freg-testing",
     )
+
+
+@pytest.fixture
+def idporten_create_client_response(maskinporten_create_client_response):
+    return maskinporten_create_client_response
 
 
 @pytest.fixture
