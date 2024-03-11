@@ -110,8 +110,8 @@ def create_client(
 
     logger.debug(
         sanitize(
-            f"Creating new {client_in.provider} client for team '{team_name}' in "
-            "{client_in.env} with scopes {client_in.scopes}"
+            f"Creating new {client_in.client_type} ({client_in.provider}) "
+            "client for team '{team_name}' in {client_in.env}."
         )
     )
 
