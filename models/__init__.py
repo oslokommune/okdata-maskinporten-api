@@ -1,10 +1,13 @@
 from models.models import (
     AuditLogEntry,
+    ClientIn,
     ClientKeyMetadata,
+    ClientType,
     CreateClientKeyIn,
     CreateClientKeyOut,
     DeleteMaskinportenClientIn,
     DeleteMaskinportenClientOut,
+    IdPortenClientIn,
     MaskinportenClientIn,
     MaskinportenClientOut,
     MaskinportenEnvironment,
@@ -12,11 +15,14 @@ from models.models import (
 
 __all__ = [
     "AuditLogEntry",
+    "ClientIn",
     "ClientKeyMetadata",
+    "ClientType",
     "CreateClientKeyIn",
     "CreateClientKeyOut",
     "DeleteMaskinportenClientIn",
     "DeleteMaskinportenClientOut",
+    "IdPortenClientIn",
     "MaskinportenClientIn",
     "MaskinportenClientOut",
     "MaskinportenEnvironment",

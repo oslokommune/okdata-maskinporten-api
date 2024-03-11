@@ -5,14 +5,19 @@ from datetime import datetime, timezone
 import requests
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, Path, status
+from fastapi.responses import JSONResponse
 from okdata.aws.logging import log_exception
+from pydantic import ValidationError
 
 from models import (
+    ClientIn,
     ClientKeyMetadata,
+    ClientType,
     CreateClientKeyIn,
     CreateClientKeyOut,
     DeleteMaskinportenClientIn,
     DeleteMaskinportenClientOut,
+    IdPortenClientIn,
     MaskinportenClientIn,
     MaskinportenClientOut,
     MaskinportenEnvironment,
@@ -39,7 +44,11 @@ from maskinporten_api.ssm import (
 )
 from maskinporten_api.util import getenv, sanitize
 from resources.authorizer import AuthInfo, authorize, ServiceClient
-from resources.errors import error_message_models, ErrorResponse
+from resources.errors import (
+    error_message_models,
+    ErrorResponse,
+    pydantic_error_to_str,
+)
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
@@ -59,15 +68,31 @@ router = APIRouter()
     ),
 )
 def create_client(
-    body: MaskinportenClientIn,
+    body: ClientIn,
     auth_info: AuthInfo = Depends(),
     service_client: ServiceClient = Depends(),
 ):
     authorize(auth_info, scope="maskinporten:client:create")
 
     try:
+        client_model = (
+            IdPortenClientIn
+            if body.client_type == ClientType.idporten
+            else MaskinportenClientIn
+        )
+        client_in = client_model(**body.dict())
+    except ValidationError as exc:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "message": "Invalid data provided for client type: "
+                + "\n\n".join(map(pydantic_error_to_str, exc.errors())),
+            },
+        )
+
+    try:
         team = get_team(
-            body.team_id,
+            client_in.team_id,
             auth_info.bearer_token,
             has_role="origo-team",
         )
@@ -85,23 +110,38 @@ def create_client(
 
     logger.debug(
         sanitize(
-            f"Creating new {body.provider} client for team '{team_name}' in "
-            "{body.env} with scopes {body.scopes}"
+            f"Creating new {client_in.client_type} ({client_in.provider}) "
+            "client for team '{team_name}' in {client_in.env}."
         )
     )
 
     try:
-        maskinporten_client = MaskinportenClient(body.env)
+        maskinporten_client = MaskinportenClient(client_in.env)
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
-    new_client = maskinporten_client.create_client(
-        team_name, body.provider, body.integration, body.scopes
-    ).json()
+    new_client = (
+        maskinporten_client.create_idporten_client(
+            team_name,
+            client_in.provider,
+            client_in.integration,
+            client_in.client_uri,
+            client_in.redirect_uris,
+            client_in.post_logout_redirect_uris,
+            client_in.frontchannel_logout_uri,
+        ).json()
+        if body.client_type == ClientType.idporten
+        else maskinporten_client.create_maskinporten_client(
+            team_name,
+            client_in.provider,
+            client_in.integration,
+            client_in.scopes,
+        ).json()
+    )
 
     new_client_id = new_client["client_id"]
     new_client_scopes = new_client["scopes"]
-    resource_name = client_resource_name(body.env, new_client_id)
+    resource_name = client_resource_name(client_in.env, new_client_id)
 
     try:
         create_okdata_permissions(
@@ -124,7 +164,7 @@ def create_client(
         scopes=new_client_scopes,
     )
     audit_notify(
-        "Client created", new_client["client_name"], body.env, new_client_scopes
+        "Client created", new_client["client_name"], client_in.env, new_client_scopes
     )
 
     return MaskinportenClientOut.parse_obj(new_client)

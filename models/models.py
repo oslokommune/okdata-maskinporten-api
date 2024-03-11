@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 
 class MaskinportenEnvironment(str, Enum):
@@ -11,12 +11,36 @@ class MaskinportenEnvironment(str, Enum):
     prod = "prod"
 
 
-class MaskinportenClientIn(BaseModel):
+class ClientType(str, Enum):
+    maskinporten = "maskinporten"
+    idporten = "idporten"
+
+
+class ClientIn(BaseModel):
+    client_type: ClientType = ClientType.maskinporten
+
     team_id: UUID
     provider: str
     integration: str
-    scopes: list[str]
     env: MaskinportenEnvironment
+
+    scopes: Optional[list[str]]
+
+    client_uri: Optional[AnyHttpUrl]
+    frontchannel_logout_uri: Optional[AnyHttpUrl]
+    redirect_uris: Optional[list[AnyHttpUrl]]
+    post_logout_redirect_uris: Optional[list[AnyHttpUrl]]
+
+
+class MaskinportenClientIn(ClientIn):
+    scopes: list[str]
+
+
+class IdPortenClientIn(ClientIn):
+    client_uri: AnyHttpUrl
+    frontchannel_logout_uri: Optional[AnyHttpUrl] = None
+    redirect_uris: list[AnyHttpUrl]
+    post_logout_redirect_uris: list[AnyHttpUrl]
 
 
 class MaskinportenClientOut(BaseModel):

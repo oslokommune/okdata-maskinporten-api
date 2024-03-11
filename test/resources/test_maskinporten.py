@@ -1,5 +1,5 @@
 import os
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 import requests_mock
@@ -94,6 +94,31 @@ def test_create_client(
         maskinporten_create_client_body["env"],
         client["scopes"],
     )
+
+
+def test_create_client_idporten(
+    idporten_create_client_body,
+    idporten_create_client_response,
+    user_team_response,
+    mock_authorizer,
+    mock_client,
+):
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}", json=user_team_response)
+
+        with patch("resources.maskinporten.MaskinportenClient") as MaskinportenClient:
+            mocked_maskinporten_client = Mock()
+            MaskinportenClient.return_value = mocked_maskinporten_client
+            mocked_maskinporten_client.create_idporten_client.return_value.json.return_value = (
+                idporten_create_client_response
+            )
+            mock_client.post(
+                "/clients",
+                json=idporten_create_client_body,
+                headers={"Authorization": get_mock_user("janedoe").bearer_token},
+            )
+            mocked_maskinporten_client.create_idporten_client.assert_called_once()
 
 
 def test_create_client_rollback(

@@ -117,7 +117,7 @@ class MaskinportenClient:
     def _make_client_description(team_name, provider, integration):
         return f"{provider.capitalize()}-klient for {integration} ({team_name})"
 
-    def create_client(self, team_name, provider, integration, scopes):
+    def create_maskinporten_client(self, team_name, provider, integration, scopes):
         return self._request(
             "POST",
             ["idporten:dcr.write"],
@@ -131,6 +131,43 @@ class MaskinportenClient:
                 "grant_types": ["urn:ietf:params:oauth:grant-type:jwt-bearer"],
                 "integration_type": "maskinporten",
                 "application_type": "web",
+            },
+        )
+
+    def create_idporten_client(
+        self,
+        team_name,
+        provider,
+        integration,
+        client_uri,
+        redirect_uris,
+        post_logout_redirect_uris,
+        frontchannel_logout_uri=None,
+    ):
+        return self._request(
+            "POST",
+            ["idporten:dcr.write"],
+            json={
+                "access_token_lifetime": 0,
+                "application_type": "web",
+                "authorization_lifetime": 0,
+                "client_name": self._make_client_name(team_name, provider, integration),
+                "client_uri": client_uri,
+                "description": self._make_client_description(
+                    team_name, provider, integration
+                ),
+                "code_challenge_method": "S256",
+                "frontchannel_logout_session_required": True,
+                "frontchannel_logout_uri": frontchannel_logout_uri,
+                "grant_types": ["authorization_code", "refresh_token"],
+                "integration_type": "idporten",
+                "post_logout_redirect_uris": post_logout_redirect_uris,
+                "redirect_uris": redirect_uris,
+                "refresh_token_lifetime": 0,
+                "refresh_token_usage": "ONETIME",
+                "scopes": ["openid", "profile"],
+                "sso_disabled": False,
+                "token_endpoint_auth_method": "private_key_jwt",
             },
         )
 
