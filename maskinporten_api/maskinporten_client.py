@@ -65,12 +65,12 @@ _ENV_CONFIGS = [
     EnvConfig(
         MaskinportenEnvironment.test.value,
         "https://test.maskinporten.no/.well-known/oauth-authorization-server",
-        "https://integrasjon-ver2.difi.no/clients/",
+        "https://api.test.samarbeid.digdir.no/clients/",
     ),
     EnvConfig(
         MaskinportenEnvironment.prod.value,
         "https://maskinporten.no/.well-known/oauth-authorization-server",
-        "https://integrasjon.difi.no/clients/",
+        "https://api.samarbeid.digdir.no/clients/",
     ),
 ]
 
