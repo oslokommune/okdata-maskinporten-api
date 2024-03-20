@@ -4,9 +4,10 @@ import re
 import threading
 
 import requests
-from OpenSSL import crypto
+
 from botocore.exceptions import ClientError
 from okdata.aws.ssm import get_secret
+from cryptography.hazmat.primitives.serialization import pkcs12
 
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.util import getenv
@@ -90,14 +91,16 @@ class MaskinportenClient:
 
     def __init__(self, env):
         config = env_config(env)
-        p12 = crypto.load_pkcs12(
+
+        private_key, certificate, _ = pkcs12.load_key_and_certificates(
             base64.b64decode(config.certificate()),
             config.certificate_password().encode("utf-8"),
         )
+
         conf = JWTConfig(
             issuer=config.maskinporten_admin_client_id(),
-            certificate=p12.get_certificate(),
-            private_key=p12.get_privatekey(),
+            certificate=certificate,
+            private_key=private_key,
         )
         self.client = JWTAuthClient(conf, config.oidc_wellknown)
         self.base_url = config.maskinporten_clients_endpoint
