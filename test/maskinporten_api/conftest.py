@@ -1,6 +1,5 @@
 import pytest
-
-from cryptography.hazmat.primitives.serialization import pkcs12
+from OpenSSL import crypto
 
 from maskinporten_api.jwt_client import JWTConfig, JWTGenerator
 
@@ -8,15 +7,12 @@ from maskinporten_api.jwt_client import JWTConfig, JWTGenerator
 @pytest.fixture
 def jwt_config():
     with open("test/data/test.p12", "rb") as f:
-        private_key, certificate, _ = pkcs12.load_key_and_certificates(
-            f.read(),
-            b"test",
-        )
+        p12 = crypto.load_pkcs12(f.read(), b"test")
     return JWTConfig(
         issuer="foo-corp",
         consumer_org="123",
-        certificate=certificate,
-        private_key=private_key,
+        certificate=p12.get_certificate(),
+        private_key=p12.get_privatekey(),
     )
 
 

@@ -22,14 +22,7 @@ from datetime import datetime, timedelta
 
 import jwt
 import requests
-
-from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.serialization import (
-    Encoding,
-    PrivateFormat,
-    NoEncryption,
-)
+from OpenSSL import crypto
 from pydantic import BaseModel
 
 
@@ -43,8 +36,8 @@ class JWTAuthError(Exception):
 @dataclass
 class JWTConfig:
     issuer: str
-    certificate: x509.Certificate
-    private_key: rsa.RSAPrivateKey
+    certificate: crypto.X509
+    private_key: crypto.PKey
     consumer_org: str = None
 
 
@@ -57,10 +50,7 @@ class JWTGenerator:
     def _jws_headers(self):
         """Return JWT headers for the present certificate."""
         x5c = base64.b64encode(
-            # Serialize the certificate to the underlying ASN.1 data structure
-            # using it's main serialization format "Distinguished Encoding Rules" (DER).
-            # https://cryptography.io/en/latest/x509/reference/#cryptography.x509.Certificate.public_bytes
-            self.jwt_config.certificate.public_bytes(Encoding.DER),
+            crypto.dump_certificate(crypto.FILETYPE_ASN1, self.jwt_config.certificate)
         )
         return {
             "x5c": [x5c.decode("utf-8")],
@@ -94,11 +84,7 @@ class JWTGenerator:
         """Return a freshly generated JWT for `audience` and `scopes`."""
         headers = self._jws_headers()
         claims = self._claims(audience, scopes)
-        pk = self.jwt_config.private_key.private_bytes(
-            encoding=Encoding.PEM,
-            format=PrivateFormat.PKCS8,
-            encryption_algorithm=NoEncryption(),
-        )
+        pk = crypto.dump_privatekey(crypto.FILETYPE_PEM, self.jwt_config.private_key)
 
         return jwt.encode(claims, pk, algorithm="RS256", headers=headers)
 
