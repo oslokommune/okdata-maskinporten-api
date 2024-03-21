@@ -21,20 +21,13 @@ setup(
         "authlib",
         "aws-xray-sdk>=2.12,<3",
         "boto3>=1.28.11,<2",
-        # Not needed directly (it's required by `pyopenssl`), but require
-        # version 1.15.0 or higher explicitly in order to support Python 3.10+.
-        "cffi>=1.15.0,<2",
-        # Not needed directly (it's required by `pyopenssl`), but require
-        # version 41.0.4 or higher explicitly in order to mitigate a bunch of
-        # security issues.
-        "cryptography>=41.0.4,<42",
+        "cryptography>=42.0.5,<43",
         "fastapi>=0.109.2",
         "mangum>=0.12.4,<1",
         "okdata-aws>=2.1,<3",
         "okdata-resource-auth>=0.1.4",
         "pydantic>=1.10,<2",
         "pyjwt>=2.7,<3",
-        "pyopenssl>=23.2.0,<24",
         # Not needed directly (it's required by `python-keycloak`), but require
         # version 3.3.0 or higher explicitly to silence some deprecation
         # warnings.

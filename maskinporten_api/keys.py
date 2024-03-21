@@ -6,8 +6,14 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from OpenSSL import crypto
 from authlib.jose import jwk
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import (
+    BestAvailableEncryption,
+    Encoding,
+    PublicFormat,
+    pkcs12,
+)
 
 from maskinporten_api.util import getenv
 
@@ -20,14 +26,16 @@ class Key:
     password: str
 
 
-def _generate_key() -> crypto.PKey:
+def _generate_key() -> rsa.RSAPrivateKey:
     """Return a freshly made 4096 bit RSA key pair."""
-    key = crypto.PKey()
-    key.generate_key(crypto.TYPE_RSA, 4096)
+    key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=4096,
+    )
     return key
 
 
-def _jwk_from_key(key: crypto.PKey, expiration_days):
+def _jwk_from_key(key: rsa.RSAPrivateKey, expiration_days):
     """Return a JSON Web Key (JWK) payload representing `key`.
 
     The key expires in `expiration_days` days.
@@ -35,27 +43,38 @@ def _jwk_from_key(key: crypto.PKey, expiration_days):
     now = datetime.now(tz=ZoneInfo(key=os.environ["TIMEZONE"]))
     expiry = now + timedelta(days=expiration_days)
 
+    public_key = key.public_key().public_bytes(
+        encoding=Encoding.PEM,
+        format=PublicFormat.SubjectPublicKeyInfo,
+    )
+
     return {
         "kid": now.strftime("kid-%Y-%m-%d-%H-%M-%S"),
         "alg": "RS256",
-        **jwk.dumps(crypto.dump_publickey(crypto.FILETYPE_PEM, key)),
+        **jwk.dumps(public_key),
         "exp": int(expiry.timestamp()),
     }
 
 
-def _pkcs12_from_key(key: crypto.PKey, key_alias: str, passphrase: str) -> str:
+def _pkcs12_from_key(
+    key: rsa.RSAPrivateKey,
+    key_alias: str,
+    passphrase: str,
+) -> str:
     """Return a Base64-encoded PKCS #12 archive containing `key`.
 
     `key_alias` is the alias/friendly name of the key in the keystore.
 
     `passphrase` is used to encrypt the structure.
     """
-    pkcs12 = crypto.PKCS12()
-    pkcs12.set_privatekey(key)
-    pkcs12.set_friendlyname(key_alias.encode("utf-8"))
-    return base64.b64encode(
-        pkcs12.export(passphrase.encode("utf-8")),
-    ).decode("utf-8")
+    serialized_pkcs12 = pkcs12.serialize_key_and_certificates(
+        name=key_alias.encode("utf-8"),
+        key=key,
+        cert=None,
+        cas=None,
+        encryption_algorithm=BestAvailableEncryption(passphrase.encode("utf-8")),
+    )
+    return base64.b64encode(serialized_pkcs12).decode("utf-8")
 
 
 def _generate_password(pw_length: int) -> str:
