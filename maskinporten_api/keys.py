@@ -29,6 +29,9 @@ class Key:
 def _generate_key() -> rsa.RSAPrivateKey:
     """Return a freshly made 4096 bit RSA key pair."""
     key = rsa.generate_private_key(
+        # Indicates what one mathematical property of the key generation will
+        # be. Should be `65537` unless specific reason to do otherwise. See
+        # https://cryptography.io/en/latest/hazmat/primitives/asymmetric/rsa/
         public_exponent=65537,
         key_size=4096,
     )
