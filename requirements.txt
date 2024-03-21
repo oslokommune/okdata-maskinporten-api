@@ -24,16 +24,13 @@ botocore==1.31.61
 certifi==2023.7.22
     # via requests
 cffi==1.16.0
-    # via
-    #   cryptography
-    #   okdata-maskinporten-api (setup.py)
+    # via cryptography
 charset-normalizer==2.0.4
     # via requests
-cryptography==41.0.6
+cryptography==42.0.5
     # via
     #   authlib
     #   okdata-maskinporten-api (setup.py)
-    #   pyopenssl
 ecdsa==0.14.1
     # via python-jose
 fastapi==0.109.2
@@ -71,8 +68,6 @@ pyjwt==2.8.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
-pyopenssl==23.2.0
-    # via okdata-maskinporten-api (setup.py)
 pyrsistent==0.19.3
     # via jsonschema
 python-dateutil==2.8.1
