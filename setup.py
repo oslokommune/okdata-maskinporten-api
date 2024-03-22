@@ -24,9 +24,9 @@ setup(
         "cryptography>=42.0.5,<43",
         "fastapi>=0.109.2",
         "mangum>=0.12.4,<1",
-        "okdata-aws>=2.1,<3",
+        "okdata-aws>=4,<5",
         "okdata-resource-auth>=0.1.4",
-        "pydantic>=1.10,<2",
+        "pydantic>2,<3",
         "pyjwt>=2.7,<3",
         # Not needed directly (it's required by `python-keycloak`), but require
         # version 3.3.0 or higher explicitly to silence some deprecation

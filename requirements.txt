@@ -4,6 +4,8 @@
 #
 #    pip-compile
 #
+annotated-types==0.6.0
+    # via pydantic
 anyio==3.6.2
     # via starlette
 attrs==20.3.0
@@ -47,7 +49,7 @@ jsonschema==3.2.0
     # via okdata-sdk
 mangum==0.17.0
     # via okdata-maskinporten-api (setup.py)
-okdata-aws==2.1.0
+okdata-aws==4.0.0
     # via okdata-maskinporten-api (setup.py)
 okdata-resource-auth==0.1.4
     # via okdata-maskinporten-api (setup.py)
@@ -59,11 +61,12 @@ pyasn1==0.4.8
     #   rsa
 pycparser==2.20
     # via cffi
-pydantic==1.10.13
+pydantic==2.6.4
     # via
     #   fastapi
-    #   okdata-aws
     #   okdata-maskinporten-api (setup.py)
+pydantic-core==2.16.3
+    # via pydantic
 pyjwt==2.8.0
     # via
     #   okdata-maskinporten-api (setup.py)
@@ -112,6 +115,7 @@ typing-extensions==4.8.0
     #   fastapi
     #   mangum
     #   pydantic
+    #   pydantic-core
 urllib3==1.26.18
     # via
     #   botocore

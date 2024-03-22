@@ -80,13 +80,13 @@ def create_client(
             if body.client_type == ClientType.idporten
             else MaskinportenClientIn
         )
-        client_in = client_model(**body.dict())
+        client_in = client_model(**body.model_dump())
     except ValidationError as exc:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "message": "Invalid data provided for client type: "
-                + "\n\n".join(map(pydantic_error_to_str, exc.errors())),
+                + "\n".join(map(pydantic_error_to_str, exc.errors())),
             },
         )
 
@@ -167,7 +167,7 @@ def create_client(
         "Client created", new_client["client_name"], client_in.env, new_client_scopes
     )
 
-    return MaskinportenClientOut.parse_obj(new_client)
+    return MaskinportenClientOut.model_validate(new_client)
 
 
 @router.get(
@@ -203,7 +203,12 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
             client_resource_name(env, client["client_id"])
         )
         if permission and required_scope in permission["scopes"]:
-            clients.append(MaskinportenClientOut.parse_obj(client))
+            clients.append(
+                MaskinportenClientOut.model_validate(
+                    client,
+                    from_attributes=True,
+                )
+            )
 
     return clients
 

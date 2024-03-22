@@ -1,9 +1,20 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union
+from typing import Annotated, Optional, Union
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, ConfigDict, BaseModel, Field
+from pydantic.functional_serializers import PlainSerializer
+
+
+OffsetDatetime = Annotated[
+    datetime,
+    PlainSerializer(
+        lambda dt: dt.isoformat(timespec="seconds"),
+        return_type=str,
+        when_used="json",
+    ),
+]
 
 
 class MaskinportenEnvironment(str, Enum):
@@ -24,12 +35,12 @@ class ClientIn(BaseModel):
     integration: str
     env: MaskinportenEnvironment
 
-    scopes: Optional[list[str]]
+    scopes: Optional[list[str]] = None
 
-    client_uri: Optional[AnyHttpUrl]
-    frontchannel_logout_uri: Optional[AnyHttpUrl]
-    redirect_uris: Optional[list[AnyHttpUrl]]
-    post_logout_redirect_uris: Optional[list[AnyHttpUrl]]
+    client_uri: Optional[AnyHttpUrl] = None
+    frontchannel_logout_uri: Optional[AnyHttpUrl] = None
+    redirect_uris: Optional[list[AnyHttpUrl]] = None
+    post_logout_redirect_uris: Optional[list[AnyHttpUrl]] = None
 
 
 class MaskinportenClientIn(ClientIn):
@@ -48,8 +59,8 @@ class MaskinportenClientOut(BaseModel):
     client_name: str
     description: str
     scopes: list[str]
-    created: datetime
-    last_updated: datetime
+    created: OffsetDatetime
+    last_updated: OffsetDatetime
     active: bool
 
 
@@ -64,14 +75,14 @@ class DeleteMaskinportenClientOut(BaseModel):
 
 
 class CreateClientKeyIn(BaseModel):
-    destination_aws_account: Optional[str]
-    destination_aws_region: Optional[str]
-    enable_auto_rotate: Optional[bool]
+    destination_aws_account: Optional[str] = None
+    destination_aws_region: Optional[str] = None
+    enable_auto_rotate: Optional[bool] = False
 
 
 class CreateClientKeyOut(BaseModel):
     kid: str
-    expires: datetime
+    expires: OffsetDatetime
     ssm_params: Optional[list[str]]
     keystore: Optional[str]
     key_alias: Optional[str]
@@ -81,16 +92,15 @@ class CreateClientKeyOut(BaseModel):
 class ClientKeyMetadata(BaseModel):
     kid: str
     client_id: str
-    expires: datetime
+    expires: OffsetDatetime
 
 
 class AuditLogEntry(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     item_id: str = Field(alias="id")
     action: str
-    timestamp: datetime
+    timestamp: OffsetDatetime
     user: str
     scopes: Union[list[str], None]
     key_id: Union[str, None]
-
-    class Config:
-        allow_population_by_field_name = True
