@@ -32,6 +32,6 @@ def validation_exception_handler(request, exc):
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
-            "message": "\n\n".join(map(pydantic_error_to_str, exc.errors())),
+            "message": "\n".join(map(pydantic_error_to_str, exc.errors())),
         },
     )
