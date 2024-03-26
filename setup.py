@@ -34,14 +34,5 @@ setup(
         "python-jose>=3.3.0,<4.0.0",
         "python-keycloak>=1,<2",
         "requests>=2.28.0,<3",
-        # We don't really need this, but AWS Lambda started including this
-        # library in the Python 3.9 runtime, and `requests` will swap the
-        # standard library `json` out for it when it's present in the
-        # environment. Include it here explicitly so we are sure which JSON
-        # library `requests` picks.
-        #
-        # TODO: Remove once `requests` 3.0.0 is out, since `simplejson` support
-        # is dropped there.
-        "simplejson>=3.18.1,<4",
     ],
 )

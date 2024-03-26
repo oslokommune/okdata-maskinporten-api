@@ -4,7 +4,11 @@ service: okdata-maskinporten-api
 
 provider:
   name: aws
-  runtime: python3.10
+  ecr:
+    images:
+      okdata-maskinporten-api:
+        path: ./
+        platform: linux/amd64
   memorySize: 1024
   region: eu-west-1
   endpointType: REGIONAL
@@ -44,31 +48,30 @@ provider:
     KEY_DEFAULT_EXPIRATION_DAYS: 90
     KEY_UNDER_ROTATION_EXPIRATION_DAYS: 7
 
-package:
-  patterns:
-    - '!**/*'
-    - app.py
-    - handler.py
-    - jobs/*.py
-    - maskinporten_api/*.py
-    - models/*.py
-    - resources/*.py
-
 functions:
   app:
-    handler: handler.handler
+    image:
+      name: okdata-maskinporten-api
+      command:
+        - handler.handler
     events:
       - http: ANY /
       - http: ANY /{any+}
     timeout: 29
   export-tables:
-    handler: jobs.backup.export_tables
+    image:
+      name: okdata-maskinporten-api
+      command:
+        - jobs.backup.export_tables
     events:
       # Midnight at the first day of every month.
       - schedule: cron(0 0 1 * ? *)
     timeout: 30
   client-report-internal:
-    handler: jobs.client_report.send_client_report_internal
+    image:
+      name: okdata-maskinporten-api
+      command:
+        - jobs.client_report.send_client_report_internal
     events:
       - schedule:
           # Midnight at the first day of every month.
@@ -76,7 +79,10 @@ functions:
           enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
     timeout: 300
   client-report-external:
-    handler: jobs.client_report.send_client_report_external
+    image:
+      name: okdata-maskinporten-api
+      command:
+        - jobs.client_report.send_client_report_external
     events:
       - schedule:
           # At 10:00 on 10/10 every year (the security month).
@@ -84,7 +90,10 @@ functions:
           enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
     timeout: 300
   key-rotator:
-    handler: jobs.auto_rotate.rotate_keys
+    image:
+      name: okdata-maskinporten-api
+      command:
+        - jobs.auto_rotate.rotate_keys
     events:
       - schedule:
           # At 2:00 every weekday.
@@ -96,7 +105,6 @@ plugins:
   - serverless-better-credentials # must be first
   - serverless-plugin-git-variables
   - serverless-prune-plugin
-  - serverless-python-requirements
 
 resources:
   Description: |
@@ -105,12 +113,6 @@ resources:
 
 custom:
   version: 0.1.0
-  pythonRequirements:
-    dockerizePip: non-linux
-    dockerImage: public.ecr.aws/sam/build-python3.10:latest
-    slim: true
-    pipCmdExtraArgs: ['--platform', 'manylinux2014_x86_64', '--only-binary=:all:']
-    usePoetry: false
   prune:
     automatic: true
     number: 3
