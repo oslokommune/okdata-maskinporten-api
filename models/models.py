@@ -7,6 +7,11 @@ from pydantic import AnyHttpUrl, ConfigDict, BaseModel, Field
 from pydantic.functional_serializers import PlainSerializer
 
 
+# Type definition for customized serialization of datetimes. Uses
+# the functional serializer `PlainSerializer` from Pydantic in order
+# to override how the field is serialized to JSON. See:
+# https://docs.pydantic.dev/latest/concepts/types/#custom-types
+# https://docs.pydantic.dev/latest/api/functional_serializers
 OffsetDatetime = Annotated[
     datetime,
     PlainSerializer(
