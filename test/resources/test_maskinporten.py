@@ -58,8 +58,8 @@ def test_create_client(
         "client_name": "my-team-freg-testing",
         "description": "Freg-klient for testing (My team)",
         "scopes": ["folkeregister:deling/offentligmedhjemmel"],
-        "created": "2021-09-15T10:20:43.354000+02:00",
-        "last_updated": "2021-09-15T10:20:43.354000+02:00",
+        "created": "2021-09-15T10:20:43+02:00",
+        "last_updated": "2021-09-15T10:20:43+02:00",
         "active": True,
     }
     assert created_client == client
@@ -274,7 +274,10 @@ def test_create_client_invalid_team_id(
         headers={"Authorization": get_mock_user("janedoe").bearer_token},
     )
     assert res.status_code == 400
-    assert res.json()["message"] == "Invalid team ID (value is not a valid uuid)"
+    assert (
+        res.json()["message"]
+        == "body.team_id: Invalid team ID (Input should be a valid UUID, invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `i` at 1)"
+    )
 
 
 def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
@@ -297,8 +300,8 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
             "client_name": "my-team-freg-testing",
             "description": "Freg-klient for testing (My team)",
             "scopes": ["folkeregister:deling/offentligmedhjemmel"],
-            "created": "2021-09-15T10:20:43.354000+02:00",
-            "last_updated": "2021-09-15T10:20:43.354000+02:00",
+            "created": "2021-09-15T10:20:43+02:00",
+            "last_updated": "2021-09-15T10:20:43+02:00",
             "active": True,
         }
     ]
@@ -353,7 +356,7 @@ def test_list_clients_validation_error(
     assert response.status_code == 400
     assert (
         response.json()["message"]
-        == "Unsupported Maskinporten environment. Must be one of: test, prod"
+        == "path.env: Unsupported Maskinporten environment. Must be one of: test, prod"
     )
 
 
@@ -904,7 +907,7 @@ def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):
     assert res.status_code == 400
     assert (
         res.json()["message"]
-        == 'Invalid client ID (string does not match regex "^[0-9a-f-]+$")'
+        == "path.client_id: Invalid client ID (String should match pattern '^[0-9a-f-]+$')"
     )
 
 

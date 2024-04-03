@@ -144,7 +144,7 @@ class JWTAuthClient:
         except requests.exceptions.HTTPError:
             raise JWTAuthError(response.status_code, response.text)
 
-        token = AccessToken.parse_obj(response.json())
+        token = AccessToken.model_validate(response.json())
 
         logging.debug(
             f"Received Maskinporten token valid for {token.expires_in} seconds"
