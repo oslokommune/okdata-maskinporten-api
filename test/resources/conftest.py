@@ -58,7 +58,7 @@ def get_mock_user(principal_id):
     return None
 
 
-def generate_mock_client_response(
+def maskinporten_client_response(
     client_id,
     client_name,
     scopes=["folkeregister:deling/offentligmedhjemmel"],
@@ -81,6 +81,35 @@ def generate_mock_client_response(
         "client_id": client_id,
         "client_orgno": "123456789",
         "active": True,
+    }
+
+
+def idporten_client_response(client_id, client_name):
+    return {
+        "client_name": client_name,
+        "client_uri": "http://localhost:8000",
+        "description": "Test client",
+        "scopes": ["openid", "profile"],
+        "redirect_uris": ["http://localhost:8000/auth/callback"],
+        "post_logout_redirect_uris": ["http://localhost:8000/"],
+        "authorization_lifetime": 0,
+        "access_token_lifetime": 0,
+        "refresh_token_lifetime": 0,
+        "refresh_token_usage": "ONETIME",
+        "frontchannel_logout_uri": "http://localhost:8000/auth/logout",
+        "frontchannel_logout_session_required": True,
+        "token_endpoint_auth_method": "private_key_jwt",
+        "grant_types": ["authorization_code", "refresh_token"],
+        "integration_type": "idporten",
+        "application_type": "web",
+        "sso_disabled": False,
+        "code_challenge_method": "S256",
+        "last_updated": "2024-01-01T20:00:00.000Z",
+        "created": "2024-01-01T20:00:00.000Z",
+        "client_id": client_id,
+        "client_orgno": "123456789",
+        "active": True,
+        "jwks_uri": f"/clients/{client_id}/jwks",
     }
 
 
@@ -113,15 +142,18 @@ def idporten_create_client_body():
 
 @pytest.fixture
 def maskinporten_create_client_response():
-    return generate_mock_client_response(
+    return maskinporten_client_response(
         client_id="d1427568-1eba-1bf2-59ed-1c4af065f30e",
         client_name="my-team-freg-testing",
     )
 
 
 @pytest.fixture
-def idporten_create_client_response(maskinporten_create_client_response):
-    return maskinporten_create_client_response
+def idporten_create_client_response():
+    return idporten_client_response(
+        client_id="1a7a504d-bb4c-239d-1469-61e220c3bcb6",
+        client_name="my-team-idporten-testing",
+    )
 
 
 @pytest.fixture
@@ -134,7 +166,7 @@ def maskinporten_get_client_response(maskinporten_create_client_response):
 def maskinporten_get_clients_response(maskinporten_get_client_response):
     return [
         maskinporten_get_client_response,
-        generate_mock_client_response(
+        maskinporten_client_response(
             client_id="a70c6d97-51c2-4a08-83ce-50f44ebf8921",
             client_name="another-client",
         ),

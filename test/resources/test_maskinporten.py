@@ -1,5 +1,5 @@
 import os
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 import requests_mock
@@ -101,24 +101,73 @@ def test_create_client_idporten(
     idporten_create_client_response,
     user_team_response,
     mock_authorizer,
+    mock_aws,
     mock_client,
+    mock_dynamodb,
+    mocker,
 ):
     with requests_mock.Mocker(real_http=True) as rm:
+        mock_user = get_mock_user("janedoe")
         mock_access_token_generation_requests(rm)
-        rm.get(f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}", json=user_team_response)
 
-        with patch("resources.maskinporten.MaskinportenClient") as MaskinportenClient:
-            mocked_maskinporten_client = Mock()
-            MaskinportenClient.return_value = mocked_maskinporten_client
-            mocked_maskinporten_client.create_idporten_client.return_value.json.return_value = (
-                idporten_create_client_response
-            )
-            mock_client.post(
-                "/clients",
-                json=idporten_create_client_body,
-                headers={"Authorization": get_mock_user("janedoe").bearer_token},
-            )
-            mocked_maskinporten_client.create_idporten_client.assert_called_once()
+        rm.post(CLIENTS_ENDPOINT, json=idporten_create_client_response)
+
+        teams_api_matcher = rm.get(
+            f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
+            json=user_team_response,
+        )
+        permissions_api_matcher = rm.post(
+            f"{OKDATA_PERMISSION_API_URL}/permissions",
+        )
+        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
+
+        created_client = mock_client.post(
+            "/clients",
+            json=idporten_create_client_body,
+            headers={"Authorization": mock_user.bearer_token},
+        ).json()
+
+    client = {
+        "client_id": "1a7a504d-bb4c-239d-1469-61e220c3bcb6",
+        "client_name": "my-team-idporten-testing",
+        "description": "Test client",
+        "scopes": ["openid", "profile"],
+        "created": "2024-01-01T20:00:00+00:00",
+        "last_updated": "2024-01-01T20:00:00+00:00",
+        "active": True,
+    }
+    assert created_client == client
+
+    teams_request = teams_api_matcher.last_request
+    assert teams_request.headers["Authorization"] == f"Bearer {mock_user.access_token}"
+
+    permissions_request = permissions_api_matcher.last_request
+    assert (
+        permissions_request.headers["Authorization"] == f"Bearer {valid_client_token}"
+    )
+    resource_name = client_resource_name(
+        idporten_create_client_body["env"], client["client_id"]
+    )
+    assert permissions_request.json() == {
+        "owner": {
+            "user_id": user_team_response["name"],
+            "user_type": "team",
+        },
+        "resource_name": resource_name,
+    }
+
+    table = mock_dynamodb.Table("maskinporten-audit-trail")
+    audit_log_entry = table.query(KeyConditionExpression=Key("Id").eq(resource_name))[
+        "Items"
+    ][0]
+    assert audit_log_entry["Action"] == "create"
+
+    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
+        "Client created",
+        client["client_name"],
+        idporten_create_client_body["env"],
+        client["scopes"],
+    )
 
 
 def test_create_client_rollback(
