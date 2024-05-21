@@ -84,7 +84,7 @@ python-keycloak==1.8.0
     # via
     #   okdata-maskinporten-api (setup.py)
     #   okdata-sdk
-requests==2.31.0
+requests==2.32.0
     # via
     #   okdata-aws
     #   okdata-maskinporten-api (setup.py)
