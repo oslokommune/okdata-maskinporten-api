@@ -10,8 +10,8 @@ from resources.errors import ErrorResponse, pydantic_error_to_str
 
 root_path = os.environ.get("ROOT_PATH", "")
 app = FastAPI(
-    title="TODO",
-    description="TODO",
+    title="okdata-maskinporten-api",
+    description="REST API for managing clients and keys for public services and synchronization with AWS SSM",
     version="0.1.0",
     root_path=root_path,
 )
