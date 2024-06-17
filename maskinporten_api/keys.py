@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from authlib.jose import jwk
+from authlib.jose import JsonWebKey
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import (
     BestAvailableEncryption,
@@ -54,7 +54,7 @@ def _jwk_from_key(key: rsa.RSAPrivateKey, expiration_days):
     return {
         "kid": now.strftime("kid-%Y-%m-%d-%H-%M-%S"),
         "alg": "RS256",
-        **jwk.dumps(public_key),
+        **JsonWebKey.import_key(public_key),
         "exp": int(expiry.timestamp()),
     }
 
