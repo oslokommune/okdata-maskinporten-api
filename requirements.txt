@@ -116,7 +116,7 @@ typing-extensions==4.8.0
     #   mangum
     #   pydantic
     #   pydantic-core
-urllib3==1.26.18
+urllib3==1.26.19
     # via
     #   botocore
     #   okdata-sdk
