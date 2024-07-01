@@ -95,8 +95,6 @@ rsa==4.7
     # via python-jose
 s3transfer==0.7.0
     # via boto3
-simplejson==3.19.1
-    # via okdata-maskinporten-api (setup.py)
 six==1.15.0
     # via
     #   ecdsa
