@@ -24,15 +24,11 @@ setup(
         "cryptography>=42.0.5,<43",
         "fastapi>=0.109.2",
         "mangum>=0.12.4,<1",
-        "okdata-aws>=4,<5",
+        "okdata-aws>=4.1",
         "okdata-resource-auth>=0.1.4",
         "pydantic>2,<3",
         "pyjwt>=2.7,<3",
-        # Not needed directly (it's required by `python-keycloak`), but require
-        # version 3.3.0 or higher explicitly to silence some deprecation
-        # warnings.
-        "python-jose>=3.3.0,<4.0.0",
-        "python-keycloak>=1,<2",
+        "python-keycloak",
         "requests>=2.28.0,<3",
     ],
 )
