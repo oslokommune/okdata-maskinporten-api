@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Optional, Union
 from uuid import UUID
 
@@ -22,12 +22,12 @@ OffsetDatetime = Annotated[
 ]
 
 
-class MaskinportenEnvironment(str, Enum):
+class MaskinportenEnvironment(StrEnum):
     test = "test"
     prod = "prod"
 
 
-class ClientType(str, Enum):
+class ClientType(StrEnum):
     maskinporten = "maskinporten"
     idporten = "idporten"
 
