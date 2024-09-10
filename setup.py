@@ -31,4 +31,5 @@ setup(
         "python-keycloak",
         "requests>=2.28.0,<3",
     ],
+    python_requires="==3.11.*",
 )
