@@ -78,17 +78,17 @@ functions:
           rate: cron(0 0 1 * ? *)
           enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
     timeout: 300
-  client-report-external:
-    image:
-      name: okdata-maskinporten-api
-      command:
-        - jobs.client_report.send_client_report_external
-    events:
-      - schedule:
-          # At 10:00 on 10/10 every year (the security month).
-          rate: cron(0 10 10 10 ? *)
-          enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
-    timeout: 300
+  # client-report-external:
+  #   image:
+  #     name: okdata-maskinporten-api
+  #     command:
+  #       - jobs.client_report.send_client_report_external
+  #   events:
+  #     - schedule:
+  #         # At 10:00 on 10/10 every year (the security month).
+  #         rate: cron(0 10 10 10 ? *)
+  #         enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
+  #   timeout: 300
   key-rotator:
     image:
       name: okdata-maskinporten-api
