@@ -6,6 +6,7 @@ løsningen.
 - [Feilmelding ved skriving av nøkkel til SSM](#feilmelding-ved-skriving-av-nøkkel-til-ssm)
 - [Feilmelding om manglende tilgang til scope](#feilmelding-om-manglende-tilgang-til-scope)
 - [Feilmelding om manglende delegering](#feilmelding-om-manglende-delegering)
+- [Feilmelding om ukjent kid](#feilmelding-om-ukjent-kid)
 - [Er klient- og nøkkel ID-er hemmelige?](#er-klient--og-nøkkel-id-er-hemmelige)
 
 ## Feilmelding ved skriving av nøkkel til SSM
