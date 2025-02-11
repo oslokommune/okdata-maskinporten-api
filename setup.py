@@ -21,7 +21,7 @@ setup(
         "authlib>=1",
         "aws-xray-sdk>=2.12,<3",
         "boto3>=1.28.11,<2",
-        "cryptography>=42.0.5,<44",
+        "cryptography>=42.0.5,<45",
         "fastapi>=0.109.2",
         "mangum>=0.12.4,<1",
         "okdata-aws>=4.1",
