@@ -109,3 +109,13 @@ class AuditLogEntry(BaseModel):
     user: str
     scopes: Union[list[str], None]
     key_id: Union[str, None]
+
+
+class Provider(BaseModel):
+    provider_id: str
+    name: str
+
+
+class Scope(BaseModel):
+    scope: str
+    provider_id: str
