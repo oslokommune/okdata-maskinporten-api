@@ -180,6 +180,7 @@ def maskinporten_create_client_key_response():
             {
                 "kid": "kid-1970-01-01-01-00-00",
                 "alg": "RS256",
+                "use": "sig",
                 "n": "nYFc81LY5FoxWcKh",
                 "e": "AQAB",
                 "kty": "RSA",

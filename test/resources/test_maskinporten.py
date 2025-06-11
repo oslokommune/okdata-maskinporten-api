@@ -8,7 +8,7 @@ from freezegun import freeze_time
 
 from maskinporten_api.audit import _slack_message_payload
 from maskinporten_api.auto_rotate import clients_to_rotate
-from maskinporten_api.maskinporten_client import env_config
+from maskinporten_api.maskinporten_client import env_config, _jwk_ensure_use_sig
 from maskinporten_api.permissions import client_resource_name
 from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
@@ -17,6 +17,14 @@ from test.resources.conftest import get_mock_user, valid_client_token, team_id
 CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 SLACK_WEBHOOK_URL = "http://hooks.slack.arpa/services/123"
+
+
+def test_jwk_ensure_use_sig():
+    assert _jwk_ensure_use_sig({"foo": "bar"}) == {"foo": "bar", "use": "sig"}
+    assert _jwk_ensure_use_sig({"foo": "bar", "use": "sig"}) == {
+        "foo": "bar",
+        "use": "sig",
+    }
 
 
 def test_create_client(
@@ -190,7 +198,7 @@ def test_create_client_rollback(
         )
         rm.post(f"{OKDATA_PERMISSION_API_URL}/permissions", status_code=403)
         delete_client_matcher = rm.delete(
-            f"{CLIENTS_ENDPOINT}{maskinporten_create_client_response['client_id']}"
+            f"{CLIENTS_ENDPOINT}/{maskinporten_create_client_response['client_id']}"
         )
         res = mock_client.post(
             "/clients",
@@ -425,11 +433,11 @@ def test_delete_client(
         audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
 
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
-        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
-        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
+        rm.get(f"{CLIENTS_ENDPOINT}/{client_id}/jwks", json={})
+        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}")
         res = mock_client.post(
             f"/clients/{env}/{client_id}/delete",
             json={"aws_account": None, "aws_region": None},
@@ -475,11 +483,11 @@ def test_delete_client_no_body(
 
         audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
-        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
-        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
+        rm.get(f"{CLIENTS_ENDPOINT}/{client_id}/jwks", json={})
+        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}")
         res = mock_client.post(
             f"/clients/{env}/{client_id}/delete",
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
@@ -523,14 +531,14 @@ def test_delete_client_remaining_keys(
         mock_access_token_generation_requests(rm)
 
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
-        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
+        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}")
         res = mock_client.post(
             f"/clients/test/{client_id}/delete",
             json={"aws_account": None, "aws_region": None},
@@ -565,11 +573,11 @@ def test_delete_client_delete_from_ssm(
 
         audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
-        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
-        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
+        rm.get(f"{CLIENTS_ENDPOINT}/{client_id}/jwks", json={})
+        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}")
 
         aws_account = "123456789876"
         aws_region = "eu-west-1"
@@ -626,19 +634,19 @@ def test_delete_client_auto_rotate_disabled(
         mock_access_token_generation_requests(rm)
 
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         rm.post(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
-        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}")
-        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}/jwks")
+        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}")
+        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}/jwks")
 
         res = mock_client.post(
             f"/clients/test/{client_id}/keys",
@@ -662,7 +670,7 @@ def test_delete_client_auto_rotate_disabled(
         )
         assert res.status_code == 200
 
-        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={"keys": []})
+        rm.get(f"{CLIENTS_ENDPOINT}/{client_id}/jwks", json={"keys": []})
 
         res = mock_client.post(
             f"/clients/test/{client_id}/delete",
@@ -698,15 +706,15 @@ def test_create_client_key_to_aws(
 
         audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         rm.post(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
 
@@ -783,15 +791,15 @@ def test_create_client_key_auto_rotate(
         mock_access_token_generation_requests(rm)
 
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         rm.post(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
         res = mock_client.post(
@@ -854,15 +862,15 @@ def test_create_client_key_return_to_client(
 
         audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         rm.post(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
         res = mock_client.post(
@@ -918,11 +926,11 @@ def test_create_client_key_too_many_keys(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
 
@@ -974,11 +982,11 @@ def test_create_client_key_assume_role_access_denied(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.post(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_create_client_key_response,
         )
 
@@ -1019,14 +1027,14 @@ def test_delete_client_key_last_remaining(
 
         audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
-        rm.delete(f"{CLIENTS_ENDPOINT}{client_id}/jwks")
+        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}/jwks")
 
         res = mock_client.delete(
             f"/clients/{env}/{client_id}/keys/{key_id}",
@@ -1077,15 +1085,15 @@ def test_delete_client_key_more_than_one_left(
 
         audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         rm.post(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_delete_client_key_response,
         )
         res = mock_client.delete(
@@ -1129,10 +1137,10 @@ def test_delete_client_key_no_keys(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}",
+            f"{CLIENTS_ENDPOINT}/{client_id}",
             json=maskinporten_get_client_response,
         )
-        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={})
+        rm.get(f"{CLIENTS_ENDPOINT}/{client_id}/jwks", json={})
         res = mock_client.delete(
             f"/clients/test/{client_id}/keys/{key_id}",
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
@@ -1149,7 +1157,7 @@ def test_list_client_keys(
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         response = mock_client.get(
@@ -1176,7 +1184,7 @@ def test_list_client_keys_empty(
         mock_access_token_generation_requests(rm)
         del maskinporten_list_client_keys_response["keys"]
         rm.get(
-            f"{CLIENTS_ENDPOINT}{client_id}/jwks",
+            f"{CLIENTS_ENDPOINT}/{client_id}/jwks",
             json=maskinporten_list_client_keys_response,
         )
         response = mock_client.get(
@@ -1193,7 +1201,7 @@ def test_list_client_keys_no_permission_for_resource(mock_client, mock_authorize
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
-        rm.get(f"{CLIENTS_ENDPOINT}{client_id}/jwks", json={"foo": "bar"})
+        rm.get(f"{CLIENTS_ENDPOINT}/{client_id}/jwks", json={"foo": "bar"})
         response = mock_client.get(
             f"/clients/test/{client_id}/keys",
             headers={"Authorization": get_mock_user("homersimpson").bearer_token},

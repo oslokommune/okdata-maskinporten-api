@@ -12,6 +12,7 @@ def test_jwk_from_key():
 
     assert jwk["kid"] == "kid-1970-01-01-01-00-00"
     assert jwk["alg"] == "RS256"
+    assert jwk["use"] == "sig"
     assert isinstance(jwk["n"], str)
     assert isinstance(jwk["e"], str)
     assert jwk["kty"] == "RSA"
