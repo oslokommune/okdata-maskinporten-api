@@ -54,6 +54,7 @@ def _jwk_from_key(key: rsa.RSAPrivateKey, expiration_days):
     return {
         "kid": now.strftime("kid-%Y-%m-%d-%H-%M-%S"),
         "alg": "RS256",
+        "use": "sig",
         **JsonWebKey.import_key(public_key),
         "exp": int(expiry.timestamp()),
     }

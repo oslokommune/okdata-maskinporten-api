@@ -66,12 +66,12 @@ _ENV_CONFIGS = [
     EnvConfig(
         MaskinportenEnvironment.test.value,
         "https://test.maskinporten.no/.well-known/oauth-authorization-server",
-        "https://api.test.samarbeid.digdir.no/clients/",
+        "https://api.test.samarbeid.digdir.no/api/v1/clients",
     ),
     EnvConfig(
         MaskinportenEnvironment.prod.value,
         "https://maskinporten.no/.well-known/oauth-authorization-server",
-        "https://api.samarbeid.digdir.no/clients/",
+        "https://api.samarbeid.digdir.no/api/v1/clients",
     ),
 ]
 
@@ -82,6 +82,15 @@ def env_config(env):
         return next(e for e in _ENV_CONFIGS if e.name == env)
     except StopIteration:
         raise UnsupportedEnvironmentError(env)
+
+
+# The new version of Digdir's Maskinporten API published 2025-05-22 has
+# stricter validation checks on client keys; a `use` field is now
+# required. This function can be used to patch existing keys that don't have
+# `use` fields in a transitional phase. This function can be deleted after some
+# time, when all active keys have been migrated.
+def _jwk_ensure_use_sig(jwk):
+    return {**jwk, "use": "sig"}
 
 
 class MaskinportenClient:
@@ -177,13 +186,13 @@ class MaskinportenClient:
         )
 
     def get_client(self, client_id: str):
-        return self._request("GET", ["idporten:dcr.read"], client_id)
+        return self._request("GET", ["idporten:dcr.read"], f"/{client_id}")
 
     def get_clients(self):
         return self._request("GET", ["idporten:dcr.read"])
 
     def delete_client(self, client_id: str):
-        return self._request("DELETE", ["idporten:dcr.write"], client_id)
+        return self._request("DELETE", ["idporten:dcr.write"], f"/{client_id}")
 
     def create_client_key(self, client_id: str, jwk: dict):
         existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
@@ -194,10 +203,10 @@ class MaskinportenClient:
         return self._request(
             "POST",
             ["idporten:dcr.write"],
-            f"{client_id}/jwks",
+            f"/{client_id}/jwks",
             # We need to send every existing key together with the new one,
             # otherwise all the existing keys are deleted.
-            json={"keys": [jwk, *existing_jwks]},
+            json={"keys": [jwk, *map(_jwk_ensure_use_sig, existing_jwks)]},
         )
 
     def delete_client_key(self, client_id, key_id):
@@ -216,13 +225,13 @@ class MaskinportenClient:
                 return self._request(
                     "DELETE",
                     ["idporten:dcr.write"],
-                    f"{client_id}/jwks",
+                    f"/{client_id}/jwks",
                 )
 
             return self._request(
                 "POST",
                 ["idporten:dcr.write"],
-                f"{client_id}/jwks",
+                f"/{client_id}/jwks",
                 json={"keys": updated_jwks},
             )
         finally:
@@ -232,7 +241,7 @@ class MaskinportenClient:
         return self._request(
             "GET",
             ["idporten:dcr.read"],
-            f"{client_id}/jwks",
+            f"/{client_id}/jwks",
         )
 
     def _request(self, method, scopes, path="", json=None):
