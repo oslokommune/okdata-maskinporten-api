@@ -160,9 +160,7 @@ class MaskinportenClient:
             "POST",
             ["idporten:dcr.write"],
             json={
-                "access_token_lifetime": 0,
                 "application_type": "web",
-                "authorization_lifetime": 0,
                 "client_name": self._make_client_name(team_name, provider, integration),
                 "client_uri": str(client_uri),
                 "description": self._make_client_description(
@@ -177,7 +175,6 @@ class MaskinportenClient:
                     str(u) for u in post_logout_redirect_uris
                 ],
                 "redirect_uris": [str(u) for u in redirect_uris],
-                "refresh_token_lifetime": 0,
                 "refresh_token_usage": "ONETIME",
                 "scopes": ["openid", "profile"],
                 "sso_disabled": False,
