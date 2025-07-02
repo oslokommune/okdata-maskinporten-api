@@ -4,14 +4,15 @@ import re
 import threading
 
 import requests
-
 from botocore.exceptions import ClientError
-from okdata.aws.ssm import get_secret
 from cryptography.hazmat.primitives.serialization import pkcs12
+from fastapi import status
+from okdata.aws.ssm import get_secret
 
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.util import getenv
 from models import MaskinportenEnvironment
+from resources.errors import DigdirValidationErrorResponse
 
 
 class UnsupportedEnvironmentError(Exception):
@@ -130,21 +131,24 @@ class MaskinportenClient:
         return f"{provider.capitalize()}-klient for {integration} ({team_name})"
 
     def create_maskinporten_client(self, team_name, provider, integration, scopes):
-        return self._request(
-            "POST",
-            ["idporten:dcr.write"],
-            json={
-                "client_name": self._make_client_name(team_name, provider, integration),
-                "description": self._make_client_description(
-                    team_name, provider, integration
-                ),
-                "scopes": scopes,
-                "token_endpoint_auth_method": "private_key_jwt",
-                "grant_types": ["urn:ietf:params:oauth:grant-type:jwt-bearer"],
-                "integration_type": "maskinporten",
-                "application_type": "web",
-            },
-        )
+        params = {
+            "client_name": self._make_client_name(team_name, provider, integration),
+            "description": self._make_client_description(
+                team_name, provider, integration
+            ),
+            "scopes": scopes,
+            "token_endpoint_auth_method": "private_key_jwt",
+            "grant_types": ["urn:ietf:params:oauth:grant-type:jwt-bearer"],
+            "integration_type": "maskinporten",
+            "application_type": "web",
+        }
+
+        try:
+            return self._request("POST", ["idporten:dcr.write"], json=params)
+        except requests.HTTPError as e:
+            if e.response.status_code == status.HTTP_400_BAD_REQUEST:
+                raise DigdirValidationErrorResponse(e.response)
+            raise
 
     def create_idporten_client(
         self,
@@ -156,31 +160,32 @@ class MaskinportenClient:
         post_logout_redirect_uris,
         frontchannel_logout_uri=None,
     ):
-        return self._request(
-            "POST",
-            ["idporten:dcr.write"],
-            json={
-                "application_type": "web",
-                "client_name": self._make_client_name(team_name, provider, integration),
-                "client_uri": str(client_uri),
-                "description": self._make_client_description(
-                    team_name, provider, integration
-                ),
-                "code_challenge_method": "S256",
-                "frontchannel_logout_session_required": True,
-                "frontchannel_logout_uri": str(frontchannel_logout_uri),
-                "grant_types": ["authorization_code", "refresh_token"],
-                "integration_type": "idporten",
-                "post_logout_redirect_uris": [
-                    str(u) for u in post_logout_redirect_uris
-                ],
-                "redirect_uris": [str(u) for u in redirect_uris],
-                "refresh_token_usage": "ONETIME",
-                "scopes": ["openid", "profile"],
-                "sso_disabled": False,
-                "token_endpoint_auth_method": "private_key_jwt",
-            },
-        )
+        params = {
+            "application_type": "web",
+            "client_name": self._make_client_name(team_name, provider, integration),
+            "client_uri": str(client_uri),
+            "description": self._make_client_description(
+                team_name, provider, integration
+            ),
+            "code_challenge_method": "S256",
+            "frontchannel_logout_session_required": True,
+            "frontchannel_logout_uri": str(frontchannel_logout_uri),
+            "grant_types": ["authorization_code", "refresh_token"],
+            "integration_type": "idporten",
+            "post_logout_redirect_uris": [str(u) for u in post_logout_redirect_uris],
+            "redirect_uris": [str(u) for u in redirect_uris],
+            "refresh_token_usage": "ONETIME",
+            "scopes": ["openid", "profile"],
+            "sso_disabled": False,
+            "token_endpoint_auth_method": "private_key_jwt",
+        }
+
+        try:
+            return self._request("POST", ["idporten:dcr.write"], json=params)
+        except requests.HTTPError as e:
+            if e.response.status_code == status.HTTP_400_BAD_REQUEST:
+                raise DigdirValidationErrorResponse(e.response)
+            raise
 
     def get_client(self, client_id: str):
         return self._request("GET", ["idporten:dcr.read"], f"/{client_id}")
@@ -197,14 +202,19 @@ class MaskinportenClient:
         if len(existing_jwks) >= self.MAX_KEYS:
             raise TooManyKeysError(client_id, self.MAX_KEYS)
 
-        return self._request(
-            "POST",
-            ["idporten:dcr.write"],
-            f"/{client_id}/jwks",
-            # We need to send every existing key together with the new one,
-            # otherwise all the existing keys are deleted.
-            json={"keys": [jwk, *map(_jwk_ensure_use_sig, existing_jwks)]},
-        )
+        try:
+            return self._request(
+                "POST",
+                ["idporten:dcr.write"],
+                f"/{client_id}/jwks",
+                # We need to send every existing key together with the new one,
+                # otherwise all the existing keys are deleted.
+                json={"keys": [jwk, *map(_jwk_ensure_use_sig, existing_jwks)]},
+            )
+        except requests.HTTPError as e:
+            if e.response.status_code == status.HTTP_400_BAD_REQUEST:
+                raise DigdirValidationErrorResponse(e.response)
+            raise
 
     def delete_client_key(self, client_id, key_id):
         self._delete_client_key_lock.acquire()
