@@ -1,4 +1,29 @@
-from maskinporten_api.maskinporten_client import MaskinportenClient
+from dataclasses import dataclass
+from unittest.mock import Mock
+
+import pytest
+import requests_mock
+
+from maskinporten_api.maskinporten_client import (
+    _is_client_error_response,
+    env_config,
+    MaskinportenClient,
+)
+from resources.errors import DigdirClientErrorResponse
+
+CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
+
+
+def test_is_client_error_response():
+    @dataclass
+    class MockResponse:
+        status_code: int
+
+    assert not _is_client_error_response(MockResponse(200))
+    assert _is_client_error_response(MockResponse(400))
+    assert _is_client_error_response(MockResponse(428))
+    assert _is_client_error_response(MockResponse(499))
+    assert not _is_client_error_response(MockResponse(500))
 
 
 def test_slugify_team_name():
@@ -26,3 +51,32 @@ def test_make_client_description():
         )
         == "Freg-klient for tjenesteprofil (Min side)"
     )
+
+
+def test_create_maskinporten_client_error(maskinporten_client, client_error_response):
+    maskinporten_client.client.get_access_token = Mock(return_value="foobar")
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        rm.post(CLIENTS_ENDPOINT, status_code=400, json=client_error_response)
+        with pytest.raises(DigdirClientErrorResponse) as e:
+            maskinporten_client.create_maskinporten_client(
+                "team-x", "krr", "test-integration", ["krr:global/digitalpost.read"]
+            )
+            assert str(e) == "Client errors from Digdir's API:\n- error 1\n- error 2"
+
+
+def test_create_idporten_client_error(maskinporten_client, client_error_response):
+    maskinporten_client.client.get_access_token = Mock(return_value="foobar")
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        rm.post(CLIENTS_ENDPOINT, status_code=400, json=client_error_response)
+        with pytest.raises(DigdirClientErrorResponse) as e:
+            maskinporten_client.create_idporten_client(
+                "team-x",
+                "krr",
+                "test-integration",
+                "http://example.org",
+                "http://example.org",
+                "http://example.org",
+            )
+            assert str(e) == "Client errors from Digdir's API:\n- error 1\n- error 2"
