@@ -32,7 +32,7 @@ def maskinporten_client(mock_aws):
 
 
 @pytest.fixture
-def client_validation_error_response():
+def client_error_response():
     return {
         "status": 400,
         "timestamp": "2025-07-02T08:30:00.000000000Z",

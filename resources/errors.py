@@ -11,13 +11,13 @@ class ErrorResponse(Exception):
         self.message = message
 
 
-class DigdirValidationErrorResponse(ErrorResponse):
+class DigdirClientErrorResponse(ErrorResponse):
     def __init__(self, response):
         errors = response.json()["errors"]
 
         super().__init__(
             400,
-            "Validation error{} from Digdir's API:{}".format(
+            "Client error{} from Digdir's API:{}".format(
                 "s" if len(errors) > 1 else "",
                 "".join([f'\n- {e["errorMessage"]}' for e in errors]),
             ),

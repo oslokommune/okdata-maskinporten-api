@@ -6,13 +6,12 @@ import threading
 import requests
 from botocore.exceptions import ClientError
 from cryptography.hazmat.primitives.serialization import pkcs12
-from fastapi import status
 from okdata.aws.ssm import get_secret
 
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.util import getenv
 from models import MaskinportenEnvironment
-from resources.errors import DigdirValidationErrorResponse
+from resources.errors import DigdirClientErrorResponse
 
 
 class UnsupportedEnvironmentError(Exception):
@@ -94,6 +93,10 @@ def _jwk_ensure_use_sig(jwk):
     return {**jwk, "use": "sig"}
 
 
+def _is_client_error_response(response):
+    return 400 <= response.status_code <= 499
+
+
 class MaskinportenClient:
     # The maximum number of keys that a Maskinporten client will hold. This is
     # a restriction in Maskinporten itself.
@@ -146,8 +149,8 @@ class MaskinportenClient:
         try:
             return self._request("POST", ["idporten:dcr.write"], json=params)
         except requests.HTTPError as e:
-            if e.response.status_code == status.HTTP_400_BAD_REQUEST:
-                raise DigdirValidationErrorResponse(e.response)
+            if _is_client_error_response(e.response):
+                raise DigdirClientErrorResponse(e.response)
             raise
 
     def create_idporten_client(
@@ -183,8 +186,8 @@ class MaskinportenClient:
         try:
             return self._request("POST", ["idporten:dcr.write"], json=params)
         except requests.HTTPError as e:
-            if e.response.status_code == status.HTTP_400_BAD_REQUEST:
-                raise DigdirValidationErrorResponse(e.response)
+            if _is_client_error_response(e.response):
+                raise DigdirClientErrorResponse(e.response)
             raise
 
     def get_client(self, client_id: str):
@@ -212,8 +215,8 @@ class MaskinportenClient:
                 json={"keys": [jwk, *map(_jwk_ensure_use_sig, existing_jwks)]},
             )
         except requests.HTTPError as e:
-            if e.response.status_code == status.HTTP_400_BAD_REQUEST:
-                raise DigdirValidationErrorResponse(e.response)
+            if _is_client_error_response(e.response):
+                raise DigdirClientErrorResponse(e.response)
             raise
 
     def delete_client_key(self, client_id, key_id):
