@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.11
+FROM public.ecr.aws/lambda/python:3.13
 
 COPY jobs ${LAMBDA_TASK_ROOT}/jobs
 COPY maskinporten_api ${LAMBDA_TASK_ROOT}/maskinporten_api
