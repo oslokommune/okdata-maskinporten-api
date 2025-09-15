@@ -67,6 +67,9 @@ class TeamMissingEmailWarning(Exception):
     def __str__(self):
         return f"Team {self.team_name} har ingen epostadresse."
 
+    def __eq__(self, other):
+        return self.team_name == other.team_name
+
     def __hash__(self):
         return hash(self.team_name)
 
