@@ -7,7 +7,7 @@ from maskinporten_api.auto_rotate import (
 )
 
 
-def test_clients_to_rotate(mock_aws, mock_dynamodb):
+def test_clients_to_rotate(mock_dynamodb):
     assert len(clients_to_rotate()) == 0
 
     enable_auto_rotate(
@@ -29,7 +29,7 @@ def test_clients_to_rotate(mock_aws, mock_dynamodb):
     assert len(clients_to_rotate()) == 2
 
 
-def test_enable_auto_rotate(mock_aws, mock_dynamodb):
+def test_enable_auto_rotate(mock_dynamodb):
     client_id = "cbf4058f-9a8b-75c5-9b19-25d6fef8e8ba"
     env = "test"
 

@@ -27,7 +27,7 @@ def jwt_generator(jwt_config):
 
 
 @pytest.fixture
-def maskinporten_client(mock_aws):
+def maskinporten_client(mock_ssm):
     return MaskinportenClient("test")
 
 

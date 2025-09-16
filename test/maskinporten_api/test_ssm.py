@@ -1,11 +1,9 @@
 import json
 
-import boto3
 import pytest
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
 from moto.sts.models import STSBackend
-from okdata.aws.ssm import get_secret
 
 from maskinporten_api.keys import create_key
 from maskinporten_api.ssm import (
@@ -14,7 +12,7 @@ from maskinporten_api.ssm import (
 )
 
 
-def test_send_secrets(mock_aws):
+def test_send_secrets(mock_ssm_foreign):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
     secrets_client = ForeignAccountSecretsClient(
@@ -28,11 +26,9 @@ def test_send_secrets(mock_aws):
         ]
     )
 
-    ssm_client = boto3.client("ssm", region_name=destination_aws_region)
-
     okdata_parameters = [
         p
-        for p in ssm_client.describe_parameters()["Parameters"]
+        for p in mock_ssm_foreign.describe_parameters()["Parameters"]
         if p["Name"].startswith("/okdata/")
     ]
 
@@ -44,7 +40,7 @@ def test_send_secrets(mock_aws):
     }
 
 
-def test_send_secrets_fails(raise_assume_role_access_denied):
+def test_send_secrets_fails(mock_ssm_foreign, raise_assume_role_access_denied):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
 
@@ -55,7 +51,7 @@ def test_send_secrets_fails(raise_assume_role_access_denied):
         assert str(e) == "Some error"
 
 
-def test_delete_secrets(mock_aws):
+def test_delete_secrets(mock_ssm_foreign):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
     secrets_client = ForeignAccountSecretsClient(
@@ -73,11 +69,9 @@ def test_delete_secrets(mock_aws):
         f"/okdata/maskinporten/{maskinporten_client_id}/secret-1"
     ]
 
-    ssm_client = boto3.client("ssm", region_name=destination_aws_region)
-
     okdata_parameters = {
         p["Name"]
-        for p in ssm_client.describe_parameters()["Parameters"]
+        for p in mock_ssm_foreign.describe_parameters()["Parameters"]
         if p["Name"].startswith("/okdata/")
     }
 
@@ -87,13 +81,17 @@ def test_delete_secrets(mock_aws):
 
 
 @freeze_time("1970-01-01")
-def test_send_key_to_aws(mock_aws):
+def test_send_key_to_aws(mock_ssm_foreign):
     client = ForeignAccountSecretsClient("123456789876", "eu-west-1", "some-client")
 
     # Key expires in three days
     client.send_key_to_aws(create_key(3), "test", "foo")
 
-    key = json.loads(get_secret("/okdata/maskinporten/some-client/key.json"))
+    key = json.loads(
+        mock_ssm_foreign.get_parameter(
+            Name="/okdata/maskinporten/some-client/key.json", WithDecryption=True
+        )["Parameter"]["Value"]
+    )
 
     assert key["key_id"] == "kid-1970-01-01-01-00-00"
     assert isinstance(key["keystore"], str)

@@ -32,7 +32,7 @@ def test_create_client(
     maskinporten_create_client_response,
     user_team_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -109,7 +109,7 @@ def test_create_client_idporten(
     idporten_create_client_response,
     user_team_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -184,6 +184,7 @@ def test_create_client_rollback(
     user_team_response,
     mock_authorizer,
     mock_client,
+    mock_ssm,
     mocker,
 ):
     with requests_mock.Mocker(real_http=True) as rm:
@@ -214,7 +215,7 @@ def test_create_client_rollback(
 def test_create_client_no_create_permission(
     maskinporten_create_client_body,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -235,7 +236,7 @@ def test_create_client_not_team_member(
     maskinporten_create_client_body,
     user_team_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -265,7 +266,7 @@ def test_create_client_not_team_member(
 def test_create_client_403_from_permission_api(
     maskinporten_create_client_body,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -292,7 +293,7 @@ def test_create_client_403_from_permission_api(
 def test_create_client_team_lookup_fail(
     maskinporten_create_client_body,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -319,7 +320,7 @@ def test_create_client_team_lookup_fail(
 def test_create_client_invalid_team_id(
     maskinporten_create_client_body,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
 ):
     body = maskinporten_create_client_body
@@ -337,7 +338,9 @@ def test_create_client_invalid_team_id(
     )
 
 
-def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_response):
+def test_list_clients(
+    mock_client, mock_authorizer, maskinporten_get_clients_response, mock_ssm
+):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_user = get_mock_user("janedoe")
         mock_access_token_generation_requests(rm)
@@ -365,7 +368,7 @@ def test_list_clients(mock_client, mock_authorizer, maskinporten_get_clients_res
 
 
 def test_list_clients_no_permissions(
-    mock_client, mock_authorizer, maskinporten_get_clients_response
+    mock_client, mock_authorizer, maskinporten_get_clients_response, mock_ssm
 ):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_user = get_mock_user("homersimpson")
@@ -385,7 +388,7 @@ def test_list_clients_no_permissions(
 
 
 def test_list_clients_unauthorized(
-    mock_client, mock_authorizer, maskinporten_get_clients_response
+    mock_client, mock_authorizer, maskinporten_get_clients_response, mock_ssm
 ):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -400,7 +403,7 @@ def test_list_clients_unauthorized(
 
 
 def test_list_clients_validation_error(
-    mock_client, mock_authorizer, maskinporten_get_clients_response
+    mock_client, mock_authorizer, maskinporten_get_clients_response, mock_ssm
 ):
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
@@ -420,7 +423,7 @@ def test_list_clients_validation_error(
 def test_delete_client(
     maskinporten_get_client_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -470,7 +473,7 @@ def test_delete_client(
 def test_delete_client_no_body(
     maskinporten_get_client_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -520,7 +523,7 @@ def test_delete_client_remaining_keys(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -553,7 +556,7 @@ def test_delete_client_delete_from_ssm(
     MockForeignAccountSecretsClient,
     maskinporten_get_client_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -621,7 +624,7 @@ def test_delete_client_auto_rotate_disabled(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -691,7 +694,7 @@ def test_create_client_key_to_aws(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -779,7 +782,7 @@ def test_create_client_key_auto_rotate(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -847,7 +850,7 @@ def test_create_client_key_return_to_client(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -911,7 +914,7 @@ def test_create_client_key_too_many_keys(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -951,7 +954,7 @@ def test_create_client_key_too_many_keys(
     )
 
 
-def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):
+def test_create_client_key_invalid_client_id(mock_authorizer, mock_client, mock_ssm):
     res = mock_client.post(
         "/clients/test/invalid_client_id/keys",
         json={
@@ -970,7 +973,7 @@ def test_create_client_key_invalid_client_id(mock_authorizer, mock_client):
 
 def test_create_client_key_assume_role_access_denied(
     mock_client,
-    mock_aws,
+    mock_ssm,
     mock_authorizer,
     raise_assume_role_access_denied,
     maskinporten_get_client_response,
@@ -1013,7 +1016,7 @@ def test_delete_client_key_last_remaining(
     maskinporten_get_client_response,
     maskinporten_list_client_keys_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -1066,7 +1069,7 @@ def test_delete_client_key_more_than_one_left(
     maskinporten_list_client_keys_response,
     maskinporten_delete_client_key_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -1126,7 +1129,7 @@ def test_delete_client_key_no_keys(
     maskinporten_list_client_keys_response,
     maskinporten_delete_client_key_response,
     mock_authorizer,
-    mock_aws,
+    mock_ssm,
     mock_client,
     mock_dynamodb,
     mocker,
@@ -1150,7 +1153,7 @@ def test_delete_client_key_no_keys(
 
 
 def test_list_client_keys(
-    mock_client, mock_authorizer, maskinporten_list_client_keys_response
+    mock_client, mock_authorizer, maskinporten_list_client_keys_response, mock_ssm
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
@@ -1176,7 +1179,7 @@ def test_list_client_keys(
 
 
 def test_list_client_keys_empty(
-    mock_client, mock_authorizer, maskinporten_list_client_keys_response
+    mock_client, mock_authorizer, maskinporten_list_client_keys_response, mock_ssm
 ):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
@@ -1196,7 +1199,9 @@ def test_list_client_keys_empty(
     assert response.json() == []
 
 
-def test_list_client_keys_no_permission_for_resource(mock_client, mock_authorizer):
+def test_list_client_keys_no_permission_for_resource(
+    mock_client, mock_authorizer, mock_ssm
+):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
