@@ -7,7 +7,7 @@ from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import get_mock_user
 
 
-def test_get_audit_log_empty(mock_client, mock_authorizer, mock_dynamodb):
+def test_get_audit_log_empty(mock_client, mock_authorizer, mock_dynamodb, mock_ssm):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
@@ -22,7 +22,7 @@ def test_get_audit_log_empty(mock_client, mock_authorizer, mock_dynamodb):
 
 
 @freeze_time("1970-01-01")
-def test_get_audit_log_non_empty(mock_client, mock_authorizer, mock_dynamodb):
+def test_get_audit_log_non_empty(mock_client, mock_authorizer, mock_dynamodb, mock_ssm):
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
     audit_log(
         client_resource_name("test", client_id),
@@ -53,7 +53,7 @@ def test_get_audit_log_non_empty(mock_client, mock_authorizer, mock_dynamodb):
     ]
 
 
-def test_get_audit_log_no_access(mock_client, mock_authorizer):
+def test_get_audit_log_no_access(mock_client, mock_authorizer, mock_ssm):
     client_id = "36fdf3f2-68c2-d131-4d10-dcc2d077771a"
 
     with requests_mock.Mocker(real_http=True) as rm:

@@ -27,7 +27,7 @@ def test_delete_key():
     mp_client.delete_client_key.assert_called_once_with(client_id, kid)
 
 
-def test_rotate_client_no_existing_key(mock_aws, mocker):
+def test_rotate_client_no_existing_key(mock_ssm, mocker):
     mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
     mp_client = Mock()
     mp_client.get_client_keys.return_value.json.return_value = {"keys": []}
@@ -48,7 +48,7 @@ def test_rotate_client_no_existing_key(mock_aws, mocker):
     maskinporten.ForeignAccountSecretsClient._send_secrets.assert_called_once()
 
 
-def test_rotate_client_single_existing_key(mock_aws, mocker):
+def test_rotate_client_single_existing_key(mock_ssm, mocker):
     mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
     mp_client = Mock()
     mp_client.get_client_keys.return_value.json.return_value = {
@@ -85,7 +85,7 @@ def test_rotate_client_single_existing_key(mock_aws, mocker):
     maskinporten.ForeignAccountSecretsClient._send_secrets.assert_called_once()
 
 
-def test_rotate_client_multiple_existing_keys(mock_aws, mocker):
+def test_rotate_client_multiple_existing_keys(mock_ssm, mocker):
     mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
     mp_client = Mock()
     mp_client.get_client_keys.return_value.json.return_value = {
@@ -148,7 +148,7 @@ def test_rotate_keys(
     mock_maskinporten_client,
     mock_clients_to_rotate,
     mock_rotate_client,
-    mock_aws,
+    mock_ssm,
     mock_dynamodb,
 ):
     client_id = "19ba4329-2c11-234b-a66d-69a4174e9e49"
