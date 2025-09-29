@@ -1,4 +1,5 @@
 name: Deploy Dev
+
 on:
   push:
     branches:
@@ -7,26 +8,34 @@ on:
       - '**/*.md'
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
     - name: Set up Python 3.13
-      uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
+      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
       with:
         python-version: '3.13'
     - name: Install Python dependencies
       run: pip install tox
     - name: Test with tox
       run: tox -e py,flake8,black
-    - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
+    - uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
       with:
         node-version: '18.x'
     - name: Install NPM dependencies
       run: npm install
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_DEV }}:role/github-deploy
+        aws-region: eu-west-1
+    - name: Sts GetCallerIdentity
+      run: aws sts get-caller-identity
     - name: Deploy Lambda functions
-      run: |
-        AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_DEV }} \
-        AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }} \
-        ./node_modules/.bin/sls deploy -s dev
+      run: ./node_modules/.bin/sls deploy -s dev
