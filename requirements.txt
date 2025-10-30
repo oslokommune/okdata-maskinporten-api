@@ -4,6 +4,8 @@
 #
 #    pip-compile
 #
+annotated-doc==0.0.3
+    # via fastapi
 annotated-types==0.7.0
     # via pydantic
 anyio==4.10.0
@@ -38,7 +40,7 @@ cryptography==44.0.3
     #   okdata-maskinporten-api (setup.py)
 deprecation==2.1.0
     # via python-keycloak
-fastapi==0.116.1
+fastapi==0.120.2
     # via okdata-maskinporten-api (setup.py)
 idna==3.10
     # via

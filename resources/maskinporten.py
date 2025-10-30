@@ -222,7 +222,7 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
         status.HTTP_404_NOT_FOUND,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
     ),
 )
 def delete_client(  # noqa: C901
@@ -262,7 +262,7 @@ def delete_client(  # noqa: C901
 
         if len(existing_jwks) > 0:
             raise ErrorResponse(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 f"Client {client_id} cannot be deleted due to active keys associated with client.",
             )
     except requests.HTTPError:
@@ -278,7 +278,7 @@ def delete_client(  # noqa: C901
                 body.aws_account, body.aws_region, client_id
             )
         except AssumeRoleAccessDeniedError as e:
-            raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
+            raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e))
 
     logger.debug(sanitize(f"Deleting maskinporten client {client_id}"))
 
@@ -336,7 +336,7 @@ def delete_client(  # noqa: C901
         status.HTTP_403_FORBIDDEN,
         status.HTTP_404_NOT_FOUND,
         status.HTTP_409_CONFLICT,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         status.HTTP_500_INTERNAL_SERVER_ERROR,
     ),
 )
@@ -378,7 +378,7 @@ def create_client_key(
                 client_id,
             )
         except AssumeRoleAccessDeniedError as e:
-            raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
+            raise ErrorResponse(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e))
 
     key = create_key(
         int(
