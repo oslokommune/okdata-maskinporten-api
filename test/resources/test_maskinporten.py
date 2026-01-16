@@ -8,13 +8,13 @@ from freezegun import freeze_time
 
 from maskinporten_api.audit import _slack_message_payload
 from maskinporten_api.auto_rotate import clients_to_rotate
-from maskinporten_api.maskinporten_client import env_config, _jwk_ensure_use_sig
+from maskinporten_api.maskinporten_client import EnvConfig, _jwk_ensure_use_sig
 from maskinporten_api.permissions import client_resource_name
 from resources import maskinporten
 from test.mock_utils import mock_access_token_generation_requests
 from test.resources.conftest import get_mock_user, valid_client_token, team_id
 
-CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
+CLIENTS_ENDPOINT = EnvConfig("dig", "test").maskinporten_clients_endpoint
 OKDATA_PERMISSION_API_URL = os.environ["OKDATA_PERMISSION_API_URL"]
 SLACK_WEBHOOK_URL = "http://hooks.slack.arpa/services/123"
 

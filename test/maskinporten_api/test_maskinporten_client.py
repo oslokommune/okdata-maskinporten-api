@@ -6,12 +6,12 @@ import requests_mock
 
 from maskinporten_api.maskinporten_client import (
     _is_client_error_response,
-    env_config,
+    EnvConfig,
     MaskinportenClient,
 )
 from resources.errors import DigdirClientErrorResponse
 
-CLIENTS_ENDPOINT = env_config("test").maskinporten_clients_endpoint
+CLIENTS_ENDPOINT = EnvConfig("dig", "test").maskinporten_clients_endpoint
 
 
 def test_is_client_error_response():

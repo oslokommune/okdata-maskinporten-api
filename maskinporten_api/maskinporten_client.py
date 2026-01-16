@@ -1,17 +1,21 @@
 import base64
-import dataclasses
+import functools
 import re
 import threading
 
 import requests
-from botocore.exceptions import ClientError
 from cryptography.hazmat.primitives.serialization import pkcs12
 from okdata.aws.ssm import get_secret
 
 from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
 from maskinporten_api.util import getenv
-from models import MaskinportenEnvironment
+from models import MaskinportenEnvironment, Organization
 from resources.errors import DigdirClientErrorResponse
+
+
+class UnsupportedOrganizationError(Exception):
+    def __init__(self, org):
+        super().__init__(f"Organization '{org}' is not supported")
 
 
 class UnsupportedEnvironmentError(Exception):
@@ -31,57 +35,56 @@ class KeyNotFoundError(Exception):
         super().__init__(f"Key '{key_id}' not found for client '{client_id}'")
 
 
-@dataclasses.dataclass
+_ENDPOINTS = {
+    MaskinportenEnvironment.test: {
+        "oidc_wellknown": "https://test.maskinporten.no/.well-known/oauth-authorization-server",
+        "maskinporten_clients": "https://api.test.samarbeid.digdir.no/api/v1/clients",
+    },
+    MaskinportenEnvironment.prod: {
+        "oidc_wellknown": "https://maskinporten.no/.well-known/oauth-authorization-server",
+        "maskinporten_clients": "https://api.samarbeid.digdir.no/api/v1/clients",
+    },
+}
+
+
 class EnvConfig:
-    name: MaskinportenEnvironment
+    env: MaskinportenEnvironment
     oidc_wellknown: str
     maskinporten_clients_endpoint: str
 
+    def __init__(self, org: Organization, env: MaskinportenEnvironment):
+        self.org = org
+        self.env = env
+
+        if not hasattr(Organization, org):
+            raise UnsupportedOrganizationError(org)
+
+        try:
+            endpoints = _ENDPOINTS[env]
+        except KeyError:
+            raise UnsupportedEnvironmentError(env)
+
+        self.oidc_wellknown = endpoints["oidc_wellknown"]
+        self.maskinporten_clients_endpoint = endpoints["maskinporten_clients"]
+
     def maskinporten_admin_client_id(self):
-        try:
-            return getenv(f"MASKINPORTEN_ADMIN_CLIENT_ID_{self.name.upper()}")
-        except ClientError:
-            raise UnsupportedEnvironmentError(self.name)
+        return getenv(
+            f"MASKINPORTEN_ADMIN_{self.org.upper()}_CLIENT_ID_{self.env.upper()}"
+        )
 
+    @functools.cache
     def certificate(self):
-        try:
-            return get_secret(
-                f"/dataplatform/maskinporten/origo-certificate-{self.name}.part1"
-            ) + get_secret(
-                f"/dataplatform/maskinporten/origo-certificate-{self.name}.part2"
-            )
-        except ClientError:
-            raise UnsupportedEnvironmentError(self.name)
+        return get_secret(
+            f"/dataplatform/maskinporten/{self.org}-certificate-{self.env}.part1"
+        ) + get_secret(
+            f"/dataplatform/maskinporten/{self.org}-certificate-{self.env}.part2"
+        )
 
+    @functools.cache
     def certificate_password(self):
-        try:
-            return get_secret(
-                f"/dataplatform/maskinporten/origo-certificate-password-{self.name}"
-            )
-        except ClientError:
-            raise UnsupportedEnvironmentError(self.name)
-
-
-_ENV_CONFIGS = [
-    EnvConfig(
-        MaskinportenEnvironment.test.value,
-        "https://test.maskinporten.no/.well-known/oauth-authorization-server",
-        "https://api.test.samarbeid.digdir.no/api/v1/clients",
-    ),
-    EnvConfig(
-        MaskinportenEnvironment.prod.value,
-        "https://maskinporten.no/.well-known/oauth-authorization-server",
-        "https://api.samarbeid.digdir.no/api/v1/clients",
-    ),
-]
-
-
-def env_config(env):
-    """Return the configuration for environment `env`."""
-    try:
-        return next(e for e in _ENV_CONFIGS if e.name == env)
-    except StopIteration:
-        raise UnsupportedEnvironmentError(env)
+        return get_secret(
+            f"/dataplatform/maskinporten/{self.org}-certificate-password-{self.env}"
+        )
 
 
 # The new version of Digdir's Maskinporten API published 2025-05-22 has
@@ -102,8 +105,15 @@ class MaskinportenClient:
     # a restriction in Maskinporten itself.
     MAX_KEYS = 5
 
-    def __init__(self, env):
-        config = env_config(env)
+    def __init__(
+        self,
+        # TODO: Switch argument order when all users have been migrated (to
+        # mirror the argument order in `EnvConf`).
+        env: MaskinportenEnvironment,
+        # TODO: Remove default once full multi org support is implemented.
+        org: Organization = Organization.origo,
+    ):
+        config = EnvConfig(org, env)
 
         private_key, certificate, _ = pkcs12.load_key_and_certificates(
             base64.b64decode(config.certificate()),

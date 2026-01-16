@@ -21,6 +21,11 @@ OffsetDatetime = Annotated[
 ]
 
 
+class Organization(StrEnum):
+    dig = "dig"
+    origo = "origo"
+
+
 class MaskinportenEnvironment(StrEnum):
     test = "test"
     prod = "prod"
