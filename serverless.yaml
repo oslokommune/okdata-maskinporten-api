@@ -98,7 +98,6 @@ plugins:
 resources:
   Description: |
     ${self:service} ${git:branch}:${git:sha1}
-    ${git:message}
 
 custom:
   version: 0.1.0
