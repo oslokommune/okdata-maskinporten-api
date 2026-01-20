@@ -11,6 +11,7 @@ from models.models import (
     MaskinportenClientIn,
     MaskinportenClientOut,
     MaskinportenEnvironment,
+    Organization,
     Provider,
     Scope,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "MaskinportenClientIn",
     "MaskinportenClientOut",
     "MaskinportenEnvironment",
+    "Organization",
     "Provider",
     "Scope",
 ]

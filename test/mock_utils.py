@@ -1,9 +1,9 @@
-from maskinporten_api.maskinporten_client import env_config
+from maskinporten_api.maskinporten_client import EnvConfig
 
 
 def mock_access_token_generation_requests(mocker):
     mocker.get(
-        env_config("test").oidc_wellknown,
+        EnvConfig("dig", "test").oidc_wellknown,
         json={
             "issuer": "foo-corp",
             "token_endpoint": "https://example.org/token-endpoint",

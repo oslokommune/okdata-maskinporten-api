@@ -32,9 +32,10 @@ logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
 MASKINPORTEN_ENVS = [e.value for e in MaskinportenEnvironment]
 
 # Maskinporten admin client IDs. These are not administered by us.
+# TODO: Add DIG support.
 ADMIN_CLIENTS = [
-    os.environ["MASKINPORTEN_ADMIN_CLIENT_ID_TEST"],
-    os.environ["MASKINPORTEN_ADMIN_CLIENT_ID_PROD"],
+    os.environ["MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_TEST"],
+    os.environ["MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_PROD"],
 ]
 
 
