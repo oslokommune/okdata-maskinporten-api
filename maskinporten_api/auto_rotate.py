@@ -38,7 +38,7 @@ def clients_to_rotate():
     return items
 
 
-def enable_auto_rotate(client_id, env, aws_account, aws_region, client_name):
+def enable_auto_rotate(client_id, org, env, aws_account, aws_region, client_name):
     """Enable automatic key rotation for client `client_id`."""
 
     dynamodb = boto3.resource("dynamodb", region_name=getenv("AWS_REGION"))
@@ -48,6 +48,7 @@ def enable_auto_rotate(client_id, env, aws_account, aws_region, client_name):
         db_response = table.put_item(
             Item={
                 "ClientId": client_id,
+                "Org": org,
                 "Env": env,
                 "AwsAccount": aws_account,
                 "AwsRegion": aws_region,

@@ -69,6 +69,7 @@ def test_create_client(
         "created": "2021-09-15T10:20:43+02:00",
         "last_updated": "2021-09-15T10:20:43+02:00",
         "active": True,
+        "org": "origo",
     }
     assert created_client == client
 
@@ -143,6 +144,7 @@ def test_create_client_idporten(
         "created": "2024-01-01T20:00:00+00:00",
         "last_updated": "2024-01-01T20:00:00+00:00",
         "active": True,
+        "org": "origo",
     }
     assert created_client == client
 
@@ -363,7 +365,18 @@ def test_list_clients(
             "created": "2021-09-15T10:20:43+02:00",
             "last_updated": "2021-09-15T10:20:43+02:00",
             "active": True,
-        }
+            "org": "dig",
+        },
+        {
+            "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
+            "client_name": "my-team-freg-testing",
+            "description": "Freg-klient for testing (My team)",
+            "scopes": ["folkeregister:deling/offentligmedhjemmel"],
+            "created": "2021-09-15T10:20:43+02:00",
+            "last_updated": "2021-09-15T10:20:43+02:00",
+            "active": True,
+            "org": "origo",
+        },
     ]
 
 
@@ -470,53 +483,18 @@ def test_delete_client(
     )
 
 
-def test_delete_client_no_body(
-    maskinporten_get_client_response,
-    mock_authorizer,
-    mock_ssm,
-    mock_client,
-    mock_dynamodb,
-    mocker,
-):
+def test_delete_client_no_body(mock_authorizer, mock_ssm, mock_client, mocker):
     env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
 
     with requests_mock.Mocker(real_http=True) as rm:
         mock_access_token_generation_requests(rm)
-
-        audit_notify_matcher = rm.post(SLACK_WEBHOOK_URL)
-        rm.get(
-            f"{CLIENTS_ENDPOINT}/{client_id}",
-            json=maskinporten_get_client_response,
-        )
-        rm.get(f"{CLIENTS_ENDPOINT}/{client_id}/jwks", json={})
-        rm.delete(f"{CLIENTS_ENDPOINT}/{client_id}")
         res = mock_client.post(
             f"/clients/{env}/{client_id}/delete",
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
 
-    assert res.status_code == 200
-    data = res.json()
-    assert data["client_id"] == client_id
-    assert data["deleted_ssm_params"] == []
-
-    table = mock_dynamodb.Table("maskinporten-audit-trail")
-    audit_log_entry = table.query(
-        KeyConditionExpression=Key("Id").eq(
-            client_resource_name(
-                env,
-                client_id,
-            )
-        )
-    )["Items"][0]
-    assert audit_log_entry["Action"] == "delete"
-    assert audit_log_entry["User"] == "janedoe"
-
-    client = maskinporten_get_client_response
-    assert audit_notify_matcher.last_request.json() == _slack_message_payload(
-        "Client deleted", client["client_name"], env, client["scopes"]
-    )
+    assert res.status_code == 400
 
 
 def test_delete_client_remaining_keys(
@@ -811,6 +789,7 @@ def test_create_client_key_auto_rotate(
                 "destination_aws_account": "123456789876",
                 "destination_aws_region": "eu-west-1",
                 "enable_auto_rotate": True,
+                "org": "dig",
             },
             headers={"Authorization": get_mock_user("janedoe").bearer_token},
         )
@@ -835,6 +814,7 @@ def test_create_client_key_auto_rotate(
     assert clients_to_rotate() == [
         {
             "ClientId": client_id,
+            "Org": "dig",
             "Env": "test",
             "AwsAccount": "123456789876",
             "AwsRegion": "eu-west-1",

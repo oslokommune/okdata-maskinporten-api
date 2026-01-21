@@ -4,6 +4,7 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 
 from maskinporten_api.jwt_client import JWTConfig, JWTGenerator
 from maskinporten_api.maskinporten_client import MaskinportenClient
+from models import Organization
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ def jwt_generator(jwt_config):
 
 @pytest.fixture
 def maskinporten_client(mock_ssm):
-    return MaskinportenClient("test")
+    return MaskinportenClient(Organization.dig, "test")
 
 
 @pytest.fixture

@@ -15,7 +15,7 @@ from maskinporten_api.keys import create_key
 from maskinporten_api.maskinporten_client import MaskinportenClient
 from maskinporten_api.ssm import ForeignAccountSecretsClient
 from maskinporten_api.util import getenv
-from models import MaskinportenEnvironment
+from models import MaskinportenEnvironment, Organization
 
 patch_all()
 
@@ -85,18 +85,26 @@ def _rotate_client(
 @logging_wrapper
 @xray_recorder.capture("rotate_keys")
 def rotate_keys(event, context):
-    maskinporten_clients = {env: MaskinportenClient(env) for env in MASKINPORTEN_ENVS}
+    maskinporten_clients = {
+        (org, env): MaskinportenClient(org, env)
+        for org in Organization
+        for env in MASKINPORTEN_ENVS
+    }
     scheduled_deletions = []
     client_exceptions = {}
 
     for client in clients_to_rotate():
+        # A missing `org` field means this is a legacy client, i.e. it belongs
+        # to Origo.
+        org = client.get("Org", Organization.origo)
+
         logger.info(
-            f"Handling client '{client['ClientName']}' [{client['Env']}]",
+            f"Handling client '{client['ClientName']}' in org '{org}' [{client['Env']}]",
         )
         try:
             scheduled_deletions.extend(
                 _rotate_client(
-                    maskinporten_clients[client["Env"]],
+                    maskinporten_clients[(org, client["Env"])],
                     client["ClientId"],
                     client["Env"],
                     client["AwsAccount"],

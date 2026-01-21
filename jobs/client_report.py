@@ -21,7 +21,7 @@ from maskinporten_api.permissions import (
     get_resource_permissions,
     get_team_by_name,
 )
-from models import MaskinportenEnvironment
+from models import MaskinportenEnvironment, Organization
 from resources.authorizer import ServiceClient, keycloak_client
 
 patch_all()
@@ -32,10 +32,11 @@ logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
 MASKINPORTEN_ENVS = [e.value for e in MaskinportenEnvironment]
 
 # Maskinporten admin client IDs. These are not administered by us.
-# TODO: Add DIG support.
 ADMIN_CLIENTS = [
-    os.environ["MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_TEST"],
+    os.environ["MASKINPORTEN_ADMIN_DIG_CLIENT_ID_PROD"],
+    os.environ["MASKINPORTEN_ADMIN_DIG_CLIENT_ID_TEST"],
     os.environ["MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_PROD"],
+    os.environ["MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_TEST"],
 ]
 
 
@@ -164,15 +165,17 @@ def _send_email(to_emails, body):
 
 def _active_clients(env):
     """Return a list of active Maskinporten clients in `env`."""
+    clients = []
+
     try:
-        maskinporten_client = MaskinportenClient(env)
+        for org in Organization:
+            maskinporten_client = MaskinportenClient(org, env)
+            clients += maskinporten_client.get_clients().json()
     except UnsupportedEnvironmentError:
         logging.warning(
             f"Skipping unsupported Maskinporten environment {env}",
         )
-        return []
 
-    clients = maskinporten_client.get_clients().json()
     return [c for c in clients if c["active"]]
 
 

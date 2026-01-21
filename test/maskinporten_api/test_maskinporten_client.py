@@ -35,12 +35,12 @@ def test_slugify_team_name():
     )
 
 
-def test_make_client_name():
+def test_make_client_name(maskinporten_client):
     assert (
-        MaskinportenClient._make_client_name(
-            "Skjemautvikling", "krr", "dvd-nae-fagprosess"
+        maskinporten_client._make_client_name(
+            "test", "Skjemautvikling", "krr", "dvd-nae-fagprosess"
         )
-        == "skjemautvikling-krr-dvd-nae-fagprosess"
+        == "DIG - okdata-skjemautvikling-krr-dvd-nae-fagprosess - test"
     )
 
 
@@ -60,7 +60,11 @@ def test_create_maskinporten_client_error(maskinporten_client, client_error_resp
         rm.post(CLIENTS_ENDPOINT, status_code=400, json=client_error_response)
         with pytest.raises(DigdirClientErrorResponse) as e:
             maskinporten_client.create_maskinporten_client(
-                "team-x", "krr", "test-integration", ["krr:global/digitalpost.read"]
+                "test",
+                "team-x",
+                "krr",
+                "test-integration",
+                ["krr:global/digitalpost.read"],
             )
             assert str(e) == "Client errors from Digdir's API:\n- error 1\n- error 2"
 
@@ -72,6 +76,7 @@ def test_create_idporten_client_error(maskinporten_client, client_error_response
         rm.post(CLIENTS_ENDPOINT, status_code=400, json=client_error_response)
         with pytest.raises(DigdirClientErrorResponse) as e:
             maskinporten_client.create_idporten_client(
+                "test",
                 "team-x",
                 "krr",
                 "test-integration",
