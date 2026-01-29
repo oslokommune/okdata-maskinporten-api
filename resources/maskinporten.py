@@ -21,6 +21,7 @@ from models import (
     MaskinportenClientIn,
     MaskinportenClientOut,
     MaskinportenEnvironment,
+    Organization,
 )
 from maskinporten_api.audit import audit_log, audit_notify
 from maskinporten_api.auto_rotate import disable_auto_rotate, enable_auto_rotate
@@ -30,6 +31,7 @@ from maskinporten_api.maskinporten_client import (
     MaskinportenClient,
     TooManyKeysError,
     UnsupportedEnvironmentError,
+    UnsupportedOrganizationError,
 )
 from maskinporten_api.permissions import (
     client_resource_name,
@@ -116,12 +118,13 @@ def create_client(
     )
 
     try:
-        maskinporten_client = MaskinportenClient(client_in.env)
+        maskinporten_client = MaskinportenClient(client_in.org, client_in.env)
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
     new_client = (
         maskinporten_client.create_idporten_client(
+            client_in.env,
             team_name,
             client_in.provider,
             client_in.integration,
@@ -132,6 +135,7 @@ def create_client(
         ).json()
         if body.client_type == ClientType.idporten
         else maskinporten_client.create_maskinporten_client(
+            client_in.env,
             team_name,
             client_in.provider,
             client_in.integration,
@@ -167,7 +171,7 @@ def create_client(
         "Client created", new_client["client_name"], client_in.env, new_client_scopes
     )
 
-    return MaskinportenClientOut.model_validate(new_client)
+    return MaskinportenClientOut.model_validate({**new_client, "org": client_in.org})
 
 
 @router.get(
@@ -191,24 +195,25 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
             status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
         )
 
-    try:
-        maskinporten_client = MaskinportenClient(env)
-    except UnsupportedEnvironmentError as e:
-        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
-
     clients = []
 
-    for client in maskinporten_client.get_clients().json():
-        permission = user_permissions.get(
-            client_resource_name(env, client["client_id"])
-        )
-        if permission and required_scope in permission["scopes"]:
-            clients.append(
-                MaskinportenClientOut.model_validate(
-                    client,
-                    from_attributes=True,
-                )
+    for org in Organization:
+        try:
+            maskinporten_client = MaskinportenClient(org, env)
+        except (UnsupportedEnvironmentError, UnsupportedOrganizationError) as e:
+            raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+
+        for client in maskinporten_client.get_clients().json():
+            permission = user_permissions.get(
+                client_resource_name(env, client["client_id"])
             )
+            if permission and required_scope in permission["scopes"]:
+                clients.append(
+                    MaskinportenClientOut.model_validate(
+                        {**client, "org": org},
+                        from_attributes=True,
+                    )
+                )
 
     return clients
 
@@ -227,7 +232,7 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
 )
 def delete_client(  # noqa: C901
     env: MaskinportenEnvironment,
-    body: DeleteMaskinportenClientIn = None,
+    body: DeleteMaskinportenClientIn,
     client_id: str = Path(..., pattern=r"^[0-9a-f-]+$"),
     auth_info: AuthInfo = Depends(),
     service_client: ServiceClient = Depends(),
@@ -241,7 +246,7 @@ def delete_client(  # noqa: C901
     )
 
     try:
-        maskinporten_client = MaskinportenClient(env)
+        maskinporten_client = MaskinportenClient(body.org, env)
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -355,7 +360,7 @@ def create_client_key(
     )
 
     try:
-        maskinporten_client = MaskinportenClient(env)
+        maskinporten_client = MaskinportenClient(body.org, env)
     except UnsupportedEnvironmentError as e:
         raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -411,6 +416,7 @@ def create_client_key(
                 )
                 enable_auto_rotate(
                     client_id,
+                    body.org,
                     env,
                     body.destination_aws_account,
                     body.destination_aws_region,
@@ -466,19 +472,24 @@ def delete_client_key(
         resource=resource_name,
     )
 
-    try:
-        maskinporten_client = MaskinportenClient(env)
-    except UnsupportedEnvironmentError as e:
-        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+    client = None
 
-    try:
-        client = maskinporten_client.get_client(client_id).json()
-    except requests.HTTPError as e:
-        if e.response.status_code == status.HTTP_404_NOT_FOUND:
-            raise ErrorResponse(
-                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
-            )
-        raise
+    for org in Organization:
+        maskinporten_client = MaskinportenClient(org, env)
+
+        try:
+            client = maskinporten_client.get_client(client_id).json()
+            break
+        except requests.HTTPError as e:
+            if e.response.status_code in (
+                status.HTTP_403_FORBIDDEN,
+                status.HTTP_404_NOT_FOUND,
+            ):
+                continue
+            raise
+
+    if client is None:
+        raise ErrorResponse(status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}")
 
     logger.debug(sanitize(f"Deleting key {key_id} from client {client_id}"))
 
@@ -518,19 +529,24 @@ def list_client_keys(
         resource=client_resource_name(env, client_id),
     )
 
-    try:
-        maskinporten_client = MaskinportenClient(env)
-    except UnsupportedEnvironmentError as e:
-        raise ErrorResponse(status.HTTP_400_BAD_REQUEST, str(e))
+    jwks = None
 
-    try:
-        jwks = maskinporten_client.get_client_keys(client_id).json()
-    except requests.HTTPError as e:
-        if e.response.status_code == status.HTTP_404_NOT_FOUND:
-            raise ErrorResponse(
-                status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}"
-            )
-        raise
+    for org in Organization:
+        maskinporten_client = MaskinportenClient(org, env)
+
+        try:
+            jwks = maskinporten_client.get_client_keys(client_id).json()
+            break
+        except requests.HTTPError as e:
+            if e.response.status_code in (
+                status.HTTP_403_FORBIDDEN,
+                status.HTTP_404_NOT_FOUND,
+            ):
+                continue
+            raise
+
+    if jwks is None:
+        raise ErrorResponse(status.HTTP_404_NOT_FOUND, f"No client with ID {client_id}")
 
     return [
         ClientKeyMetadata(

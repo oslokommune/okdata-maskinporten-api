@@ -1,5 +1,4 @@
 import base64
-import functools
 import re
 import threading
 
@@ -72,7 +71,6 @@ class EnvConfig:
             f"MASKINPORTEN_ADMIN_{self.org.upper()}_CLIENT_ID_{self.env.upper()}"
         )
 
-    @functools.cache
     def certificate(self):
         return get_secret(
             f"/dataplatform/maskinporten/{self.org}-certificate-{self.env}.part1"
@@ -80,7 +78,6 @@ class EnvConfig:
             f"/dataplatform/maskinporten/{self.org}-certificate-{self.env}.part2"
         )
 
-    @functools.cache
     def certificate_password(self):
         return get_secret(
             f"/dataplatform/maskinporten/{self.org}-certificate-password-{self.env}"
@@ -105,15 +102,11 @@ class MaskinportenClient:
     # a restriction in Maskinporten itself.
     MAX_KEYS = 5
 
-    def __init__(
-        self,
-        # TODO: Switch argument order when all users have been migrated (to
-        # mirror the argument order in `EnvConf`).
-        env: MaskinportenEnvironment,
-        # TODO: Remove default once full multi org support is implemented.
-        org: Organization = Organization.origo,
-    ):
+    org: Organization = None
+
+    def __init__(self, org: Organization, env: MaskinportenEnvironment):
         config = EnvConfig(org, env)
+        self.org = org
 
         private_key, certificate, _ = pkcs12.load_key_and_certificates(
             base64.b64decode(config.certificate()),
@@ -135,17 +128,18 @@ class MaskinportenClient:
             re.sub("[^a-zæøå0-9 ]", "", team_name.lower()).strip(" ").replace(" ", "-")
         )
 
-    @classmethod
-    def _make_client_name(cls, team_name, provider, integration):
-        return f"{cls._slugify_team_name(team_name)}-{provider}-{integration}"
+    def _make_client_name(self, env, team_name, provider, integration):
+        return f"{self.org.upper()} - okdata-{self._slugify_team_name(team_name)}-{provider}-{integration} - {env}"
 
     @staticmethod
     def _make_client_description(team_name, provider, integration):
         return f"{provider.capitalize()}-klient for {integration} ({team_name})"
 
-    def create_maskinporten_client(self, team_name, provider, integration, scopes):
+    def create_maskinporten_client(self, env, team_name, provider, integration, scopes):
         params = {
-            "client_name": self._make_client_name(team_name, provider, integration),
+            "client_name": self._make_client_name(
+                env, team_name, provider, integration
+            ),
             "description": self._make_client_description(
                 team_name, provider, integration
             ),
@@ -165,6 +159,7 @@ class MaskinportenClient:
 
     def create_idporten_client(
         self,
+        env,
         team_name,
         provider,
         integration,
@@ -175,7 +170,9 @@ class MaskinportenClient:
     ):
         params = {
             "application_type": "web",
-            "client_name": self._make_client_name(team_name, provider, integration),
+            "client_name": self._make_client_name(
+                env, team_name, provider, integration
+            ),
             "client_uri": str(client_uri),
             "description": self._make_client_description(
                 team_name, provider, integration

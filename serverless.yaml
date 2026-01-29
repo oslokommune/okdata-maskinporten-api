@@ -35,6 +35,8 @@ provider:
     SERVICE_NAME: ${self:service}
     MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_TEST: ${ssm:/dataplatform/maskinporten/admin-client-id-test}
     MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_PROD: ${ssm:/dataplatform/maskinporten/admin-client-id-prod}
+    MASKINPORTEN_ADMIN_DIG_CLIENT_ID_TEST: ${ssm:/dataplatform/maskinporten/admin-client-id-dig-test}
+    MASKINPORTEN_ADMIN_DIG_CLIENT_ID_PROD: ${ssm:/dataplatform/maskinporten/admin-client-id-dig-prod}
     MASKINPORTEN_CONSUMER_ORG: ${ssm:/dataplatform/maskinporten/consumer-org}
     MASKINPORTEN_KEY_ALIAS: client-key
     KEYCLOAK_SERVER: ${ssm:/dataplatform/shared/keycloak-server-url}

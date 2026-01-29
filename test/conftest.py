@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from moto import mock_aws
 
 from app import app
-from models import MaskinportenEnvironment
+from models import MaskinportenEnvironment, Organization
 
 
 @pytest.fixture
@@ -31,24 +31,25 @@ def mock_ssm():
             Type="SecureString",
         )
 
-        for env in MaskinportenEnvironment:
-            ssm_client.put_parameter(
-                Name=f"/dataplatform/maskinporten/origo-certificate-password-{env.value}",
-                Value="test",
-                Type="SecureString",
-            )
-            with open("test/data/test.p12.txt.part1") as f:
+        for org in Organization:
+            for env in MaskinportenEnvironment:
                 ssm_client.put_parameter(
-                    Name=f"/dataplatform/maskinporten/origo-certificate-{env.value}.part1",
-                    Value=f.read(),
+                    Name=f"/dataplatform/maskinporten/{org}-certificate-password-{env.value}",
+                    Value="test",
                     Type="SecureString",
                 )
-            with open("test/data/test.p12.txt.part2") as f:
-                ssm_client.put_parameter(
-                    Name=f"/dataplatform/maskinporten/origo-certificate-{env.value}.part2",
-                    Value=f.read(),
-                    Type="SecureString",
-                )
+                with open("test/data/test.p12.txt.part1") as f:
+                    ssm_client.put_parameter(
+                        Name=f"/dataplatform/maskinporten/{org}-certificate-{env.value}.part1",
+                        Value=f.read(),
+                        Type="SecureString",
+                    )
+                with open("test/data/test.p12.txt.part2") as f:
+                    ssm_client.put_parameter(
+                        Name=f"/dataplatform/maskinporten/{org}-certificate-{env.value}.part2",
+                        Value=f.read(),
+                        Type="SecureString",
+                    )
 
         yield ssm_client
 

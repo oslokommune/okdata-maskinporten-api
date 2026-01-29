@@ -42,6 +42,8 @@ class ClientIn(BaseModel):
     team_id: UUID
     provider: str
     integration: str
+    # TODO: Make the default DIG once all necessary access has been granted.
+    org: Optional[Organization] = Organization.origo
     env: MaskinportenEnvironment
 
     scopes: Optional[list[str]] = None
@@ -71,11 +73,14 @@ class MaskinportenClientOut(BaseModel):
     created: OffsetDatetime
     last_updated: OffsetDatetime
     active: bool
+    org: Organization
 
 
 class DeleteMaskinportenClientIn(BaseModel):
     aws_account: Optional[str]
     aws_region: Optional[str]
+    # TODO: Make the default DIG once all necessary access has been granted.
+    org: Optional[Organization] = Organization.origo
 
 
 class DeleteMaskinportenClientOut(BaseModel):
@@ -87,6 +92,8 @@ class CreateClientKeyIn(BaseModel):
     destination_aws_account: Optional[str] = None
     destination_aws_region: Optional[str] = None
     enable_auto_rotate: Optional[bool] = False
+    # TODO: Make the default DIG once all necessary access has been granted.
+    org: Optional[Organization] = Organization.origo
 
 
 class CreateClientKeyOut(BaseModel):
