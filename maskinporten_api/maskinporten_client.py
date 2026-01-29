@@ -231,7 +231,11 @@ class MaskinportenClient:
 
         try:
             existing_jwks = self.get_client_keys(client_id).json().get("keys", [])
-            updated_jwks = [jwk for jwk in existing_jwks if jwk["kid"] != key_id]
+            updated_jwks = [
+                _jwk_ensure_use_sig(jwk)
+                for jwk in existing_jwks
+                if jwk["kid"] != key_id
+            ]
 
             if len(existing_jwks) == len(updated_jwks):
                 raise KeyNotFoundError(client_id, key_id)
