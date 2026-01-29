@@ -183,7 +183,11 @@ def create_client(
         status.HTTP_403_FORBIDDEN,
     ),
 )
-def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
+def list_clients(
+    env: MaskinportenEnvironment,
+    auth_info: AuthInfo = Depends(),
+    org: Organization = None,
+):
     required_scope = "maskinporten:client:read"
     authorize(auth_info, scope=required_scope)
 
@@ -196,8 +200,9 @@ def list_clients(env: MaskinportenEnvironment, auth_info: AuthInfo = Depends()):
         )
 
     clients = []
+    organizations = [org] if org else Organization
 
-    for org in Organization:
+    for org in organizations:
         try:
             maskinporten_client = MaskinportenClient(org, env)
         except (UnsupportedEnvironmentError, UnsupportedOrganizationError) as e:
