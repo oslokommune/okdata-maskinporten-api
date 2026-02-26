@@ -159,6 +159,7 @@ def test_rotate_keys(
             "AwsAccount": "123456789000",
             "AwsRegion": "eu-west-1",
             "ClientName": "my-client",
+            "Org": "dig",
         }
     ]
 

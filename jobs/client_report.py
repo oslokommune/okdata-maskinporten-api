@@ -35,8 +35,6 @@ MASKINPORTEN_ENVS = [e.value for e in MaskinportenEnvironment]
 ADMIN_CLIENTS = [
     os.environ["MASKINPORTEN_ADMIN_DIG_CLIENT_ID_PROD"],
     os.environ["MASKINPORTEN_ADMIN_DIG_CLIENT_ID_TEST"],
-    os.environ["MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_PROD"],
-    os.environ["MASKINPORTEN_ADMIN_ORIGO_CLIENT_ID_TEST"],
 ]
 
 

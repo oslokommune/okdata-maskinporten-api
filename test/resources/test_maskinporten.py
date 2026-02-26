@@ -69,7 +69,7 @@ def test_create_client(
         "created": "2021-09-15T10:20:43+02:00",
         "last_updated": "2021-09-15T10:20:43+02:00",
         "active": True,
-        "org": "origo",
+        "org": "dig",
     }
     assert created_client == client
 
@@ -144,7 +144,7 @@ def test_create_client_idporten(
         "created": "2024-01-01T20:00:00+00:00",
         "last_updated": "2024-01-01T20:00:00+00:00",
         "active": True,
-        "org": "origo",
+        "org": "dig",
     }
     assert created_client == client
 
@@ -366,17 +366,7 @@ def test_list_clients(
             "last_updated": "2021-09-15T10:20:43+02:00",
             "active": True,
             "org": "dig",
-        },
-        {
-            "client_id": "d1427568-1eba-1bf2-59ed-1c4af065f30e",
-            "client_name": "my-team-freg-testing",
-            "description": "Freg-klient for testing (My team)",
-            "scopes": ["folkeregister:deling/offentligmedhjemmel"],
-            "created": "2021-09-15T10:20:43+02:00",
-            "last_updated": "2021-09-15T10:20:43+02:00",
-            "active": True,
-            "org": "origo",
-        },
+        }
     ]
 
 

@@ -23,7 +23,6 @@ OffsetDatetime = Annotated[
 
 class Organization(StrEnum):
     dig = "dig"
-    origo = "origo"
 
 
 class MaskinportenEnvironment(StrEnum):
@@ -42,8 +41,7 @@ class ClientIn(BaseModel):
     team_id: UUID
     provider: str
     integration: str
-    # TODO: Make the default DIG once all necessary access has been granted.
-    org: Optional[Organization] = Organization.origo
+    org: Optional[Organization] = Organization.dig
     env: MaskinportenEnvironment
 
     scopes: Optional[list[str]] = None
@@ -79,8 +77,7 @@ class MaskinportenClientOut(BaseModel):
 class DeleteMaskinportenClientIn(BaseModel):
     aws_account: Optional[str]
     aws_region: Optional[str]
-    # TODO: Make the default DIG once all necessary access has been granted.
-    org: Optional[Organization] = Organization.origo
+    org: Optional[Organization] = Organization.dig
 
 
 class DeleteMaskinportenClientOut(BaseModel):
@@ -92,8 +89,7 @@ class CreateClientKeyIn(BaseModel):
     destination_aws_account: Optional[str] = None
     destination_aws_region: Optional[str] = None
     enable_auto_rotate: Optional[bool] = False
-    # TODO: Make the default DIG once all necessary access has been granted.
-    org: Optional[Organization] = Organization.origo
+    org: Optional[Organization] = Organization.dig
 
 
 class CreateClientKeyOut(BaseModel):
