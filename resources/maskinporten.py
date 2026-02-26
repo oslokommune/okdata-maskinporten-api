@@ -302,6 +302,8 @@ def delete_client(  # noqa: C901
     deleted_ssm_params = []
     if send_to_aws:
         try:
+            # TODO: We can stop deleting all parameters except `key.json` after
+            # a while, as they are no longer injected for new clients.
             deleted_ssm_params = secrets_client.delete_secrets(
                 ["key.json", "key_id", "keystore", "key_alias", "key_password"]
             )

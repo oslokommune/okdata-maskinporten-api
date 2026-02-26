@@ -28,7 +28,7 @@ def test_delete_key():
 
 
 def test_rotate_client_no_existing_key(mock_ssm, mocker):
-    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secret")
     mp_client = Mock()
     mp_client.get_client_keys.return_value.json.return_value = {"keys": []}
 
@@ -45,11 +45,11 @@ def test_rotate_client_no_existing_key(mock_ssm, mocker):
     assert scheduled_deletions == []
 
     mp_client.create_client_key.assert_called_once()
-    maskinporten.ForeignAccountSecretsClient._send_secrets.assert_called_once()
+    maskinporten.ForeignAccountSecretsClient._send_secret.assert_called_once()
 
 
 def test_rotate_client_single_existing_key(mock_ssm, mocker):
-    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secret")
     mp_client = Mock()
     mp_client.get_client_keys.return_value.json.return_value = {
         "keys": [{"kid": "key-1"}]
@@ -82,11 +82,11 @@ def test_rotate_client_single_existing_key(mock_ssm, mocker):
     assert scheduled_deletions[0].kid == "key-1"
 
     mp_client.create_client_key.assert_called_once()
-    maskinporten.ForeignAccountSecretsClient._send_secrets.assert_called_once()
+    maskinporten.ForeignAccountSecretsClient._send_secret.assert_called_once()
 
 
 def test_rotate_client_multiple_existing_keys(mock_ssm, mocker):
-    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secret")
     mp_client = Mock()
     mp_client.get_client_keys.return_value.json.return_value = {
         "keys": [{"kid": "key-1"}, {"kid": "key-2"}]
@@ -138,7 +138,7 @@ def test_rotate_client_multiple_existing_keys(mock_ssm, mocker):
     assert scheduled_deletions[1].kid == "key-2"
 
     mp_client.create_client_key.assert_called_once()
-    maskinporten.ForeignAccountSecretsClient._send_secrets.assert_called_once()
+    maskinporten.ForeignAccountSecretsClient._send_secret.assert_called_once()
 
 
 @patch("jobs.auto_rotate._rotate_client")
