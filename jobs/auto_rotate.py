@@ -94,9 +94,7 @@ def rotate_keys(event, context):
     client_exceptions = {}
 
     for client in clients_to_rotate():
-        # A missing `org` field means this is a legacy client, i.e. it belongs
-        # to Origo.
-        org = client.get("Org", Organization.origo)
+        org = client["Org"]
 
         logger.info(
             f"Handling client '{client['ClientName']}' in org '{org}' [{client['Env']}]",
