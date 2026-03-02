@@ -54,23 +54,6 @@ class ForeignAccountSecretsClient:
         )
         return path
 
-    def _send_secrets(self, secrets: list):
-        """Send secret values to another AWS account.
-
-        Secret values are stored as SecureString SSM parameters with prefix
-        `/okdata/maskinporten/{self.client_id}/`.
-
-        Return a list of the paths of the created SSM parameters.
-        """
-        return [
-            self._send_secret(
-                s["name"],
-                s["value"],
-                s["description"],
-            )
-            for s in secrets
-        ]
-
     def delete_secrets(self, secrets):
         """Delete secrets belonging to a Maskinporten client.
 
@@ -83,52 +66,23 @@ class ForeignAccountSecretsClient:
     def send_key_to_aws(self, key: Key, env, client_name):
         exp = datetime.fromtimestamp(int(key.jwk["exp"]), tz=timezone.utc)
 
-        return self._send_secrets(
-            [
-                {
-                    "name": "key.json",
-                    "value": json.dumps(
-                        {
-                            "key_id": key.jwk["kid"],
-                            "keystore": key.keystore,
-                            "key_alias": key.alias,
-                            "key_password": key.password,
-                            "key_expiry": exp.isoformat(),
-                        }
-                    ),
-                    "description": (
-                        f"[{env}] {client_name}: JSON-encoded string "
-                        "containing the key ID, the PKCS #12 archive "
-                        "containing the key, the alias of the key in the "
-                        "keystore, the key password, and the key expiration "
-                        "time."
-                    ),
-                },
-                # TODO: Remove these four after all users have migrated away
-                # from them.
-                {
-                    "name": "key_id",
-                    "value": key.jwk["kid"],
-                    "description": f"(Deprecated) [{env}] {client_name}: Key ID",
-                },
-                {
-                    "name": "keystore",
-                    "value": key.keystore,
-                    "description": (
-                        f"(Deprecated) [{env}] {client_name}: PKCS #12 archive containing the key"
-                    ),
-                },
-                {
-                    "name": "key_alias",
-                    "value": key.alias,
-                    "description": (
-                        f"(Deprecated) [{env}] {client_name}: Alias of the key in the keystore"
-                    ),
-                },
-                {
-                    "name": "key_password",
-                    "value": key.password,
-                    "description": f"(Deprecated) [{env}] {client_name}: Key password",
-                },
-            ]
-        )
+        return [
+            self._send_secret(
+                "key.json",
+                json.dumps(
+                    {
+                        "key_id": key.jwk["kid"],
+                        "keystore": key.keystore,
+                        "key_alias": key.alias,
+                        "key_password": key.password,
+                        "key_expiry": exp.isoformat(),
+                    }
+                ),
+                (
+                    f"[{env}] {client_name}: JSON-encoded string containing "
+                    "the key ID, the PKCS #12 archive with the key, the alias "
+                    "of the key in the keystore, the key password, and the "
+                    "key expiration time."
+                ),
+            )
+        ]

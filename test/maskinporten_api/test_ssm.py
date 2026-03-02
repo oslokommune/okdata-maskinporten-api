@@ -12,19 +12,14 @@ from maskinporten_api.ssm import (
 )
 
 
-def test_send_secrets(mock_ssm_foreign):
+def test_send_secret(mock_ssm_foreign):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
     secrets_client = ForeignAccountSecretsClient(
         "123456789876", destination_aws_region, maskinporten_client_id
     )
 
-    secrets_client._send_secrets(
-        [
-            {"name": "some-secret-1", "value": "value", "description": "foo"},
-            {"name": "some-secret-2", "value": "value", "description": "foo"},
-        ]
-    )
+    secrets_client._send_secret("some-secret-1", "value", "foo")
 
     okdata_parameters = [
         p
@@ -32,15 +27,15 @@ def test_send_secrets(mock_ssm_foreign):
         if p["Name"].startswith("/okdata/")
     ]
 
-    assert all([p["Type"] == "SecureString" for p in okdata_parameters])
+    assert len(okdata_parameters) == 1
+    assert okdata_parameters[0]["Type"] == "SecureString"
+    assert (
+        okdata_parameters[0]["Name"]
+        == f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-1"
+    )
 
-    assert {p["Name"] for p in okdata_parameters} == {
-        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-1",
-        f"/okdata/maskinporten/{maskinporten_client_id}/some-secret-2",
-    }
 
-
-def test_send_secrets_fails(mock_ssm_foreign, raise_assume_role_access_denied):
+def test_send_secret_fails(mock_ssm_foreign, raise_assume_role_access_denied):
     maskinporten_client_id = "some-client"
     destination_aws_region = "eu-west-1"
 
@@ -58,12 +53,8 @@ def test_delete_secrets(mock_ssm_foreign):
         "123456789876", destination_aws_region, maskinporten_client_id
     )
 
-    secrets_client._send_secrets(
-        [
-            {"name": "secret-1", "value": "value", "description": "foo"},
-            {"name": "secret-2", "value": "value", "description": "foo"},
-        ]
-    )
+    secrets_client._send_secret("secret-1", "value", "foo")
+    secrets_client._send_secret("secret-2", "value", "foo")
 
     assert secrets_client.delete_secrets(["secret-1", "secret-3"]) == [
         f"/okdata/maskinporten/{maskinporten_client_id}/secret-1"

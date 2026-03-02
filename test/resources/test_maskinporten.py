@@ -667,7 +667,7 @@ def test_create_client_key_to_aws(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secret")
 
     env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
@@ -706,25 +706,17 @@ def test_create_client_key_to_aws(
     assert key == {
         "kid": "kid-1970-01-01-01-00-00",
         "expires": "1970-04-01T00:00:00+00:00",
-        "ssm_params": [
-            f"/okdata/maskinporten/{client_id}/key.json",
-            f"/okdata/maskinporten/{client_id}/key_id",
-            f"/okdata/maskinporten/{client_id}/keystore",
-            f"/okdata/maskinporten/{client_id}/key_alias",
-            f"/okdata/maskinporten/{client_id}/key_password",
-        ],
+        "ssm_params": [f"/okdata/maskinporten/{client_id}/key.json"],
         "keystore": None,
         "key_alias": None,
         "key_password": None,
     }
 
-    maskinporten.ForeignAccountSecretsClient._send_secrets.assert_called_once()
-    assert {
-        s["name"]
-        for s in maskinporten.ForeignAccountSecretsClient._send_secrets.call_args[0][
-            1:
-        ][0]
-    } == {"key.json", "key_id", "keystore", "key_alias", "key_password"}
+    maskinporten.ForeignAccountSecretsClient._send_secret.assert_called_once()
+    assert (
+        maskinporten.ForeignAccountSecretsClient._send_secret.call_args[0][1]
+        == "key.json"
+    )
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.query(
@@ -789,13 +781,7 @@ def test_create_client_key_auto_rotate(
     assert key == {
         "kid": "kid-1970-01-01-01-00-00",
         "expires": "1970-01-08T00:00:00+00:00",
-        "ssm_params": [
-            f"/okdata/maskinporten/{client_id}/key.json",
-            f"/okdata/maskinporten/{client_id}/key_id",
-            f"/okdata/maskinporten/{client_id}/keystore",
-            f"/okdata/maskinporten/{client_id}/key_alias",
-            f"/okdata/maskinporten/{client_id}/key_password",
-        ],
+        "ssm_params": [f"/okdata/maskinporten/{client_id}/key.json"],
         "keystore": None,
         "key_alias": None,
         "key_password": None,
@@ -825,7 +811,7 @@ def test_create_client_key_return_to_client(
     mock_dynamodb,
     mocker,
 ):
-    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secrets")
+    mocker.spy(maskinporten.ForeignAccountSecretsClient, "_send_secret")
 
     env = "test"
     client_id = "d1427568-1eba-1bf2-59ed-1c4af065f30e"
@@ -860,7 +846,7 @@ def test_create_client_key_return_to_client(
     assert isinstance(key["key_alias"], str)
     assert isinstance(key["key_password"], str)
 
-    maskinporten.ForeignAccountSecretsClient._send_secrets.assert_not_called()
+    maskinporten.ForeignAccountSecretsClient._send_secret.assert_not_called()
 
     table = mock_dynamodb.Table("maskinporten-audit-trail")
     audit_log_entry = table.query(
