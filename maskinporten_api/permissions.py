@@ -14,6 +14,7 @@ def create_okdata_permissions(resource_name, team_name, auth_header):
         f"{os.environ['OKDATA_PERMISSION_API_URL']}/permissions",
         json=create_permissions_body,
         headers=auth_header,
+        timeout=15,
     )
     create_permissions_response.raise_for_status()
 
@@ -24,6 +25,7 @@ def delete_okdata_permissions(resource_name, auth_header):
     res = requests.delete(
         f"{os.environ['OKDATA_PERMISSION_API_URL']}/permissions/{resource_name}",
         headers=auth_header,
+        timeout=15,
     )
     res.raise_for_status()
     return res
@@ -33,6 +35,7 @@ def get_resource_permissions(resource_name, auth_header):
     res = requests.get(
         f"{os.environ['OKDATA_PERMISSION_API_URL']}/permissions/{resource_name}",
         headers=auth_header,
+        timeout=15,
     )
     res.raise_for_status()
     return res.json()
@@ -43,6 +46,7 @@ def get_user_permissions(bearer_token):
         f"{os.environ['OKDATA_PERMISSION_API_URL']}/my_permissions",
         headers={"Authorization": f"Bearer {bearer_token}"},
         params={"resource_type": "maskinporten:client"},
+        timeout=15,
     )
     res.raise_for_status()
     return res.json()
@@ -67,6 +71,7 @@ def get_team(team_id, bearer_token, has_role=None):
         f"{os.environ['OKDATA_PERMISSION_API_URL']}/teams/{team_id}",
         headers={"Authorization": f"Bearer {bearer_token}"},
         params=params,
+        timeout=15,
     )
     res.raise_for_status()
     return res.json()
@@ -77,6 +82,6 @@ def get_team_by_name(team_name, auth_header):
     url = "{}/teams/name/{}".format(
         os.environ["OKDATA_PERMISSION_API_URL"], quote(team_name)
     )
-    res = requests.get(url, headers=auth_header)
+    res = requests.get(url, headers=auth_header, timeout=15)
     res.raise_for_status()
     return res.json()

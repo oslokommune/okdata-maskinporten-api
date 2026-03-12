@@ -4,12 +4,17 @@ import threading
 
 import requests
 from cryptography.hazmat.primitives.serialization import pkcs12
+from fastapi import status
 from okdata.aws.ssm import get_secret
 
-from maskinporten_api.jwt_client import JWTAuthClient, JWTConfig
+from maskinporten_api.jwt_client import (
+    JWTAuthClient,
+    JWTConfig,
+    MaskinportenConnectionError,
+)
 from maskinporten_api.util import getenv
 from models import MaskinportenEnvironment, Organization
-from resources.errors import DigdirClientErrorResponse
+from resources.errors import DigdirClientErrorResponse, ErrorResponse
 
 
 class UnsupportedOrganizationError(Exception):
@@ -266,18 +271,26 @@ class MaskinportenClient:
         )
 
     def _request(self, method, scopes, path="", json=None):
-        access_token = self.client.get_access_token(scopes)
+        try:
+            access_token = self.client.get_access_token(scopes)
+        except MaskinportenConnectionError as e:
+            raise ErrorResponse(status.HTTP_503_SERVICE_UNAVAILABLE, str(e))
 
-        response = requests.request(
-            method,
-            f"{self.base_url}{path}",
-            headers={
-                "Accept": "*/*",
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {access_token}",
-            },
-            json=json,
-        )
+        try:
+            response = requests.request(
+                method,
+                f"{self.base_url}{path}",
+                headers={
+                    "Accept": "*/*",
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {access_token}",
+                },
+                json=json,
+                timeout=15,
+            )
+        except TimeoutError as e:
+            raise ErrorResponse(status.HTTP_503_SERVICE_UNAVAILABLE, str(e))
+
         response.raise_for_status()
 
         return response
