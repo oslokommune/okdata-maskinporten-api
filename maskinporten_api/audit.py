@@ -62,6 +62,7 @@ def audit_notify(header, client_name, env, scopes):
         response = requests.post(
             notify_endpoint,
             json=_slack_message_payload(header, client_name, env, scopes),
+            timeout=15,
         )
         response.raise_for_status()
     except requests.RequestException as e:

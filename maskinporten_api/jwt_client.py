@@ -33,7 +33,16 @@ from cryptography.hazmat.primitives.serialization import (
 from pydantic import BaseModel
 
 
-class JWTAuthError(Exception):
+class MaskinportenConnectionError(Exception):
+    pass
+
+
+class MaskinportenTimeoutError(MaskinportenConnectionError):
+    def __init__(self, error_message):
+        super().__init__(f"Maskinporten token request timed out: {error_message}")
+
+
+class JWTAuthError(MaskinportenConnectionError):
     def __init__(self, status_code, error_description):
         super().__init__(
             f"Got status code {status_code} from Maskinporten: {error_description}"
@@ -118,7 +127,13 @@ class JWTAuthClient:
         self.jwt_config = jwt_config
         self.jwt_generator = JWTGenerator(jwt_config)
 
-        well_known_conf = json.loads(requests.get(well_known_endpoint).text)
+        try:
+            well_known_conf = json.loads(
+                requests.get(well_known_endpoint, timeout=15).text
+            )
+        except requests.exceptions.Timeout as e:
+            raise MaskinportenTimeoutError(str(e))
+
         self.audience = well_known_conf["issuer"]
         self.token_endpoint = well_known_conf["token_endpoint"]
         logging.debug("Maskinporten auth client:")
@@ -128,17 +143,21 @@ class JWTAuthClient:
     def get_access_token(self, scopes):
         jwt = self.jwt_generator.generate_jwt(self.audience, scopes)
 
-        response = requests.post(
-            self.token_endpoint,
-            data={
-                "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                "assertion": jwt,
-            },
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Accept": "*/*",
-            },
-        )
+        try:
+            response = requests.post(
+                self.token_endpoint,
+                data={
+                    "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                    "assertion": jwt,
+                },
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "*/*",
+                },
+                timeout=15,
+            )
+        except requests.exceptions.Timeout as e:
+            raise MaskinportenTimeoutError(str(e))
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError:
