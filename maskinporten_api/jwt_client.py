@@ -33,6 +33,10 @@ from cryptography.hazmat.primitives.serialization import (
 from pydantic import BaseModel
 
 
+class MaskinportenEndpointConfigError(Exception):
+    pass
+
+
 class MaskinportenConnectionError(Exception):
     pass
 
@@ -123,7 +127,7 @@ class AccessToken(BaseModel):
 
 
 class JWTAuthClient:
-    def __init__(self, jwt_config, well_known_endpoint):
+    def __init__(self, jwt_config, well_known_endpoint, issuer):
         self.jwt_config = jwt_config
         self.jwt_generator = JWTGenerator(jwt_config)
 
@@ -134,7 +138,14 @@ class JWTAuthClient:
         except requests.exceptions.Timeout as e:
             raise MaskinportenTimeoutError(str(e))
 
-        self.audience = well_known_conf["issuer"]
+        token_endpoint = well_known_conf["token_endpoint"]
+        if not token_endpoint.startswith(issuer):
+            raise MaskinportenEndpointConfigError(
+                f"Unexpected `.well-known` token endpoint: '{token_endpoint}'. "
+                f"Expected to start with: '{issuer}'."
+            )
+
+        self.audience = issuer
         self.token_endpoint = well_known_conf["token_endpoint"]
         logging.debug("Maskinporten auth client:")
         logging.debug(f"  Audience: {self.audience}")

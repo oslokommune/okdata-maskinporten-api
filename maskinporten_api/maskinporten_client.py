@@ -11,6 +11,7 @@ from maskinporten_api.jwt_client import (
     JWTAuthClient,
     JWTConfig,
     MaskinportenConnectionError,
+    MaskinportenEndpointConfigError,
 )
 from maskinporten_api.util import getenv
 from models import MaskinportenEnvironment, Organization
@@ -39,13 +40,15 @@ class KeyNotFoundError(Exception):
         super().__init__(f"Key '{key_id}' not found for client '{client_id}'")
 
 
-_ENDPOINTS = {
+_ENVIRONMENTS = {
     MaskinportenEnvironment.test: {
         "oidc_wellknown": "https://test.maskinporten.no/.well-known/oauth-authorization-server",
+        "issuer": "https://test.maskinporten.no/",
         "maskinporten_clients": "https://api.test.samarbeid.digdir.no/api/v1/clients",
     },
     MaskinportenEnvironment.prod: {
         "oidc_wellknown": "https://maskinporten.no/.well-known/oauth-authorization-server",
+        "issuer": "https://maskinporten.no/",
         "maskinporten_clients": "https://api.samarbeid.digdir.no/api/v1/clients",
     },
 }
@@ -54,6 +57,7 @@ _ENDPOINTS = {
 class EnvConfig:
     env: MaskinportenEnvironment
     oidc_wellknown: str
+    issuer: str
     maskinporten_clients_endpoint: str
 
     def __init__(self, org: Organization, env: MaskinportenEnvironment):
@@ -64,12 +68,13 @@ class EnvConfig:
             raise UnsupportedOrganizationError(org)
 
         try:
-            endpoints = _ENDPOINTS[env]
+            env_config = _ENVIRONMENTS[env]
         except KeyError:
             raise UnsupportedEnvironmentError(env)
 
-        self.oidc_wellknown = endpoints["oidc_wellknown"]
-        self.maskinporten_clients_endpoint = endpoints["maskinporten_clients"]
+        self.oidc_wellknown = env_config["oidc_wellknown"]
+        self.issuer = env_config["issuer"]
+        self.maskinporten_clients_endpoint = env_config["maskinporten_clients"]
 
     def maskinporten_admin_client_id(self):
         return getenv(
@@ -110,21 +115,28 @@ class MaskinportenClient:
     org: Organization = None
 
     def __init__(self, org: Organization, env: MaskinportenEnvironment):
-        config = EnvConfig(org, env)
+        env_config = EnvConfig(org, env)
         self.org = org
 
         private_key, certificate, _ = pkcs12.load_key_and_certificates(
-            base64.b64decode(config.certificate()),
-            config.certificate_password().encode("utf-8"),
+            base64.b64decode(env_config.certificate()),
+            env_config.certificate_password().encode("utf-8"),
         )
 
-        conf = JWTConfig(
-            issuer=config.maskinporten_admin_client_id(),
+        jwt_config = JWTConfig(
+            issuer=env_config.maskinporten_admin_client_id(),
             certificate=certificate,
             private_key=private_key,
         )
-        self.client = JWTAuthClient(conf, config.oidc_wellknown)
-        self.base_url = config.maskinporten_clients_endpoint
+
+        try:
+            self.client = JWTAuthClient(
+                jwt_config, env_config.oidc_wellknown, env_config.issuer
+            )
+        except MaskinportenEndpointConfigError as e:
+            raise ErrorResponse(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
+
+        self.base_url = env_config.maskinporten_clients_endpoint
         self._delete_client_key_lock = threading.Lock()
 
     @staticmethod
