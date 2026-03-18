@@ -26,13 +26,24 @@ def test_is_client_error_response():
     assert not _is_client_error_response(MockResponse(500))
 
 
-def test_slugify_team_name():
-    assert MaskinportenClient._slugify_team_name("Datapatruljen") == "datapatruljen"
-    assert MaskinportenClient._slugify_team_name("Min Side") == "min-side"
+def test_slugify():
+    assert MaskinportenClient._slugify("Datapatruljen") == "datapatruljen"
+    assert MaskinportenClient._slugify("Min Side") == "min-side"
     assert (
-        MaskinportenClient._slugify_team_name("Kjøremiljø og verktøy!!!")
+        MaskinportenClient._slugify("Kjøremiljø og verktøy!!!")
         == "kjøremiljø-og-verktøy"
     )
+    assert MaskinportenClient._slugify("dvd-nae-fagprosess") == "dvd-nae-fagprosess"
+    assert MaskinportenClient._slugify("DVD NAE Fagprosess") == "dvd-nae-fagprosess"
+
+
+def test_capitalize_first():
+    assert MaskinportenClient._capitalize_first("") == ""
+    assert MaskinportenClient._capitalize_first("abc") == "Abc"
+    assert MaskinportenClient._capitalize_first("abc abc") == "Abc abc"
+    assert MaskinportenClient._capitalize_first("Abc abc") == "Abc abc"
+    assert MaskinportenClient._capitalize_first("abc Abc") == "Abc Abc"
+    assert MaskinportenClient._capitalize_first("abc ABC") == "Abc ABC"
 
 
 def test_make_client_name(maskinporten_client):
@@ -42,14 +53,56 @@ def test_make_client_name(maskinporten_client):
         )
         == "DIG - okdata-skjemautvikling-krr-dvd-nae-fagprosess - test"
     )
-
-
-def test_make_client_description():
     assert (
-        MaskinportenClient._make_client_description(
-            "Min side", "freg", "tjenesteprofil"
+        maskinporten_client._make_client_name(
+            "test", "Skjemautvikling", "krr", "DVD NAE Fagprosess"
+        )
+        == "DIG - okdata-skjemautvikling-krr-dvd-nae-fagprosess - test"
+    )
+
+
+def test_make_idporten_client_name(maskinporten_client):
+    assert (
+        maskinporten_client._make_client_name(
+            "prod", "Skjemautvikling", "idporten", "Dine skjemaer"
+        )
+        == "Oslo kommune - Dine skjemaer"
+    )
+    assert (
+        maskinporten_client._make_client_name(
+            "test", "Skjemautvikling", "idporten", "dine skjemaer"
+        )
+        == "Oslo kommune - Dine skjemaer - test"
+    )
+    assert (
+        maskinporten_client._make_client_name(
+            "test", "Skjemautvikling", "idporten", "Dine Skjemaer"
+        )
+        == "Oslo kommune - Dine Skjemaer - test"
+    )
+
+
+def test_make_client_description(maskinporten_client):
+    assert (
+        maskinporten_client._make_client_description(
+            "test", "Min side", "freg", "tjenesteprofil"
         )
         == "Freg-klient for tjenesteprofil (Min side)"
+    )
+    assert (
+        maskinporten_client._make_client_description(
+            "test", "Min side", "freg", "Tjenesteprofil"
+        )
+        == "Freg-klient for Tjenesteprofil (Min side)"
+    )
+
+
+def test_make_idporten_client_description(maskinporten_client):
+    assert (
+        maskinporten_client._make_client_description(
+            "test", "Skjemautvikling", "idporten", "Dine skjemaer"
+        )
+        == "DIG - okdata-skjemautvikling-idporten-dine-skjemaer - test"
     )
 
 
