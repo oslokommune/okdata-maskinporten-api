@@ -140,17 +140,41 @@ class MaskinportenClient:
         self._delete_client_key_lock = threading.Lock()
 
     @staticmethod
-    def _slugify_team_name(team_name):
-        return (
-            re.sub("[^a-zæøå0-9 ]", "", team_name.lower()).strip(" ").replace(" ", "-")
-        )
-
-    def _make_client_name(self, env, team_name, provider, integration):
-        return f"{self.org.upper()} - okdata-{self._slugify_team_name(team_name)}-{provider}-{integration} - {env}"
+    def _slugify(s):
+        return re.sub("[^-a-zæøå0-9 ]", "", s.lower()).strip(" ").replace(" ", "-")
 
     @staticmethod
-    def _make_client_description(team_name, provider, integration):
-        return f"{provider.capitalize()}-klient for {integration} ({team_name})"
+    def _capitalize_first(s):
+        return s[0].upper() + s[1:] if len(s) > 0 else ""
+
+    def _make_client_name(self, env, team_name, provider, integration):
+        """Return a fitting client name.
+
+        ID-porten clients receive special treatment since their names are
+        visible in the authentication dialogue for end users.
+        """
+        return (
+            "Oslo kommune - {}{}".format(
+                self._capitalize_first(integration), " - test" if env == "test" else ""
+            )
+            if provider == "idporten"
+            else f"{self.org.upper()} - okdata-{self._slugify(team_name)}-{provider}-{self._slugify(integration)} - {env}"
+        )
+
+    def _make_client_description(self, env, team_name, provider, integration):
+        """Return a fitting client description.
+
+        ID-porten clients receive special treatment here too. Normally we
+        namespace clients using the name field (e.g. "DIG -
+        okdata-team-krr-some-app - prod"), but since ID-porten names are
+        visible to end users, we move that namespacing part into the
+        description field instead.
+        """
+        return (
+            f"{self.org.upper()} - okdata-{self._slugify(team_name)}-{provider}-{self._slugify(integration)} - {env}"
+            if provider == "idporten"
+            else f"{provider.capitalize()}-klient for {integration} ({team_name})"
+        )
 
     def create_maskinporten_client(self, env, team_name, provider, integration, scopes):
         params = {
@@ -158,7 +182,7 @@ class MaskinportenClient:
                 env, team_name, provider, integration
             ),
             "description": self._make_client_description(
-                team_name, provider, integration
+                env, team_name, provider, integration
             ),
             "scopes": scopes,
             "token_endpoint_auth_method": "private_key_jwt",
@@ -192,7 +216,7 @@ class MaskinportenClient:
             ),
             "client_uri": str(client_uri),
             "description": self._make_client_description(
-                team_name, provider, integration
+                env, team_name, provider, integration
             ),
             "code_challenge_method": "S256",
             "frontchannel_logout_session_required": True,
