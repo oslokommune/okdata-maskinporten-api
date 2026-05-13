@@ -14,7 +14,7 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-authlib==1.6.11
+authlib==1.6.12
     # via okdata-maskinporten-api (setup.py)
 aws-xray-sdk==2.14.0
     # via okdata-maskinporten-api (setup.py)
