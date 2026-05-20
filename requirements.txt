@@ -42,7 +42,7 @@ deprecation==2.1.0
     # via python-keycloak
 fastapi==0.120.2
     # via okdata-maskinporten-api (setup.py)
-idna==3.10
+idna==3.15
     # via
     #   anyio
     #   requests
