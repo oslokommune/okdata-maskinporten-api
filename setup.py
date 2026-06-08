@@ -24,7 +24,7 @@ setup(
         "cryptography>=42.0.5,<47",
         "fastapi>=0.109.2",
         "mangum>=0.12.4,<1",
-        "okdata-aws>=5",
+        "okdata-aws",
         "okdata-resource-auth>=0.1.4",
         "pydantic>2,<3",
         "pyjwt>=2.7,<3",

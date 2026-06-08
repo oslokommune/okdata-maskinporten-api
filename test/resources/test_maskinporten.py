@@ -336,7 +336,7 @@ def test_create_client_invalid_team_id(
     assert res.status_code == 400
     assert (
         res.json()["message"]
-        == "body.team_id: Invalid team ID (Input should be a valid UUID, invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `i` at 1)"
+        == "body.team_id: Invalid team ID (Input should be a valid UUID, invalid character: found `i` at 1)"
     )
 
 
