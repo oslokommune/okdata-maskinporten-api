@@ -18,11 +18,11 @@ setup(
     url="https://github.com/oslokommune/okdata-maskinporten-api",
     packages=find_packages(),
     install_requires=[
-        "authlib>=1",
         "aws-xray-sdk>=2.12,<3",
         "boto3>=1.28.11,<2",
         "cryptography>=42.0.5,<49",
         "fastapi>=0.109.2",
+        "joserfc",
         "mangum>=0.12.4,<1",
         "okdata-aws",
         "okdata-resource-auth>=0.1.4",
