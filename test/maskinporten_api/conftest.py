@@ -1,10 +1,12 @@
 import pytest
+import requests_mock
 
 from cryptography.hazmat.primitives.serialization import pkcs12
 
 from maskinporten_api.jwt_client import JWTConfig, JWTGenerator
 from maskinporten_api.maskinporten_client import MaskinportenClient
 from models import Organization
+from test.mock_utils import mock_access_token_generation_requests
 
 
 @pytest.fixture
@@ -29,7 +31,9 @@ def jwt_generator(jwt_config):
 
 @pytest.fixture
 def maskinporten_client(mock_ssm):
-    return MaskinportenClient(Organization.dig, "test")
+    with requests_mock.Mocker() as rm:
+        mock_access_token_generation_requests(rm)
+        return MaskinportenClient(Organization.dig, "test")
 
 
 @pytest.fixture
