@@ -20,7 +20,7 @@ setup(
     install_requires=[
         "aws-xray-sdk>=2.12,<3",
         "boto3>=1.28.11,<2",
-        "cryptography>=42.0.5,<49",
+        "cryptography>=42.0.5,<51",
         "fastapi>=0.109.2",
         "joserfc",
         "mangum>=0.12.4,<1",
