@@ -77,7 +77,7 @@ functions:
           # Midnight at the first day of every month.
           rate: cron(0 0 1 * ? *)
           enabled: ${self:custom.clientReportEnabled.${opt:stage, self:provider.stage}}
-    timeout: 300
+    timeout: 600
   key-rotator:
     image:
       name: okdata-maskinporten-api
