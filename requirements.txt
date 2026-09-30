@@ -74,7 +74,7 @@ pydantic==2.13.4
     #   okdata-maskinporten-api (setup.py)
 pydantic-core==2.46.4
     # via pydantic
-pyjwt==2.13.0
+pyjwt==2.15.0
     # via okdata-maskinporten-api (setup.py)
 python-dateutil==2.9.0.post0
     # via botocore
