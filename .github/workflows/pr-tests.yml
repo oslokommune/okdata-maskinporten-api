@@ -16,3 +16,10 @@ jobs:
       run: pip install tox
     - name: Test with tox
       run: tox -e py,flake8,black
+    - name: Set up AWS SAM CLI
+      uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
+      with:
+        use-installer: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Validate SAM template
+      run: sam validate --lint --region eu-west-1

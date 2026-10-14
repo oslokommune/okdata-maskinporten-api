@@ -52,9 +52,18 @@ For tests and linting we use [pytest](https://pypi.org/project/pytest/),
 
 ## Deploy
 
+The service is defined in `template.yaml` and deployed with the [AWS SAM
+CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html).
+Per-environment settings (stack name, deployment bucket, region) live in
+`samconfig.toml`.
+
+The Lambda functions run a Docker image built from `Dockerfile`. `sam build`
+builds the image and `sam deploy` pushes it to the ECR repository
+`serverless-okdata-maskinporten-api-<stage>` before updating the stack.
+
 Deploy to both dev and prod is automatic via GitHub Actions on push to main. You
 can alternatively deploy from local machine with: `make deploy` or `make
-deploy-prod`.
+deploy-prod`. This requires the SAM CLI and Docker.
 
 
 ## Scripts

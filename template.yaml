@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  REST API for managing clients and keys in Maskinporten and synchronization
+  with AWS SSM.
+
+Parameters:
+  Stage:
+    Type: String
+    AllowedValues: [dev, prod]
+    Default: dev
+  GitRev:
+    Type: String
+    Description: >-
+      Deployed Git revision, formatted as "branch:short-sha".
+    Default: unknown
+  Version:
+    Type: String
+    Default: 0.1.0
+
+Conditions:
+  IsProd: !Equals [!Ref Stage, prod]
+
+Globals:
+  Function:
+    MemorySize: 1024
+    Tags:
+      GIT_REV: !Ref GitRev
+      VERSION: !Ref Version
+    Environment:
+      Variables:
+        ROOT_PATH: /maskinporten
+        GIT_REV: !Ref GitRev
+        STAGE: !Ref Stage
+        VERSION: !Ref Version
+        SERVICE_NAME: okdata-maskinporten-api
+        # Resolved from SSM by CloudFormation on every deploy.
+        MASKINPORTEN_ADMIN_DIG_CLIENT_ID_TEST: "{{resolve:ssm:/dataplatform/maskinporten/admin-client-id-dig-test}}"
+        MASKINPORTEN_ADMIN_DIG_CLIENT_ID_PROD: "{{resolve:ssm:/dataplatform/maskinporten/admin-client-id-dig-prod}}"
+        MASKINPORTEN_CONSUMER_ORG: "{{resolve:ssm:/dataplatform/maskinporten/consumer-org}}"
+        MASKINPORTEN_KEY_ALIAS: client-key
+        KEYCLOAK_SERVER: "{{resolve:ssm:/dataplatform/shared/keycloak-server-url}}"
+        KEYCLOAK_REALM: api-catalog
+        RESOURCE_SERVER_CLIENT_ID: okdata-resource-server
+        OKDATA_PERMISSION_API_URL: "{{resolve:ssm:/dataplatform/shared/api-gateway-url}}/okdata-permission-api"
+        TIMEZONE: Europe/Oslo
+        BACKUP_BUCKET_NAME: !Sub ok-origo-dataplatform-backup-${Stage}
+        EMAIL_API_URL: "{{resolve:ssm:/dataplatform/shared/email-api-url}}"
+        KEY_ROTATION_GRACE_PERIOD_SECONDS: "300"
+        KEY_DEFAULT_EXPIRATION_DAYS: "90"
+        KEY_UNDER_ROTATION_EXPIRATION_DAYS: "30"
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub okdata-maskinporten-api-${Stage}-${AWS::Region}-lambdaRole
+      PermissionsBoundary: !Sub arn:aws:iam::${AWS::AccountId}:policy/oslokommune/oslokommune-boundary
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - !Sub arn:aws:iam::${AWS::AccountId}:policy/okdata-maskinporten-api
+
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${Stage}-okdata-maskinporten-api
+      StageName: !Ref Stage
+      OpenApiVersion: "3.0.1"
+      EndpointConfiguration:
+        Type: REGIONAL
+      Tags:
+        GIT_REV: !Ref GitRev
+        VERSION: !Ref Version
+
+  AppLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/okdata-maskinporten-api-${Stage}-app
+      RetentionInDays: 90
+
+  AppFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+    Properties:
+      FunctionName: !Sub okdata-maskinporten-api-${Stage}-app
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - handler.handler
+      Timeout: 29
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref AppLogGroup
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /
+            Method: any
+        Proxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /{proxy+}
+            Method: any
+
+  ExportTablesLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/okdata-maskinporten-api-${Stage}-export-tables
+      RetentionInDays: 90
+
+  ExportTablesFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+    Properties:
+      FunctionName: !Sub okdata-maskinporten-api-${Stage}-export-tables
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - jobs.backup.export_tables
+      Timeout: 30
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ExportTablesLogGroup
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            # Midnight at the first day of every month.
+            Schedule: cron(0 0 1 * ? *)
+
+  ClientReportInternalLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/okdata-maskinporten-api-${Stage}-client-report-internal
+      RetentionInDays: 90
+
+  ClientReportInternalFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+    Properties:
+      FunctionName: !Sub okdata-maskinporten-api-${Stage}-client-report-internal
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - jobs.client_report.send_client_report_internal
+      Timeout: 600
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ClientReportInternalLogGroup
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            # Midnight at the first day of every month. Only enabled in prod.
+            Schedule: cron(0 0 1 * ? *)
+            State: !If [IsProd, ENABLED, DISABLED]
+
+  KeyRotatorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/okdata-maskinporten-api-${Stage}-key-rotator
+      RetentionInDays: 90
+
+  KeyRotatorFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+    Properties:
+      FunctionName: !Sub okdata-maskinporten-api-${Stage}-key-rotator
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - jobs.auto_rotate.rotate_keys
+      Timeout: 900
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref KeyRotatorLogGroup
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            # At 2:00 every weekday. Only enabled in prod.
+            Schedule: cron(0 2 ? * MON-FRI *)
+            State: !If [IsProd, ENABLED, DISABLED]
