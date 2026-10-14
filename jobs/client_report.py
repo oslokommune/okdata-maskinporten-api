@@ -156,7 +156,7 @@ def _send_email(to_emails, body):
             "meldingskropp": body.replace("\n", "<br />"),
         },
         headers={"apikey": get_secret("/dataplatform/shared/email-api-key")},
-        timeout=15,
+        timeout=(3.05, 15),
     )
     res.raise_for_status()
     return res

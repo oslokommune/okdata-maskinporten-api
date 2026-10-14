@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from unittest.mock import Mock
 
 import pytest
+import requests
 import requests_mock
 
 from maskinporten_api.maskinporten_client import (
@@ -9,7 +10,7 @@ from maskinporten_api.maskinporten_client import (
     EnvConfig,
     MaskinportenClient,
 )
-from resources.errors import DigdirClientErrorResponse
+from resources.errors import DigdirClientErrorResponse, ErrorResponse
 
 CLIENTS_ENDPOINT = EnvConfig("dig", "test").maskinporten_clients_endpoint
 
@@ -138,3 +139,18 @@ def test_create_idporten_client_error(maskinporten_client, client_error_response
                 "http://example.org",
             )
             assert str(e) == "Client errors from Digdir's API:\n- error 1\n- error 2"
+
+
+@pytest.mark.parametrize(
+    "exc", [requests.exceptions.ConnectTimeout, requests.exceptions.ReadTimeout]
+)
+def test_request_timeout_is_mapped_to_503(maskinporten_client, exc):
+    maskinporten_client.client.get_access_token = Mock(return_value="foobar")
+
+    with requests_mock.Mocker() as rm:
+        rm.get(f"{CLIENTS_ENDPOINT}/abc123/jwks", exc=exc("timed out"))
+        with pytest.raises(ErrorResponse) as e:
+            maskinporten_client.get_client_keys("abc123")
+
+    assert e.value.status_code == 503
+    assert e.value.message == "timed out"
