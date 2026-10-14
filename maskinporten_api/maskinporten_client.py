@@ -322,9 +322,9 @@ class MaskinportenClient:
                     "Authorization": f"Bearer {access_token}",
                 },
                 json=json,
-                timeout=15,
+                timeout=(3.05, 15),
             )
-        except TimeoutError as e:
+        except requests.exceptions.Timeout as e:
             raise ErrorResponse(status.HTTP_503_SERVICE_UNAVAILABLE, str(e))
 
         response.raise_for_status()

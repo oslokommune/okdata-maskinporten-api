@@ -133,7 +133,7 @@ class JWTAuthClient:
 
         try:
             well_known_conf = json.loads(
-                requests.get(well_known_endpoint, timeout=15).text
+                requests.get(well_known_endpoint, timeout=(3.05, 15)).text
             )
         except requests.exceptions.Timeout as e:
             raise MaskinportenTimeoutError(str(e))
@@ -165,7 +165,7 @@ class JWTAuthClient:
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Accept": "*/*",
                 },
-                timeout=15,
+                timeout=(3.05, 15),
             )
         except requests.exceptions.Timeout as e:
             raise MaskinportenTimeoutError(str(e))
