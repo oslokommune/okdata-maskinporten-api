@@ -1,0 +1,25 @@
+version = 0.1
+
+[dev.global.parameters]
+region = "eu-west-1"
+
+[dev.deploy.parameters]
+stack_name = "okdata-maskinporten-api-dev"
+s3_bucket = "ok-origo-dataplatform-config-dev"
+s3_prefix = "deploy/okdata-maskinporten-api"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = "Stage=dev"
+
+[prod.global.parameters]
+region = "eu-west-1"
+
+[prod.deploy.parameters]
+stack_name = "okdata-maskinporten-api-prod"
+s3_bucket = "ok-origo-dataplatform-config-prod"
+s3_prefix = "deploy/okdata-maskinporten-api"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = "Stage=prod"

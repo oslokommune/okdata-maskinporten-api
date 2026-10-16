@@ -15,4 +15,4 @@ RUN /sbin/useradd -r -g app app
 RUN chown -R app:app ${LAMBDA_TASK_ROOT}
 USER app
 
-CMD ["set-me-in-serverless.yaml"]
+CMD ["set-me-in-template.yaml"]

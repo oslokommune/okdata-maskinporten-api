@@ -25,11 +25,15 @@ jobs:
       run: pip install tox
     - name: Test with tox
       run: tox -e py,flake8,black
-    - uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
+    - name: Set up AWS SAM CLI
+      uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
       with:
-        node-version: '18.x'
-    - name: Install NPM dependencies
-      run: npm install
+        use-installer: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Validate SAM template
+      run: sam validate --lint --region eu-west-1
+    - name: Build Docker image
+      run: sam build
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
       with:
@@ -38,4 +42,4 @@ jobs:
     - name: Sts GetCallerIdentity
       run: aws sts get-caller-identity
     - name: Deploy Lambda functions
-      run: ./node_modules/.bin/sls deploy -s dev
+      run: sam deploy --config-env dev --image-repository ${{ secrets.AWS_ACCOUNT_DEV }}.dkr.ecr.eu-west-1.amazonaws.com/serverless-okdata-maskinporten-api-dev --parameter-overrides "Stage=dev GitRev=${GITHUB_REF_NAME}:${GITHUB_SHA::7}"

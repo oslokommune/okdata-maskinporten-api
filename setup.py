@@ -10,7 +10,7 @@ service_name = os.path.basename(os.getcwd())
 setup(
     name=service_name,
     version="0.1.0",
-    author="Origo Dataplattform",
+    author="Oslo kommune",
     author_email="dataplattform@oslo.kommune.no",
     description="REST API for managing clients and keys for public services and synchronization with AWS SSM",
     long_description=long_description,

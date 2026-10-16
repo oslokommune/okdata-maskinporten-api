@@ -20,9 +20,8 @@ var/
 .tox/
 __pycache__
 
-# Serverless directories
-.serverless
-node_modules/
+# AWS SAM build directory
+.aws-sam/
 
 .gradle/
 .terraform/
