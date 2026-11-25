@@ -48,7 +48,7 @@ jmespath==1.1.0
     # via
     #   boto3
     #   botocore
-joserfc==1.7.0
+joserfc==1.7.6
     # via okdata-maskinporten-api (setup.py)
 jsonschema==4.26.0
     # via okdata-sdk
