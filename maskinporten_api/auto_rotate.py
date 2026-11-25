@@ -15,9 +15,9 @@ log = logging.getLogger()
 _TABLE_NAME = "maskinporten-key-rotation"
 
 
-def _log_error(client_name, error_code, msg):
+def _log_error(action, client_name, error_code, msg):
     log.error(
-        "Error enabling automatic key rotation for "
+        f"Error {action} automatic key rotation for "
         f"{client_name} ({error_code}): {msg}"
     )
 
@@ -59,13 +59,13 @@ def enable_auto_rotate(client_id, org, env, aws_account, aws_region, client_name
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
         msg = e.response["Error"]["Message"]
-        _log_error(client_name, error_code, msg)
+        _log_error("enabling", client_name, error_code, msg)
         log_exception(e)
         return None
 
     status_code = db_response["ResponseMetadata"]["HTTPStatusCode"]
     if status_code != 200:
-        _log_error(client_name, status_code, db_response)
+        _log_error("enabling", client_name, status_code, db_response)
         return None
 
     return db_response
@@ -90,13 +90,13 @@ def disable_auto_rotate(client_id, env):
             return None
         error_code = e.response["Error"]["Code"]
         msg = e.response["Error"]["Message"]
-        _log_error(f"{client_id} [{env}]", error_code, msg)
+        _log_error("disabling", f"{client_id} [{env}]", error_code, msg)
         log_exception(e)
         return None
 
     status_code = db_response["ResponseMetadata"]["HTTPStatusCode"]
     if status_code != 200:
-        _log_error(f"{client_id} [{env}]", status_code, db_response)
+        _log_error("disabling", f"{client_id} [{env}]", status_code, db_response)
         return None
 
     return db_response
