@@ -113,7 +113,7 @@ def create_client(
     logger.debug(
         sanitize(
             f"Creating new {client_in.client_type} ({client_in.provider}) "
-            "client for team '{team_name}' in {client_in.env}."
+            f"client for team '{team_name}' in {client_in.env}."
         )
     )
 
