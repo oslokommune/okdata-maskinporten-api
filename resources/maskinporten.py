@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
+import boto3
 import requests
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, Path, status
@@ -25,6 +26,7 @@ from models import (
 )
 from maskinporten_api.audit import audit_log, audit_notify
 from maskinporten_api.auto_rotate import disable_auto_rotate, enable_auto_rotate
+from maskinporten_api.db_util import query_all
 from maskinporten_api.keys import create_key
 from maskinporten_api.maskinporten_client import (
     KeyNotFoundError,
@@ -59,11 +61,23 @@ logger.setLevel(os.environ.get("LOG_LEVEL", logging.INFO))
 router = APIRouter()
 
 
+def _unknown_scopes(provider, scopes):
+    """Return the scopes in `scopes` that aren't known scopes for `provider`."""
+    dynamodb = boto3.resource("dynamodb", region_name=getenv("AWS_REGION"))
+    known = {
+        s["Scope"]
+        for s in query_all(dynamodb.Table("maskinporten-scopes"))
+        if s["ProviderId"] == provider
+    }
+    return [scope for scope in scopes if scope not in known]
+
+
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=MaskinportenClientOut,
     responses=error_message_models(
+        status.HTTP_400_BAD_REQUEST,
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
         status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -116,6 +130,15 @@ def create_client(
             f"client for team '{team_name}' in {client_in.env}."
         )
     )
+
+    if client_in.client_type == ClientType.maskinporten:
+        if unknown := _unknown_scopes(client_in.provider, client_in.scopes):
+            raise ErrorResponse(
+                status.HTTP_400_BAD_REQUEST,
+                "Unknown scopes for provider '{}': {}".format(
+                    client_in.provider, ", ".join(f"'{s}'" for s in unknown)
+                ),
+            )
 
     try:
         maskinporten_client = MaskinportenClient(client_in.org, client_in.env)
