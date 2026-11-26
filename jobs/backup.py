@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import boto3
 from aws_xray_sdk.core import patch_all, xray_recorder
@@ -23,7 +23,7 @@ patch_all()
 def export_tables(event, context):
     """Trigger exports of Maskinporten related DynamoDB tables to S3."""
     dynamodb = boto3.client("dynamodb", region_name=os.environ["AWS_REGION"])
-    dt_now = datetime.utcnow()
+    dt_now = datetime.now(timezone.utc)
     results = []
 
     for table_name in TABLE_NAMES:

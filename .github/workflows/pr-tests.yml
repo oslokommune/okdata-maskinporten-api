@@ -7,17 +7,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-    - name: Set up Python 3.13
-      uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Set up Python 3.14
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
-        python-version: '3.13'
+        python-version: '3.14'
     - name: Install dependencies
       run: pip install tox
     - name: Test with tox
       run: tox -e py,flake8,black
     - name: Set up AWS SAM CLI
-      uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
+      uses: aws-actions/setup-sam@341eee193f458fa5aae5d52c94b0c5cf3a1c5a52 # v3
       with:
         use-installer: true
         token: ${{ secrets.GITHUB_TOKEN }}
