@@ -28,6 +28,7 @@ setup(
         "okdata-resource-auth>=0.1.4",
         "pydantic>2,<3",
         "pyjwt>=2.7,<3",
+        "python-dateutil",
         "python-keycloak",
         "requests>=2.28.0,<3",
     ],
