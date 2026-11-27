@@ -53,7 +53,7 @@ class ClientIn(BaseModel):
 
 
 class MaskinportenClientIn(ClientIn):
-    scopes: list[str]
+    scopes: list[str] = Field(min_length=1)
 
 
 class IdPortenClientIn(ClientIn):

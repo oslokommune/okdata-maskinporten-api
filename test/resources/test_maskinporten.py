@@ -187,6 +187,7 @@ def test_create_client_rollback(
     mock_authorizer,
     mock_client,
     mock_ssm,
+    mock_dynamodb,
     mocker,
 ):
     with requests_mock.Mocker(real_http=True) as rm:
@@ -338,6 +339,72 @@ def test_create_client_invalid_team_id(
         res.json()["message"]
         == "body.team_id: Invalid team ID (Input should be a valid UUID, invalid character: found `i` at 1)"
     )
+
+
+def test_create_client_no_scopes(
+    maskinporten_create_client_body,
+    mock_authorizer,
+    mock_ssm,
+    mock_client,
+):
+    res = mock_client.post(
+        "/clients",
+        json={**maskinporten_create_client_body, "scopes": []},
+        headers={"Authorization": get_mock_user("janedoe").bearer_token},
+    )
+
+    assert res.status_code == 400
+    assert res.json()["message"].startswith(
+        "Invalid data provided for client type: scopes: "
+    )
+
+
+@pytest.mark.parametrize(
+    "provider,scopes,unknown",
+    [
+        ("freg", ["folkeregister:deling/offentligmedhjemmel", "foo:bar"], "foo:bar"),
+        # A known scope, but for another provider.
+        (
+            "krr",
+            ["folkeregister:deling/offentligmedhjemmel"],
+            "folkeregister:deling/offentligmedhjemmel",
+        ),
+        # An empty scope. DynamoDB rejects empty key values, so looking it up
+        # by key would fail.
+        ("freg", [""], ""),
+    ],
+)
+def test_create_client_unknown_scopes(
+    provider,
+    scopes,
+    unknown,
+    maskinporten_create_client_body,
+    user_team_response,
+    mock_authorizer,
+    mock_ssm,
+    mock_client,
+    mock_dynamodb,
+):
+    body = {**maskinporten_create_client_body, "provider": provider, "scopes": scopes}
+
+    with requests_mock.Mocker(real_http=True) as rm:
+        mock_access_token_generation_requests(rm)
+        create_client_matcher = rm.post(CLIENTS_ENDPOINT, json={})
+        rm.get(
+            f"{OKDATA_PERMISSION_API_URL}/teams/{team_id}",
+            json=user_team_response,
+        )
+        res = mock_client.post(
+            "/clients",
+            json=body,
+            headers={"Authorization": get_mock_user("janedoe").bearer_token},
+        )
+
+    assert res.status_code == 400
+    assert res.json()["message"] == (
+        f"Unknown scopes for provider '{provider}': '{unknown}'"
+    )
+    assert not create_client_matcher.called
 
 
 def test_list_clients(

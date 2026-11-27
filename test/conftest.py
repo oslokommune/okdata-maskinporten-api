@@ -106,4 +106,18 @@ def mock_dynamodb():
                 "WriteCapacityUnits": 5,
             },
         )
+        dynamodb.create_table(
+            TableName="maskinporten-scopes",
+            KeySchema=[{"AttributeName": "Scope", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "Scope", "AttributeType": "S"}],
+            ProvisionedThroughput={
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5,
+            },
+        ).put_item(
+            Item={
+                "Scope": "folkeregister:deling/offentligmedhjemmel",
+                "ProviderId": "freg",
+            }
+        )
         yield dynamodb
